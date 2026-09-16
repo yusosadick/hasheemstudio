@@ -37,4 +37,15 @@ Premium creative workstation, not a generic admin template. Large type hierarchy
 
 Before full application implementation, build realistic landing, upload wizard and job-result prototypes in both themes. Capture at 390, 768 and 1440 px. Review spacing, line length, contrast, icons and empty/error states. Obtain owner feedback before polishing all screens. Continue independent backend work while waiting; do not mistake code generation for visual approval.
 
-**Current status:** not started. See `docs/STATUS.md` Phase 1.
+**Current status:** first-pass prototype built and screenshotted, awaiting owner visual approval.
+
+- Tokens implemented for real in `packages/ui/src/tokens.css`, consumed by `apps/web` via
+  Tailwind CSS variable mapping (`apps/web/tailwind.config.ts`).
+- Three prototype routes built in `apps/web`: landing (`/`), upload wizard
+  (`/prototypes/upload`), job result/verification report (`/prototypes/job-result`).
+- Screenshots captured at 390/768/1440px in both themes, full page, via Playwright against the
+  real running dev server — see `docs/evidence/phase1-design/`.
+- Self-review: no clipping, table→card collapse works, gradient CTA text contrast looks correct;
+  no automated contrast/accessibility audit run yet (Phase 7).
+- **Not yet done:** owner has not reviewed or approved these screenshots. Treat as a draft for
+  review, not a finished design.

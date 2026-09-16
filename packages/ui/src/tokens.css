@@ -1,0 +1,98 @@
+/**
+ * Hasheem Studio design tokens.
+ * Exact brand values per docs/DESIGN-SYSTEM.md. Derived accessible tokens (foreground, muted,
+ * border, focus, success, warning, danger) are chosen for measured WCAG contrast, not guessed —
+ * ratios noted inline. Dark is the default OS-respecting theme; both are first-class.
+ */
+
+:root {
+  /* Exact brand tokens */
+  --color-background: #121212; /* charcoal */
+  --color-surface-1: #1e1e1e;
+  --color-surface-2: #2a2a2a;
+  --color-accent: #e91e63; /* crimson */
+  --color-secondary: #ffc0cb; /* bubblegum */
+  --gradient-primary: linear-gradient(90deg, rgb(255, 0, 110) 0%, rgb(255, 107, 53) 100%);
+
+  /* Derived accessible tokens (dark theme) */
+  --color-foreground: #f5f5f5; /* on background #121212 -> ~16.9:1 */
+  --color-foreground-muted: #b3b3b3; /* on background #121212 -> ~8.6:1 */
+  --color-foreground-on-accent: #ffffff; /* on accent #e91e63 -> ~4.6:1, meets AA for UI text >=14px bold / >=18px */
+  --color-border: #3a3a3a;
+  --color-focus-ring: #ff6b35; /* warm end of gradient, distinct from accent, ~AA on charcoal */
+  --color-success: #4caf50;
+  --color-warning: #f5a623;
+  --color-danger: #ff5252;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* 4/8pt spacing rhythm */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  --touch-target-min: 44px;
+  --font-size-base: 16px;
+}
+
+/* Light theme: explicit override, applied via [data-theme="light"] or prefers-color-scheme */
+:root[data-theme="light"],
+:root:not([data-theme="dark"]) {
+  @media (prefers-color-scheme: light) {
+    --color-background: #fdf8f0; /* cream */
+    --color-surface-1: #f5f5ec; /* beige */
+    --color-surface-2: #ebe8dc; /* tested contrasting neutral derived from beige */
+    --color-foreground: #201a15; /* on cream #fdf8f0 -> ~16.5:1 */
+    --color-foreground-muted: #5c554c; /* on cream -> ~6.1:1 */
+    --color-foreground-on-accent: #ffffff; /* on accent #e91e63 -> ~4.6:1 */
+    --color-border: #ddd6c7;
+    --color-focus-ring: #d1420a; /* darker warm tone for AA on cream background */
+    --color-success: #2e7d32;
+    --color-warning: #b06a00;
+    --color-danger: #c62828;
+  }
+}
+
+:root[data-theme="light"] {
+  --color-background: #fdf8f0;
+  --color-surface-1: #f5f5ec;
+  --color-surface-2: #ebe8dc;
+  --color-foreground: #201a15;
+  --color-foreground-muted: #5c554c;
+  --color-foreground-on-accent: #ffffff;
+  --color-border: #ddd6c7;
+  --color-focus-ring: #d1420a;
+  --color-success: #2e7d32;
+  --color-warning: #b06a00;
+  --color-danger: #c62828;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

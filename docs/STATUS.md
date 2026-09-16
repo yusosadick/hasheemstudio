@@ -6,7 +6,10 @@
 
 **Last updated:** 2026-09-16, during initial Phase 0 session.
 
-## Current phase: Phase 0 — discovery and first GitHub push
+## Current phase: Phase 1 — design system and interaction prototype (in progress)
+
+Phase 0 gate met in full (see below). Phase 1 has a first-pass deliverable done; **owner visual
+approval is still outstanding** — that part of the Phase 1 gate cannot be self-certified.
 
 ### Done, with evidence
 
@@ -68,9 +71,41 @@ Verified by `git ls-remote origin refs/heads/main` immediately after push, indep
 Stripe/Slack/GitHub/Google API key shapes) found nothing in the 51 committed files; automated
 gitleaks scanning runs on every push going forward via `.github/workflows/ci.yml`.
 
+### Phase 1 — done so far (with evidence)
+
+- `packages/ui/src/tokens.css`: exact brand tokens (`#121212`/`#FDF8F0` background,
+  `#1E1E1E`/`#F5F5EC` surface, `#E91E63` accent, `#FFC0CB` secondary, the specified pink→orange
+  gradient) plus derived accessible foreground/muted/border/focus/success/warning/danger tokens
+  for both themes, applied via CSS variables (no flash: theme set from `localStorage`/OS
+  preference before first paint in `apps/web/index.html`).
+- `apps/web`: real Vite + React + TypeScript + Tailwind app wired to those tokens
+  (`apps/web/tailwind.config.ts` maps Tailwind color/spacing/radius utilities to the CSS
+  variables). `npx tsc -b --noEmit` passes clean.
+- Three prototype screens built: landing (`/`), upload wizard (`/prototypes/upload`), job
+  result/verification report (`/prototypes/job-result`) — mobile nav, drag/drop upload area, real
+  (hand-drawn, unlicensed-pack-free) SVG icon set, honest job-stage stepper with no fake
+  percentages, a technical diff table that collapses to cards on phones, and an explicit
+  "sampled decode check, not full verification" disclosure on the result page.
+- Verified running: `pnpm --filter @hasheemstudio/web dev` served all three routes with HTTP 200
+  on the VPS (127.0.0.1:5173) on 2026-09-16.
+- Screenshots captured for real via Playwright (Chromium, already available in this environment)
+  at 390/768/1440px in both dark and light theme, full page — 18 PNGs at
+  `docs/evidence/phase1-design/`. Self-reviewed for clipping/contrast/collapse behaviour; see that
+  directory's README for the review notes.
+
+### Phase 1 — still open
+
+- **Owner visual approval of the screenshots is not yet obtained.** This is the actual Phase 1
+  gate per `docs/IMPLEMENTATION-PLAN.md` ("Visual approval status recorded") — building and
+  screenshotting the prototype is necessary but not sufficient.
+- No automated accessibility/contrast audit run yet (planned Phase 7, though a lightweight pass
+  could move earlier).
+- No component "stories"/visual regression baselines yet (`docs/IMPLEMENTATION-PLAN.md` Phase 1
+  file list mentions "component stories/tests").
+- No keyboard-navigation test pass recorded yet, only visual/structural review.
+
 ### Not started yet
 
-- Phase 1 (design tokens, prototypes, owner visual approval)
 - Phase 2 (dedicated Supabase/Redis/storage stack, DNS/TLS)
 - Phase 3 (schema, auth, RLS, migration runner)
 - Phase 4 (upload-to-download vertical slice)
@@ -103,7 +138,11 @@ with no evidence behind it.
 
 ## Next unblocked task
 
-Phase 1: implement `packages/ui/src/tokens.css` with the exact brand tokens from
-`docs/DESIGN-SYSTEM.md`, then a minimal landing-page prototype in both themes, screenshot at
-390/768/1440px, and record owner visual-approval status here. This does not depend on any item in
-`docs/DECISIONS.md`.
+1. Surface the Phase 1 screenshots (`docs/evidence/phase1-design/`) to the owner for approval and
+   record the outcome here.
+2. In parallel (does not depend on approval or on any `docs/DECISIONS.md` item): begin Phase 2
+   infrastructure authoring — `infra/compose/*` for the isolated `hasheemstudio` Docker Compose
+   stack (dedicated Supabase, Redis, private storage). This can be written and dry-run validated
+   without DNS access; actual staging deployment and TLS remain blocked on
+   `docs/DECISIONS.md` item 1 (DNS) for public ingress, but the stack itself does not need a public
+   hostname to be stood up and smoke-tested over SSH/localhost first.
