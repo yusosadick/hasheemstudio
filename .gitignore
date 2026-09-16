@@ -23,6 +23,15 @@ secrets/
 supabase/.branches/
 supabase/.temp/
 
+# Compose runtime state / secrets — never committed
+infra/compose/.env
+infra/compose/volumes/db/data/
+infra/compose/volumes/storage/
+infra/compose/volumes/functions/*
+!infra/compose/volumes/functions/.gitkeep
+infra/compose/volumes/snippets/*
+!infra/compose/volumes/snippets/.gitkeep
+
 # Logs
 *.log
 npm-debug.log*

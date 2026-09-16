@@ -104,9 +104,55 @@ gitleaks scanning runs on every push going forward via `.github/workflows/ci.yml
   file list mentions "component stories/tests").
 - No keyboard-navigation test pass recorded yet, only visual/structural review.
 
+## Phase 2 — isolated infrastructure (in progress)
+
+### Done, with evidence
+
+- `infra/compose/docker-compose.yml`: dedicated `hasheemstudio` Compose project adapted from the
+  current official `supabase/supabase` Docker reference (see `docs/adr/0004-envoy-gateway.md` for
+  why it uses Envoy, not Kong, and why `realtime`/`functions` are excluded), plus a dedicated Redis
+  service (ACL password, AOF persistence, `noeviction` policy). All container names prefixed
+  `hasheemstudio-` and all published ports bound to `127.0.0.1` only, chosen to avoid every port
+  already in use on this shared host (cross-checked against `docs/ENVIRONMENTS.md`'s port
+  inventory).
+- `scripts/ops/generate-supabase-secrets.mjs`: real, tested secret generator (Postgres password,
+  JWT secret, HS256-signed `ANON_KEY`/`SERVICE_ROLE_KEY`, dashboard password, `SECRET_KEY_BASE`,
+  `VAULT_ENC_KEY`, `PG_META_CRYPTO_KEY`, Redis password) — writes only to
+  `/etc/hasheemstudio/<env>.env` at mode 600, refuses to overwrite without `--force`, never prints
+  values. Run for `local` on 2026-09-16.
+- **The stack was actually started and its health verified for real** (not just "container is
+  up"): Auth health endpoint, Storage status endpoint, PostgREST OpenAPI schema (service-role) and
+  a real anon-key query reaching Postgres (404 on a nonexistent table — proves the request passed
+  gateway auth and hit PostgREST/DB, not a stub), a direct `psql` connection through the Supavisor
+  pooler, and Redis `PING`/auth-rejection both confirmed. Full detail and exact commands in
+  `docs/ENVIRONMENTS.md` "Dedicated hasheemstudio Compose stack".
+- Hit and fixed one real bug during verification: the Redis healthcheck initially failed because
+  `REDIS_PASSWORD` wasn't exported into the container's environment (only used at
+  container-start-command time), causing the healthcheck's own `redis-cli` call to fail auth even
+  though Redis itself was healthy — fixed by adding an explicit `environment:` block.
+- **Confirmed zero regression** on the shared VPS: the other project's `supabase-*` stack,
+  `coolify-proxy`, and `hasheem-web-*` containers were all still `healthy` after this stack came up.
+- Vaultwarden-based secret retrieval script written (`scripts/ops/fetch-vaultwarden-secret.sh`) —
+  writes directly into the target env file, never prints the secret value. Not yet run: needs the
+  owner (or a separate terminal the owner controls) to run `bw unlock` and hand off a session key,
+  per the plan agreed with the owner in this session — see `docs/DECISIONS.md` item 1/2.
+
+### Phase 2 — still open
+
+- Not reachable publicly: no DNS, no Coolify/Traefik route wired up yet (blocked on
+  `docs/DECISIONS.md` item 1, and wiring the proxy is itself a deliberate next action once DNS
+  exists — not done blindly).
+- No dedicated least-privilege service user yet; the stack and `/etc/hasheemstudio/` currently run
+  as `yuso`.
+- No backup configured for this stack yet (`docs/BACKUP-RESTORE.md` still fully open).
+- No object storage decision made yet (`docs/adr/0003-media-storage-path.md` still open) — Storage
+  is running with the `file` backend for now, sufficient for Phase 2 connectivity verification, not
+  a final decision.
+- Resend SMTP not configured — `SMTP_PASS` is blank in the generated env, so Auth email sending
+  will not work yet. This is expected and matches `docs/DECISIONS.md` item 2.
+
 ### Not started yet
 
-- Phase 2 (dedicated Supabase/Redis/storage stack, DNS/TLS)
 - Phase 3 (schema, auth, RLS, migration runner)
 - Phase 4 (upload-to-download vertical slice)
 - Phase 5 (compatibility recipes, reliability)
@@ -138,11 +184,16 @@ with no evidence behind it.
 
 ## Next unblocked task
 
-1. Surface the Phase 1 screenshots (`docs/evidence/phase1-design/`) to the owner for approval and
-   record the outcome here.
-2. In parallel (does not depend on approval or on any `docs/DECISIONS.md` item): begin Phase 2
-   infrastructure authoring — `infra/compose/*` for the isolated `hasheemstudio` Docker Compose
-   stack (dedicated Supabase, Redis, private storage). This can be written and dry-run validated
-   without DNS access; actual staging deployment and TLS remain blocked on
-   `docs/DECISIONS.md` item 1 (DNS) for public ingress, but the stack itself does not need a public
-   hostname to be stood up and smoke-tested over SSH/localhost first.
+1. Owner review of Phase 1 screenshots: **done, approved verbally in this session** ("looks fine
+   from your description, keep going").
+2. Owner-approved next step for credentials: retrieve `hasheemstudio-resend-api` and
+   `hasheem studio DNS` from the owner's self-hosted Vaultwarden. Blocked on the owner (or a
+   separate terminal they control) running `bw unlock` and handing off a `BW_SESSION` value via a
+   file — **not** through this chat. See `scripts/ops/fetch-vaultwarden-secret.sh` and
+   `docs/DECISIONS.md`.
+3. Once those two secrets are in hand: wire Resend SMTP into `/etc/hasheemstudio/local.env` and
+   re-verify Auth email sending; add the Cloudflare-provided DNS records (or hand the owner exact
+   records to add manually) and begin Phase 2's public-ingress step.
+4. Independently unblocked regardless of the above: start Phase 3 — write the first
+   `supabase/migrations/*.sql` (schema from `docs/ARCHITECTURE.md` "Data model and RLS") and begin
+   `scripts/db/remote.mjs`, now that there's a real dedicated database to migrate and verify against.
