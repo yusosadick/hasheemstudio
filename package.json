@@ -1,0 +1,31 @@
+{
+  "name": "hasheemstudio",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Hasheem Studio monorepo — React/TypeScript frontend, Fastify API, BullMQ media worker, self-hosted Supabase.",
+  "license": "UNLICENSED",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "doctor": "node scripts/ops/doctor.mjs",
+    "dev:up": "node scripts/ops/not-implemented.mjs dev:up",
+    "dev": "node scripts/ops/not-implemented.mjs dev",
+    "build": "pnpm -r --if-present build",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "test:unit": "node scripts/ops/not-implemented.mjs test:unit",
+    "test:integration": "node scripts/ops/not-implemented.mjs test:integration",
+    "test:security": "node scripts/ops/not-implemented.mjs test:security",
+    "test:e2e": "node scripts/ops/not-implemented.mjs test:e2e",
+    "db:local:migrate": "node scripts/ops/not-implemented.mjs db:local:migrate",
+    "db:remote": "node scripts/db/remote.mjs",
+    "deploy:plan": "node scripts/ops/not-implemented.mjs deploy:plan",
+    "deploy": "node scripts/ops/not-implemented.mjs deploy",
+    "verify:live": "node scripts/ops/not-implemented.mjs verify:live"
+  },
+  "devDependencies": {}
+}

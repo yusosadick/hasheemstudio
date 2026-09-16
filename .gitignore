@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.next/
+*.tsbuildinfo
+.turbo/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+!infra/**/*.example.key
+secrets/
+**/secrets/
+
+# Supabase local state
+supabase/.branches/
+supabase/.temp/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Test / coverage
+coverage/
+playwright-report/
+test-results/
+.vitest-cache/
+
+# Media fixtures/output must never be committed except tiny licensed test fixtures explicitly reviewed
+tests/fixtures/media/*
+!tests/fixtures/media/README.md
+tmp/
+scratch/
+
+# Kubeconfigs and infra local state
+kubeconfig*
+*.kubeconfig
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Evidence must be sanitised before commit — raw capture staging area is ignored
+docs/evidence/_raw/
