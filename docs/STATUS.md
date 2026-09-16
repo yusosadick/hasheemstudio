@@ -6,12 +6,14 @@
 
 **Last updated:** 2026-09-16, during initial Phase 0 session.
 
-## Current phase: Phase 1 — design system and interaction prototype (in progress)
+## Current phase: Phase 4 (upload-to-download vertical slice) is next unblocked work
 
-Phase 0 gate met in full (see below). Phase 1 has a first-pass deliverable done; **owner visual
-approval is still outstanding** — that part of the Phase 1 gate cannot be self-certified.
+Phase 0 gate: met in full. Phase 1: first-pass prototype done, **owner-approved** in this session.
+Phase 2: dedicated Supabase+Redis stack running and verified, not yet publicly reachable (DNS
+blocked). Phase 3: tenancy/RLS/migration-runner core done and verified with real tests, scoped
+deliberately to exclude job/media tables (that's Phase 4/5's job). Details for each phase below.
 
-### Done, with evidence
+### Phase 0 — done, with evidence
 
 - **Read-only discovery performed directly on the target VPS** (`169.58.72.101`, host
   `vmi3464308`, user `yuso`). Findings recorded in `docs/ENVIRONMENTS.md`:
@@ -151,9 +153,55 @@ gitleaks scanning runs on every push going forward via `.github/workflows/ci.yml
 - Resend SMTP not configured — `SMTP_PASS` is blank in the generated env, so Auth email sending
   will not work yet. This is expected and matches `docs/DECISIONS.md` item 2.
 
-### Not started yet
+## Phase 3 — tenancy/RLS/migration runner core (done, scoped)
 
-- Phase 3 (schema, auth, RLS, migration runner)
+### Done, with evidence
+
+- `supabase/migrations/0001-0003`: bootstrap identity marker, `profiles`/`workspaces`/
+  `workspace_members` with RLS and a recursion-safe `SECURITY DEFINER` membership helper, an
+  atomic registration trigger (profile + personal workspace + owner membership together), and
+  `platform_admins` with RLS enabled and **zero** policies (no client-writable path exists at all).
+- `scripts/db/remote.mjs`: real `status`/`plan`/`apply`/`verify` commands, tested against the live
+  dedicated database (not a mock):
+  - `status` before any migration existed correctly listed all 3 as pending.
+  - `plan` correctly **refused** while the working tree was dirty.
+  - After committing and pushing, `plan` passed clean against the real pushed SHA.
+  - `apply` applied all 3 migrations in order, each wrapped with its ledger insert in one
+    transaction.
+  - `verify` did real introspection (`information_schema`, `pg_class.relrowsecurity`,
+    `pg_policies`) confirming all 4 tables exist, RLS is enabled on all 4, and no
+    pending/drifted migrations remain.
+  - **Idempotency verified**: re-running `apply` against the fully-applied state returned
+    `applied: []`, a true no-op.
+  - **Checksum-drift detection verified**: temporarily appending a line to an already-applied
+    migration file caused `plan` to correctly refuse with an explicit drift error (then reverted;
+    working tree confirmed clean again).
+- `tests/security/rls.cross-tenant.mjs`: real negative-test suite against the live stack — created
+  two throwaway users via the GoTrue admin API, signed each in for a real access token, and
+  confirmed via actual PostgREST requests: **7/7 checks passed** — registration trigger creates
+  exactly one personal workspace per user; user A cannot read user B's workspace or profile
+  (RLS silently filters, empty result); user A cannot insert themselves into user B's
+  `workspace_members` (403); user A cannot self-promote into `platform_admins` (403). Test users
+  cleaned up afterward.
+
+### Explicitly out of scope for this pass (honest gaps)
+
+- No `jobs`/`media_assets`/`upload_sessions`/`usage_*`/`outbox_*`/`audit_events`/
+  `deletion_requests` tables yet — deferred to Phase 4/5 where they're actually needed, per
+  `docs/IMPLEMENTATION-PLAN.md`'s own phase boundaries.
+- **Not yet a true SSH-based remote migration**: this runner currently executes on the same VPS
+  the target database runs on (there's only one environment, `local`, and it IS this VPS). The
+  "real SSH-based staging migration from a separate client terminal" acceptance test in
+  `docs/MIGRATIONS.md` is unmet until a genuinely separate client (e.g. an actual MacBook) runs
+  this against `staging`.
+- Concurrent-invocation test (two `apply` calls racing) not yet exercised.
+- No `staging`/`production` environment provisioned — `scripts/db/environments.json` defines them,
+  but their secrets files don't exist, so `remote.mjs` correctly refuses to target them.
+- Generated TypeScript types from the migrated schema (`docs/IMPLEMENTATION-PLAN.md` Phase 3 gate:
+  "Generated type definitions reflect migrated schema") — not done yet, no `packages/contracts`
+  codegen wired up.
+
+## Not started yet
 - Phase 4 (upload-to-download vertical slice)
 - Phase 5 (compatibility recipes, reliability)
 - Phase 6 (Resend, admin, compliance UX)
