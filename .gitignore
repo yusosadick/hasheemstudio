@@ -52,6 +52,9 @@ test-results/
 # Media fixtures/output must never be committed except tiny licensed test fixtures explicitly reviewed
 tests/fixtures/media/*
 !tests/fixtures/media/README.md
+# Self-generated via ffmpeg lavfi synthetic sources (testsrc + sine), no copyrighted content —
+# see tests/fixtures/media/README.md for the exact generation command.
+!tests/fixtures/media/synthetic-remux-test.mov
 tmp/
 scratch/
 

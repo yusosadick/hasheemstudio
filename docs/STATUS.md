@@ -201,9 +201,77 @@ gitleaks scanning runs on every push going forward via `.github/workflows/ci.yml
   "Generated type definitions reflect migrated schema") — not done yet, no `packages/contracts`
   codegen wired up.
 
+## Phase 4 — upload-to-download vertical slice (done, real, verified)
+
+### Done, with evidence — this is the actual Phase 4 gate: "a real fixture uploaded through
+### browser [see caveat], processed on VPS, downloaded and decoded"
+
+- **Schema**: `supabase/migrations/0004-0006` — `upload_sessions`, `media_assets`, `jobs`,
+  `job_attempts`, `job_events`, `verification_reports`, `outbox_events`. Applied and verified live
+  the same way as Phase 3 (`scripts/db/remote.mjs apply`/`verify`, both clean).
+- **`apps/api`** (Fastify + TypeScript, real code, typechecked clean): JWT auth
+  (`src/jwt.ts`/`src/auth.ts`, hand-rolled HS256 verify matching the generator in
+  `scripts/ops/generate-supabase-secrets.mjs`), server-side workspace membership checks (never
+  trusts a client-submitted workspace ID), a Supabase Storage HTTP client using signed
+  upload/download URLs, `POST /v1/uploads/sessions`, `POST /v1/uploads/sessions/:id/finalize`,
+  `POST /v1/jobs`, `GET /v1/jobs/:id`, `DELETE /v1/jobs/:id` (cancel).
+- **`apps/worker`** (BullMQ + TypeScript, real code, typechecked clean): a transactional-outbox
+  dispatcher (`src/dispatcher.ts`), a lease-based claim with fencing (`src/processor.ts`), pinned
+  FFmpeg/FFprobe invocation via argument arrays only (`src/ffmpeg.ts`), and — added after finding
+  the gap during this pass — a **reconciler** (`src/reconciler.ts`) that repairs stale leases from
+  a killed worker and redispatches stuck outbox events, per `docs/ARCHITECTURE.md`.
+- **`tests/e2e/upload-to-download.mjs`**, run against the live stack, **13/13 checks passed**: real
+  user → real signed-URL upload of a real self-generated fixture
+  (`tests/fixtures/media/synthetic-remux-test.mov`, committed) → real finalize → real job creation
+  → real BullMQ dispatch and worker processing (actual `ffmpeg`/`ffprobe` subprocesses) → real
+  verification report (decode check, duration match, stream-unchanged confirmation, checksums) →
+  real signed download URL → **downloaded file actually decodes with real video+audio streams and
+  correct duration** → real cancellation that never later reports success → **real server-enforced
+  daily quota** (hit an actual 429 after the configured limit, not just a documented limit).
+- **`tests/integration/worker-crash-recovery.mjs`**, run against the live stack, **6/6 checks
+  passed** after finding and fixing a real bug along the way (see below): a job is killed
+  mid-processing (whole process, not just a wrapper — see bug note), confirmed dead, its lease
+  force-expired (to avoid a 10-minute real-time wait — the only shortcut in this test), the worker
+  restarted, and the **reconciler** genuinely requeues it (`job.lease_expired_requeued` event
+  present, a real second `job_attempts` row created) and it completes successfully on retry — a
+  killed worker leads to bounded recovery, not endless processing.
+- **Real bug found and fixed during this pass**: the crash-recovery test initially showed 0/2
+  false failures — investigation found `npx tsx` / `tsx <file>` forks an internal child process to
+  run the actual code, so killing only the directly-spawned PID left the real worker running as an
+  orphan that quietly finished the job normally. Fixed by spawning with
+  `node --import tsx/esm src/index.ts` (single process, no forking) — documented in
+  `apps/worker/README.md` so this doesn't get relearned later.
+
+### Explicitly out of scope / honest gaps for this pass
+
+- **"Through the browser" is only partially met.** All of the above was driven by real HTTP calls
+  from Node test scripts using the same protocol a browser would use (real signed URLs, real PUT,
+  real JWT-authenticated requests) — not by an actual browser UI. `apps/web`'s upload/job-result
+  pages are still the static Phase 1 prototypes; they are not yet wired to real auth or this real
+  API. Wiring them up and re-running this same journey through Playwright is the next concrete
+  step, not yet done.
+- **Not resumable yet.** Only a single-shot signed-URL PUT was tested. `docs/PRD.md`'s "resumable
+  uploads; interruption recovery" acceptance criterion is unmet.
+- **Not containerized/sandboxed.** `apps/worker` runs `ffmpeg`/`ffprobe` as a direct subprocess of
+  a bare Node process on the host — none of `docs/SECURITY.md`'s "non-root, dropped capabilities,
+  read-only root filesystem, seccomp" worker sandboxing is in place. Fine for proving the pipeline
+  works; not fine to expose to real untrusted user uploads yet.
+- **Plan limits are hardcoded**, not read from a `plans`/`entitlements` table (which doesn't exist
+  yet) — `MAX_UPLOAD_BYTES`/`MAX_JOBS_PER_DAY`/`MAX_ACTIVE_JOBS` constants in the API routes, values
+  matched to `docs/PRD.md`'s Verified Free tier. No usage ledger/reservation settlement machinery
+  yet (Phase 5).
+- **Only `inspect` and `remux` recipes work.** `compat_encode` (H.264/AAC re-encode) is explicitly
+  rejected by the API with a 400 — Phase 5.
+- **No retention sweeper** (expiring old uploads/outputs) yet.
+- **`apps/api` and `apps/worker` are run manually** (plain `node`/`tsx` processes with a protected
+  env file), not under a process supervisor, not in Docker/K8s, and not started by any `pnpm dev`
+  command yet — `pnpm dev:up`/`pnpm dev` remain explicit not-implemented stubs.
+- Duplicated `env.ts`/`storage.ts` between `apps/api` and `apps/worker` — flagged for consolidation
+  once resumable uploads make the shared interface worth designing properly (see ADR-0003).
+
 ## Not started yet
-- Phase 4 (upload-to-download vertical slice)
-- Phase 5 (compatibility recipes, reliability)
+- Phase 5 (compatibility recipes, reliability — partially covered above: crash recovery, exactly-
+  once-ish settlement via claim/lease already real; fair queue and full usage ledger are not)
 - Phase 6 (Resend, admin, compliance UX)
 - Phase 7 (performance, resilience, launch gate)
 - Phase 8 (Kubernetes)
@@ -232,16 +300,15 @@ with no evidence behind it.
 
 ## Next unblocked task
 
-1. Owner review of Phase 1 screenshots: **done, approved verbally in this session** ("looks fine
-   from your description, keep going").
+1. **Wire `apps/web` to the real auth + API** (login/signup pages, session storage, replace the
+   static upload/job-result prototypes with real calls to `apps/api`), then re-run the Phase 4
+   journey driven by Playwright through an actual browser — closes the one real gap in the Phase 4
+   evidence ("through the browser").
 2. Owner-approved next step for credentials: retrieve `hasheemstudio-resend-api` and
    `hasheem studio DNS` from the owner's self-hosted Vaultwarden. Blocked on the owner (or a
    separate terminal they control) running `bw unlock` and handing off a `BW_SESSION` value via a
    file — **not** through this chat. See `scripts/ops/fetch-vaultwarden-secret.sh` and
-   `docs/DECISIONS.md`.
-3. Once those two secrets are in hand: wire Resend SMTP into `/etc/hasheemstudio/local.env` and
-   re-verify Auth email sending; add the Cloudflare-provided DNS records (or hand the owner exact
-   records to add manually) and begin Phase 2's public-ingress step.
-4. Independently unblocked regardless of the above: start Phase 3 — write the first
-   `supabase/migrations/*.sql` (schema from `docs/ARCHITECTURE.md` "Data model and RLS") and begin
-   `scripts/db/remote.mjs`, now that there's a real dedicated database to migrate and verify against.
+   `docs/DECISIONS.md`. Once in hand: wire Resend SMTP, add DNS records, begin Phase 2's
+   public-ingress step.
+3. Independently unblocked: Phase 5 items — `compat_encode` recipe, retention sweeper, real
+   plans/entitlements + usage ledger, worker sandboxing/containerization per `docs/SECURITY.md`.
