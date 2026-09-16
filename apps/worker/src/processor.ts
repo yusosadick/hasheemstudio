@@ -75,6 +75,12 @@ async function isStillActive(jobId: string): Promise<boolean> {
 async function markFailed(jobId: string, message: string): Promise<void> {
   const pool = getPool();
   await pool.query(`update jobs set status = 'failed', error_message = $2 where id = $1`, [jobId, message]);
+  // A failure still counts as a real attempt against the day's quota (docs/PRD.md "Meter ... job
+  // attempts") — settle, don't release, the reservation.
+  await pool.query(
+    `update usage_reservations set status = 'settled', resolved_at = now() where job_id = $1 and status = 'reserved'`,
+    [jobId],
+  );
   await pool.query(
     `insert into job_events (job_id, event_type, payload) values ($1, 'job.failed', jsonb_build_object('message', $2::text))`,
     [jobId, message],
@@ -235,39 +241,53 @@ export async function processJob(jobId: string): Promise<void> {
       throw new Error(`Unsupported recipe '${claimed.recipe}' reached the worker`);
     }
 
-    if (!(await isStillActive(claimed.id))) {
+    const commitClient = await pool.connect();
+    let published = false;
+    try {
+      await commitClient.query("begin");
+      // Conditional on status = 'processing' in the same statement that publishes success — closes
+      // the TOCTOU gap an earlier separate isStillActive() read-then-write would leave open. If a
+      // cancellation landed in that gap, this UPDATE affects 0 rows and we correctly skip publishing.
+      const updateRes = await commitClient.query(
+        `update jobs set status = 'succeeded', output_object_key = $2, output_size_bytes = $3, error_message = null
+         where id = $1 and status = 'processing'`,
+        [claimed.id, outputObjectKey, outputSizeBytes],
+      );
+      published = (updateRes.rowCount ?? 0) > 0;
+      if (published) {
+        await commitClient.query(
+          `insert into verification_reports (job_id, verification_level, frames_re_encoded, checks, input_checksum_sha256, output_checksum_sha256, tool_versions)
+           values ($1, $2, $3, $4::jsonb, $5, $6, $7::jsonb)`,
+          [
+            claimed.id, verificationLevel, framesReEncoded, JSON.stringify(checks),
+            inputChecksum, outputChecksum, JSON.stringify({ ffmpeg: "system", worker: WORKER_ID }),
+          ],
+        );
+        await commitClient.query(
+          `update job_attempts set finished_at = now(), outcome = 'succeeded' where job_id = $1 and attempt_number = $2`,
+          [claimed.id, claimed.attemptCount],
+        );
+        await commitClient.query(
+          `update usage_reservations set status = 'settled', resolved_at = now() where job_id = $1 and status = 'reserved'`,
+          [claimed.id],
+        );
+        await commitClient.query(
+          `insert into job_events (job_id, event_type, payload) values ($1, 'job.succeeded', '{}'::jsonb)`,
+          [claimed.id],
+        );
+      }
+      await commitClient.query("commit");
+    } catch (err) {
+      await commitClient.query("rollback").catch(() => {});
+      throw err;
+    } finally {
+      commitClient.release();
+    }
+
+    if (!published) {
       console.log(`job ${claimed.id} was cancelled just before commit — not marking succeeded`);
       return;
     }
-
-    await pool.query("begin");
-    try {
-      await pool.query(
-        `update jobs set status = 'succeeded', output_object_key = $2, output_size_bytes = $3, error_message = null where id = $1`,
-        [claimed.id, outputObjectKey, outputSizeBytes],
-      );
-      await pool.query(
-        `insert into verification_reports (job_id, verification_level, frames_re_encoded, checks, input_checksum_sha256, output_checksum_sha256, tool_versions)
-         values ($1, $2, $3, $4::jsonb, $5, $6, $7::jsonb)`,
-        [
-          claimed.id, verificationLevel, framesReEncoded, JSON.stringify(checks),
-          inputChecksum, outputChecksum, JSON.stringify({ ffmpeg: "system", worker: WORKER_ID }),
-        ],
-      );
-      await pool.query(
-        `update job_attempts set finished_at = now(), outcome = 'succeeded' where job_id = $1 and attempt_number = $2`,
-        [claimed.id, claimed.attemptCount],
-      );
-      await pool.query(
-        `insert into job_events (job_id, event_type, payload) values ($1, 'job.succeeded', '{}'::jsonb)`,
-        [claimed.id],
-      );
-      await pool.query("commit");
-    } catch (err) {
-      await pool.query("rollback");
-      throw err;
-    }
-
     console.log(`job ${claimed.id} succeeded (recipe=${claimed.recipe})`);
   } catch (err: any) {
     const message = String(err.message ?? err).slice(0, 2000);
