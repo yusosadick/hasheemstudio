@@ -1,0 +1,31 @@
+{
+  "_comment": "Non-secret environment routing for scripts/db/remote.mjs. Real values (host, credentials) live in the protected env file at secretsFile; this file only says WHERE to look, matching docs/ENVIRONMENTS.md.",
+  "local": {
+    "description": "The dedicated hasheemstudio Supabase stack running on this VPS (169.58.72.101), reached directly since this runner is currently executed on that same host. See docs/STATUS.md Phase 2 for how it was brought up.",
+    "secretsFile": "/etc/hasheemstudio/local.env",
+    "sessionHost": "127.0.0.1",
+    "sessionPortEnvVar": "POSTGRES_PORT",
+    "sessionUser": "postgres.hasheemstudio",
+    "database": "postgres",
+    "requiresConfirm": false
+  },
+  "staging": {
+    "description": "Not yet provisioned as a distinct environment. Currently the VPS only has the 'local' stack described above; a genuinely separate staging environment (or at minimum a separate database/secrets file) has not been created yet.",
+    "secretsFile": "/etc/hasheemstudio/staging.env",
+    "sessionHost": "127.0.0.1",
+    "sessionPortEnvVar": "POSTGRES_PORT",
+    "sessionUser": "postgres.hasheemstudio",
+    "database": "postgres",
+    "requiresConfirm": false
+  },
+  "production": {
+    "description": "Not provisioned. No production database exists yet.",
+    "secretsFile": "/etc/hasheemstudio/production.env",
+    "sessionHost": "127.0.0.1",
+    "sessionPortEnvVar": "POSTGRES_PORT",
+    "sessionUser": "postgres.hasheemstudio",
+    "database": "postgres",
+    "requiresConfirm": true,
+    "confirmValue": "hasheemstudio-production"
+  }
+}

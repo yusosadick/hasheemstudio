@@ -27,5 +27,8 @@
     "deploy": "node scripts/ops/not-implemented.mjs deploy",
     "verify:live": "node scripts/ops/not-implemented.mjs verify:live"
   },
+  "dependencies": {
+    "pg": "^8.13.1"
+  },
   "devDependencies": {}
 }
