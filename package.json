@@ -21,6 +21,7 @@
     "test:integration": "node tests/integration/worker-crash-recovery.mjs --fixture tests/fixtures/media/synthetic-remux-test.mov",
     "test:security": "node tests/security/rls.cross-tenant.mjs --env local",
     "test:e2e": "node tests/e2e/upload-to-download.mjs --env local --fixture tests/fixtures/media/synthetic-remux-test.mov",
+    "test:e2e:browser": "node tests/e2e/browser-upload-to-download.mjs --env local",
     "db:local:migrate": "node scripts/ops/not-implemented.mjs db:local:migrate",
     "db:remote": "node scripts/db/remote.mjs",
     "deploy:plan": "node scripts/ops/not-implemented.mjs deploy:plan",
@@ -30,5 +31,7 @@
   "dependencies": {
     "pg": "^8.13.1"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  }
 }

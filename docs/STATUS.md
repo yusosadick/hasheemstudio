@@ -244,12 +244,22 @@ gitleaks scanning runs on every push going forward via `.github/workflows/ci.yml
 
 ### Explicitly out of scope / honest gaps for this pass
 
-- **"Through the browser" is only partially met.** All of the above was driven by real HTTP calls
-  from Node test scripts using the same protocol a browser would use (real signed URLs, real PUT,
-  real JWT-authenticated requests) — not by an actual browser UI. `apps/web`'s upload/job-result
-  pages are still the static Phase 1 prototypes; they are not yet wired to real auth or this real
-  API. Wiring them up and re-running this same journey through Playwright is the next concrete
-  step, not yet done.
+- **"Through the browser" — now closed.** `apps/web` has real pages (`src/pages/Login.tsx`,
+  `Signup.tsx`, `Upload.tsx`, `JobResult.tsx`, `src/lib/auth.ts`, `src/lib/api.ts`) wired to the
+  real Supabase Auth and the real `apps/api`, with a route guard (`RequireAuth`) and CORS added to
+  the API (`@fastify/cors`, explicit origin allowlist). `tests/e2e/browser-upload-to-download.mjs`
+  drives this through real Playwright/Chromium: **8/8 checks passed** — real login through the
+  rendered `/login` page, a real file dropped into the real file input, real navigation to a real
+  job page, the real UI showing "Job complete" with the real verification report JSON rendered,
+  a real download link that returns real bytes, and a screenshot at
+  `docs/evidence/phase4-browser-e2e/job-complete.png`.
+  - **One real, already-documented blocker found in the process**: public self-service `/signup`
+    sends a real confirmation email via GoTrue, which fails with a real 500
+    ("Error sending confirmation email") because Resend SMTP isn't configured yet
+    (`docs/DECISIONS.md` item 2). Confirmed directly against the gateway, not assumed. The browser
+    test works around this by signing in via `/login` with an admin-precreated, pre-confirmed user
+    instead of driving public `/signup` — so the upload/processing/download journey is proven for
+    real, while public signup-via-real-email remains correctly blocked until Resend is wired up.
 - **Not resumable yet.** Only a single-shot signed-URL PUT was tested. `docs/PRD.md`'s "resumable
   uploads; interruption recovery" acceptance criterion is unmet.
 - **Not containerized/sandboxed.** `apps/worker` runs `ffmpeg`/`ffprobe` as a direct subprocess of
@@ -300,15 +310,12 @@ with no evidence behind it.
 
 ## Next unblocked task
 
-1. **Wire `apps/web` to the real auth + API** (login/signup pages, session storage, replace the
-   static upload/job-result prototypes with real calls to `apps/api`), then re-run the Phase 4
-   journey driven by Playwright through an actual browser — closes the one real gap in the Phase 4
-   evidence ("through the browser").
-2. Owner-approved next step for credentials: retrieve `hasheemstudio-resend-api` and
+1. Owner-approved next step for credentials: retrieve `hasheemstudio-resend-api` and
    `hasheem studio DNS` from the owner's self-hosted Vaultwarden. Blocked on the owner (or a
    separate terminal they control) running `bw unlock` and handing off a `BW_SESSION` value via a
    file — **not** through this chat. See `scripts/ops/fetch-vaultwarden-secret.sh` and
    `docs/DECISIONS.md`. Once in hand: wire Resend SMTP, add DNS records, begin Phase 2's
    public-ingress step.
-3. Independently unblocked: Phase 5 items — `compat_encode` recipe, retention sweeper, real
-   plans/entitlements + usage ledger, worker sandboxing/containerization per `docs/SECURITY.md`.
+2. Independently unblocked: Phase 5 items — `compat_encode` recipe, retention sweeper, real
+   plans/entitlements + usage ledger, worker sandboxing/containerization per `docs/SECURITY.md`,
+   resumable uploads.
