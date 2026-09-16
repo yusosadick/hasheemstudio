@@ -7,7 +7,7 @@ import { mkdir, readFile, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { getPool } from "./db.js";
 import { downloadObject, uploadObject } from "./storage.js";
-import { probe, remux, decodeCheck } from "./ffmpeg.js";
+import { probe, remux, compatEncode, decodeCheck } from "./ffmpeg.js";
 
 const SCRATCH_ROOT = process.env.WORKER_SCRATCH_DIR ?? "/tmp/hasheemstudio-scratch";
 const LEASE_MS = 10 * 60_000;
@@ -168,6 +168,57 @@ export async function processJob(jobId: string): Promise<void> {
 
       if (!decode.ok || !durationOk) {
         throw new Error(`Output verification failed: decodeOk=${decode.ok} durationOk=${durationOk}`);
+      }
+
+      outputChecksum = sha256(outputBuffer);
+      outputObjectKey = `${claimed.workspaceId}/outputs/${claimed.id}.mp4`;
+      outputSizeBytes = outputBuffer.length;
+
+      if (!(await isStillActive(claimed.id))) {
+        console.log(`job ${claimed.id} was cancelled after processing, before publish — not uploading output`);
+        return;
+      }
+
+      await uploadObject(outputObjectKey, outputBuffer, "video/mp4");
+    } else if (claimed.recipe === "compat_encode") {
+      const outputPath = join(scratchDir, "output.mp4");
+      await compatEncode(inputPath, outputPath);
+      const decode = await decodeCheck(outputPath);
+      const outputBuffer = await readFile(outputPath);
+      const outputMetadata = await probe(outputPath);
+
+      const durationDelta = metadata.durationSeconds && outputMetadata.durationSeconds
+        ? Math.abs(metadata.durationSeconds - outputMetadata.durationSeconds)
+        : null;
+      // Re-encoding shifts keyframe/GOP boundaries slightly more than a stream copy; a wider
+      // tolerance than remux's is expected and still verified, not assumed.
+      const durationOk = durationDelta === null || durationDelta < 1.5;
+      const isH264 = outputMetadata.videoCodec === "h264";
+      const isAac = metadata.audioCodec === null || outputMetadata.audioCodec === "aac";
+      const dimensionsPreserved = !metadata.width || !metadata.height
+        || (outputMetadata.width! <= metadata.width && outputMetadata.height! <= metadata.height);
+
+      verificationLevel = "compat_encode_full_decode_check";
+      framesReEncoded = true;
+      checks = {
+        decodeCheck: decode,
+        durationDelta,
+        durationOk,
+        inputStreams: { video: metadata.videoCodec, audio: metadata.audioCodec },
+        outputStreams: { video: outputMetadata.videoCodec, audio: outputMetadata.audioCodec },
+        outputIsH264: isH264,
+        outputIsAac: isAac,
+        dimensionsPreserved,
+        // Honest per docs/ARCHITECTURE.md "no universal quality score fabricated from bitrate" —
+        // SSIM/VMAF comparison is not implemented yet (Phase 5+ follow-up), so this field says so
+        // explicitly rather than omitting it or inventing a number.
+        qualityMetric: "not_computed",
+      };
+
+      if (!decode.ok || !durationOk || !isH264 || !isAac || !dimensionsPreserved) {
+        throw new Error(
+          `Output verification failed: decodeOk=${decode.ok} durationOk=${durationOk} isH264=${isH264} isAac=${isAac} dimensionsPreserved=${dimensionsPreserved}`,
+        );
       }
 
       outputChecksum = sha256(outputBuffer);
