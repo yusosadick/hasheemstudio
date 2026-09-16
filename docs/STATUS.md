@@ -54,7 +54,19 @@
 
 ### First-push evidence
 
-<!-- FIRST_PUSH_EVIDENCE_PLACEHOLDER -->
+Pushed 2026-09-16 to `git@github.com:yusosadick/hasheemstudio.git`, branch `main` (new branch,
+repo was empty before this).
+
+```
+local HEAD:            c2dfba00611dcc9a40683a5ab4b49d841461d918
+remote refs/heads/main: c2dfba00611dcc9a40683a5ab4b49d841461d918
+MATCH - push verified
+```
+
+Verified by `git ls-remote origin refs/heads/main` immediately after push, independent of the
+`git push` command's own exit code. Manual secret-pattern grep (AWS keys, private key headers,
+Stripe/Slack/GitHub/Google API key shapes) found nothing in the 51 committed files; automated
+gitleaks scanning runs on every push going forward via `.github/workflows/ci.yml`.
 
 ### Not started yet
 
