@@ -5,8 +5,8 @@ export const QUEUE_NAME = "hasheemstudio-jobs";
 
 export function redisConnection(): ConnectionOptions {
   return {
-    host: "127.0.0.1",
-    port: Number(requireEnv("REDIS_PORT")),
+    host: process.env.WORKER_REDIS_HOST ?? "127.0.0.1",
+    port: Number(process.env.WORKER_REDIS_PORT ?? requireEnv("REDIS_PORT")),
     password: requireEnv("REDIS_PASSWORD"),
     maxRetriesPerRequest: null,
   };

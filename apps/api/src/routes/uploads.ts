@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { getPool } from "../db.js";
 import { requireAuth } from "../auth.js";
 import { resolvePersonalWorkspaceId } from "../workspace.js";
-import { createSignedUploadUrl, objectInfo } from "../storage.js";
+import { createResumableUpload, objectInfo } from "../storage.js";
 
 function sanitizeFilename(name: string): string {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-120);
@@ -43,14 +43,51 @@ export async function uploadsRoutes(app: FastifyInstance): Promise<void> {
     const objectKey = `${workspaceId}/uploads/${sessionId}-${sanitizeFilename(body.filename)}`;
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
-    await pool.query(
-      `insert into upload_sessions (id, workspace_id, created_by, object_key, declared_filename, declared_size_bytes, declared_mime_type, expires_at)
-       values ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [sessionId, workspaceId, userId, objectKey, body.filename, body.declaredSizeBytes, body.declaredMimeType ?? null, expiresAt],
+    const tusUploadPath = await createResumableUpload(
+      objectKey,
+      body.declaredSizeBytes,
+      body.declaredMimeType ?? "application/octet-stream",
     );
 
-    const { url, token } = await createSignedUploadUrl(objectKey);
-    return { sessionId, objectKey, uploadUrl: url, uploadToken: token, expiresAt };
+    await pool.query(
+      `insert into upload_sessions (id, workspace_id, created_by, object_key, declared_filename, declared_size_bytes, declared_mime_type, expires_at, tus_upload_path)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [sessionId, workspaceId, userId, objectKey, body.filename, body.declaredSizeBytes, body.declaredMimeType ?? null, expiresAt, tusUploadPath],
+    );
+
+    return { sessionId, objectKey, tusUploadPath, expiresAt };
+  });
+
+  // Lets the client resume against an existing session after a reload — it may have lost the
+  // in-memory tusUploadPath from the original POST response. Ownership-checked like every other
+  // route here; never trusts the session id alone.
+  app.get("/v1/uploads/sessions/:id", { preHandler: requireAuth }, async (request, reply) => {
+    const userId = (request as any).userId as string;
+    const { id } = request.params as { id: string };
+    const pool = getPool();
+
+    const sessionRes = await pool.query(
+      `select workspace_id, state, expires_at, tus_upload_path, declared_size_bytes, declared_filename
+       from upload_sessions where id = $1`,
+      [id],
+    );
+    if (sessionRes.rows.length === 0) return reply.code(404).send({ error: "not_found" });
+    const session = sessionRes.rows[0];
+
+    const memberRes = await pool.query(
+      `select 1 from workspace_members where workspace_id = $1 and user_id = $2`,
+      [session.workspace_id, userId],
+    );
+    if (memberRes.rows.length === 0) return reply.code(403).send({ error: "forbidden" });
+
+    return {
+      sessionId: id,
+      state: session.state,
+      expiresAt: session.expires_at,
+      tusUploadPath: session.tus_upload_path,
+      declaredSizeBytes: session.declared_size_bytes,
+      declaredFilename: session.declared_filename,
+    };
   });
 
   app.post("/v1/uploads/sessions/:id/finalize", { preHandler: requireAuth }, async (request, reply) => {

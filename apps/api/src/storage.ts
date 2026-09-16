@@ -24,17 +24,27 @@ export async function ensureBucket(): Promise<void> {
   throw new Error(`ensureBucket failed: ${res.status} ${await res.text()}`);
 }
 
-export async function createSignedUploadUrl(objectKey: string): Promise<{ url: string; token: string }> {
-  const res = await fetch(`${base()}/storage/v1/object/upload/sign/${BUCKET}/${objectKey}`, {
+// Real resumable uploads (TUS), per docs/PRD.md "resumable uploads; interruption recovery" — the
+// server creates the resource (service-role, so it can set the exact objectKey/bucket regardless
+// of storage RLS), then hands the resulting path to the client, which PATCHes chunks directly to
+// storage using its own authenticated session (storage.objects RLS policies in
+// supabase/migrations/0008 scope that to the caller's own workspace prefix).
+export async function createResumableUpload(objectKey: string, sizeBytes: number, contentType: string): Promise<string> {
+  const b64 = (s: string) => Buffer.from(s, "utf8").toString("base64");
+  const res = await fetch(`${base()}/storage/v1/upload/resumable`, {
     method: "POST",
-    headers: headers({ "Content-Type": "application/json" }),
-    body: "{}",
+    headers: headers({
+      "Tus-Resumable": "1.0.0",
+      "Upload-Length": String(sizeBytes),
+      "Upload-Metadata": `bucketName ${b64(BUCKET)},objectName ${b64(objectKey)},contentType ${b64(contentType)}`,
+    }),
   });
-  if (!res.ok) throw new Error(`createSignedUploadUrl failed: ${res.status} ${await res.text()}`);
-  const body = (await res.json()) as { url: string };
-  const url = new URL(body.url, base() + "/storage/v1");
-  const token = url.searchParams.get("token") ?? "";
-  return { url: `${base()}/storage/v1${body.url}`, token };
+  if (!res.ok) throw new Error(`createResumableUpload failed: ${res.status} ${await res.text()}`);
+  const location = res.headers.get("location");
+  if (!location) throw new Error("createResumableUpload: missing Location header in response");
+  // Return only the path — the API doesn't know or care what public hostname the client will use
+  // to reach the gateway (docs/DECISIONS.md item 1, DNS still pending).
+  return new URL(location).pathname;
 }
 
 export async function createSignedDownloadUrl(objectKey: string, expiresInSeconds = 3600): Promise<string> {

@@ -4,7 +4,9 @@ import { requireEnv } from "./env.js";
 const BUCKET = "media";
 
 function base(): string {
-  return `http://127.0.0.1:${requireEnv("API_GW_HTTP_PORT")}`;
+  const host = process.env.WORKER_STORAGE_HOST ?? "127.0.0.1";
+  const port = process.env.WORKER_STORAGE_PORT ?? requireEnv("API_GW_HTTP_PORT");
+  return `http://${host}:${port}`;
 }
 
 function headers(extra: Record<string, string> = {}): Record<string, string> {

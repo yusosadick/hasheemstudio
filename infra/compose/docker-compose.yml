@@ -78,6 +78,9 @@ services:
         aliases:
           - envoy
           - kong
+      # So the network-isolated worker container can reach it as "api-gw" without any internet
+      # route of its own.
+      worker_internal: {}
     healthcheck:
       # Using a TCP port check because this image does not include curl or wget.
       test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/127.0.0.1/8000'"]
@@ -322,7 +325,10 @@ services:
       DATABASE_URL: postgres://supabase_storage_admin:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
       STORAGE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL}
       REQUEST_ALLOW_X_FORWARDED_PATH: "true"
-      FILE_SIZE_LIMIT: 52428800
+      # Must be >= the largest plan's max_upload_bytes (Pro Beta: 500 MB, see
+      # supabase/migrations/0007). This is storage's own hard ceiling; per-plan limits are
+      # enforced separately and authoritatively in apps/api (docs/STATUS.md).
+      FILE_SIZE_LIMIT: ${STORAGE_FILE_SIZE_LIMIT:-524288000}
       STORAGE_BACKEND: file
       # S3 bucket when using S3 backend, directory name when using 'file'
       GLOBAL_S3_BUCKET: ${GLOBAL_S3_BUCKET}
@@ -443,6 +449,9 @@ services:
     container_name: hasheemstudio-pooler
     image: supabase/supavisor:2.9.12
     restart: unless-stopped
+    networks:
+      default: {}
+      worker_internal: {}
     ports:
       - "127.0.0.1:${POSTGRES_PORT}:5432"
       - "127.0.0.1:${POOLER_PROXY_PORT_TRANSACTION}:6543"
@@ -496,6 +505,9 @@ services:
     container_name: hasheemstudio-redis
     image: redis:7.4-alpine
     restart: unless-stopped
+    networks:
+      default: {}
+      worker_internal: {}
     command:
       [
         "redis-server",
@@ -516,6 +528,56 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  # Sandboxed media worker (Phase 5 hardening, docs/SECURITY.md "Media processing sandbox").
+  # No published ports (nothing needs to reach it), non-root, read-only root filesystem, capped
+  # capabilities, hard resource/PID limits, and — critically — attached ONLY to worker_internal,
+  # which has no route to the internet, so a compromised worker/FFmpeg process cannot exfiltrate
+  # data or reach anything except this project's own db/redis/storage gateway.
+  worker:
+    container_name: hasheemstudio-worker
+    build:
+      context: ../..
+      dockerfile: apps/worker/Dockerfile
+    restart: unless-stopped
+    networks:
+      - worker_internal
+    depends_on:
+      supavisor:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api-gw:
+        condition: service_healthy
+    environment:
+      WORKER_DB_HOST: supavisor
+      WORKER_DB_PORT: "6543"
+      WORKER_REDIS_HOST: redis
+      WORKER_REDIS_PORT: "6379"
+      WORKER_STORAGE_HOST: api-gw
+      WORKER_STORAGE_PORT: "8000"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+    read_only: true
+    tmpfs:
+      - /scratch:mode=1777,size=2g
+      - /tmp:mode=1777,size=256m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    mem_limit: 2g
+    cpus: 2.0
+
+networks:
+  default: {}
+  # No internet route. Only db, redis and api-gw are additionally attached here so the worker can
+  # reach them by internal service name; the worker joins ONLY this network.
+  worker_internal:
+    internal: true
 
 volumes:
   db-config:
