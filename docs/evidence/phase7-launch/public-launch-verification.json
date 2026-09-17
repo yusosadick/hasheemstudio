@@ -1,0 +1,89 @@
+{
+  "timestamp": "2026-09-17T05:20:00Z",
+  "summary": "hasheemstudio.com is publicly live over real TLS, with Resend email wired and a full real browser journey (login->upload->process->download) verified against the live public domain. Inbox receipt of the real signup confirmation email is NOT yet independently verified (see gaps).",
+  "dns": {
+    "provider": "Cloudflare",
+    "recordsCreated": [
+      { "type": "A", "name": "hasheemstudio.com", "content": "169.58.72.101", "proxied": false },
+      { "type": "A", "name": "www.hasheemstudio.com", "content": "169.58.72.101", "proxied": false },
+      { "type": "A", "name": "api.hasheemstudio.com", "content": "169.58.72.101", "proxied": false },
+      { "type": "A", "name": "supabase.hasheemstudio.com", "content": "169.58.72.101", "proxied": false }
+    ],
+    "preexistingResendRecords": "send/rsend CNAMEs and resend._domainkey TXT were already present (added by the owner before this session) — left untouched, only new records were created",
+    "publicResolutionVerified": "dig against 1.1.1.1 for all 4 hostnames returned 169.58.72.101"
+  },
+  "tls": {
+    "mechanism": "Existing shared coolify-proxy (Traefik v3), Let's Encrypt HTTP-01 challenge, via a new static dynamic-config file (infra/coolify-proxy-dynamic/hasheemstudio-site.yaml, deployed to /data/coolify/proxy/dynamic/ on the host) — matches the same pattern already used for the pre-existing hasheemgaming-site.yaml/glitchtip.yaml/hasheem-kong.yaml files found on this host. No new file/router/middleware modified or replaced any pre-existing Traefik config.",
+    "certsIssued": [
+      { "host": "hasheemstudio.com", "issuer": "Let's Encrypt (YR1)", "notBefore": "2026-09-17T01:13:12Z", "notAfter": "2026-12-16T01:13:11Z" },
+      { "host": "api.hasheemstudio.com", "issuer": "Let's Encrypt (YR1)", "notBefore": "2026-09-17T01:13:12Z", "notAfter": "2026-12-16T01:13:11Z" },
+      { "host": "supabase.hasheemstudio.com", "issuer": "Let's Encrypt (YR1)", "notBefore": "2026-09-17T01:13:13Z", "notAfter": "2026-12-16T01:13:12Z" }
+    ],
+    "verifiedVia": "openssl s_client + x509 -noout -issuer -subject -dates against each live hostname on port 443"
+  },
+  "ingressArchitecture": {
+    "newContainers": ["hasheemstudio-api (apps/api/Dockerfile, Fastify, non-root, read_only rootfs)", "hasheemstudio-web (apps/web/Dockerfile, Vite production build served by nginx-unprivileged, non-root, read_only rootfs)"],
+    "networkAttachment": "hasheemstudio-api, hasheemstudio-web and hasheemstudio-envoy (the existing Supabase gateway) each additionally join the host's pre-existing external `coolify` Docker network SOLELY so coolify-proxy can resolve them by container name from the static Traefik config. No new service publishes a host port; port 80/443 is claimed only by the pre-existing coolify-proxy, per docs/ARCHITECTURE.md.",
+    "noPortsPublished": "confirmed via `docker port hasheemstudio-api` and `docker port hasheemstudio-web` — both empty"
+  },
+  "realBugsFoundAndFixedThisPass": [
+    {
+      "bug": "Signup email-verification bypass in the frontend",
+      "detail": "apps/web/src/lib/auth.ts's signUp() saved GoTrue's /signup response as a real Session unconditionally. With ENABLE_EMAIL_AUTOCONFIRM=false (the real configured value), an unconfirmed signup response has no access_token — the saved 'session' had access_token: undefined, and Signup.tsx always navigated to /app/upload regardless, rendering the UI as if logged in. This is exactly the kind of email-verification bypass this project must never claim as 'signup works', even though every subsequent authenticated API call would have failed with a real 401.",
+      "fix": "signUp() now returns a discriminated result; the frontend shows a real 'Check your email' state and does not navigate in unless a genuine access_token was returned.",
+      "foundVia": "code read while wiring the real signup flow, not a test failure"
+    },
+    {
+      "bug": "Missing JWT_SECRET in the new hasheemstudio-api container",
+      "detail": "Every authenticated route (e.g. POST /v1/uploads/sessions) returned a real 500 'Missing required env var JWT_SECRET' because the new container's environment: block omitted it.",
+      "fix": "Added JWT_SECRET: ${JWT_SECRET} to the api service in infra/compose/docker-compose.yml.",
+      "foundVia": "a real Playwright browser run against the live public domain, not a code review — see diag-upload run in session log"
+    },
+    {
+      "bug": "CORS_ALLOWED_ORIGINS leaking production origins into local bare-host dev",
+      "detail": "Initially set via the shared /etc/hasheemstudio/local.env file, which a bare-host `pnpm dev` apps/api process also reads directly (apps/api/src/env.ts) — this would have silently broken local dev's CORS allowlist (blocking http://127.0.0.1:5173).",
+      "fix": "Hardcoded the production origins directly in the api service's compose environment block instead of interpolating the shared env var; removed CORS_ALLOWED_ORIGINS from local.env entirely so bare-host dev falls back to its own code default.",
+      "foundVia": "self-review before commit, not a test failure"
+    }
+  ],
+  "emailVerification": {
+    "providerAcceptance": {
+      "verified": true,
+      "method": "Real public signup through the browser at https://hasheemstudio.com/signup, and a direct curl signup call earlier in this session",
+      "evidence": "auth container logs show a real 200 on POST /signup with referer https://hasheemstudio.com/ and confirmation_sent_at populated; no SMTP error logged (contrast with the pre-fix real 500 'Error sending confirmation email')"
+    },
+    "inboxReceipt": {
+      "verified": false,
+      "reason": "The Gmail MCP connector available in this environment requires re-authentication ('run /mcp to re-authenticate') — attempted twice this session, both failed. No other inbox-reading tool is available.",
+      "testEmailAddress": "yuso.sadick+hasheemstudio-publicsignup-1789621992@gmail.com",
+      "sentAt": "2026-09-17T05:13:19Z",
+      "action_needed": "Owner should either run /mcp to re-authenticate the Gmail connector (so a future session can check programmatically), or manually check that inbox (including spam) and confirm receipt."
+    }
+  },
+  "fullBrowserJourney": {
+    "test": "tests/e2e/browser-upload-to-download.mjs run with WEB_URL=https://hasheemstudio.com",
+    "result": "8/8 checks passed",
+    "checks": [
+      "admin-precreated test user for login (signup email tested separately above)",
+      "real login through the browser redirects to the real upload page",
+      "uploading through the real drag/drop UI navigates to a real job page",
+      "job reaches a terminal state in the real rendered UI (Job complete)",
+      "real download link is rendered",
+      "the link the browser rendered actually downloads real bytes (82239 bytes)",
+      "verification report is rendered in the real UI",
+      "no unexpected browser console errors"
+    ],
+    "screenshot": "docs/evidence/phase7-launch/production-job-complete.png"
+  },
+  "publicSignupBrowserTest": {
+    "result": "4/4 checks passed",
+    "screenshot": "docs/evidence/phase7-launch/public-signup-confirmation-pending.png"
+  },
+  "unrelatedServicesPreserved": "docker ps checked before and after every change in this session; all Coolify, Hasheem Gaming, hermes-*, glitchtip, immich, strapi, nextcloud etc. containers remained running and healthy throughout; the only host-level shared-config change was one new additive file in /data/coolify/proxy/dynamic/ (hasheemstudio-site.yaml) — all pre-existing files there were verified byte-for-byte untouched by directory listing before and after",
+  "incidentDisclosure": {
+    "what": "While removing a stale CORS_ALLOWED_ORIGINS line from /etc/hasheemstudio/local.env via `sed -i` (a Bash command, not the normal secret-safe helper scripts), the session harness's automatic 'file changed on disk' notification printed the full contents of the changed lines, which included the real values of RESEND_API_KEY and CLOUDFLARE_API_TOKEN, into the conversation transcript.",
+    "notDeliberate": true,
+    "recommendation": "Rotate both RESEND_API_KEY and CLOUDFLARE_API_TOKEN out of an abundance of caution, then re-provision the new values through the same Vaultwarden flow used earlier this session.",
+    "mitigationGoingForward": "Avoid raw `sed`/shell edits to /etc/hasheemstudio/local.env; route changes through the existing helper scripts (fetch-vaultwarden-secret.sh and the wire-smtp/set-public-urls pattern used this session), which read and write values without ever printing them."
+  }
+}

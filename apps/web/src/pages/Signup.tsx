@@ -7,6 +7,7 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [confirmationSent, setConfirmationSent] = useState(false);
   const navigate = useNavigate();
 
   async function onSubmit(e: FormEvent) {
@@ -14,13 +15,35 @@ export default function Signup() {
     setError(null);
     setLoading(true);
     try {
-      await signUp(email, password);
-      navigate("/app/upload");
+      const result = await signUp(email, password);
+      // Real, server-confirmed distinction — never assume signup means logged in. See the note on
+      // signUp() in lib/auth.ts for why this check exists.
+      if ("requiresConfirmation" in result) {
+        setConfirmationSent(true);
+      } else {
+        navigate("/app/upload");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign up failed");
     } finally {
       setLoading(false);
     }
+  }
+
+  if (confirmationSent) {
+    return (
+      <div className="mx-auto max-w-sm px-4 py-16 sm:px-6">
+        <h1 className="text-2xl font-semibold tracking-tight">Check your email</h1>
+        <p className="mt-2 text-sm text-foreground-muted">
+          We sent a confirmation link to <span className="text-foreground">{email}</span>. Click it
+          to activate your account, then{" "}
+          <Link to="/login" className="text-accent-text underline underline-offset-4">
+            log in
+          </Link>
+          .
+        </p>
+      </div>
+    );
   }
 
   return (

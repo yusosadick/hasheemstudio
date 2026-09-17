@@ -81,6 +81,12 @@ services:
       # So the network-isolated worker container can reach it as "api-gw" without any internet
       # route of its own.
       worker_internal: {}
+      # Attaches to the host's existing Coolify-managed Traefik proxy network SOLELY so the
+      # already-running coolify-proxy container can resolve/reach this container by name from its
+      # static dynamic-config file (infra/coolify-proxy-dynamic/hasheemstudio-site.yaml, deployed to
+      # /data/coolify/proxy/dynamic/ on the host — see docs/DEPLOYMENT.md). This does not claim
+      # host port 80/443 and does not modify coolify-proxy or any other service's routing.
+      coolify: {}
     healthcheck:
       # Using a TCP port check because this image does not include curl or wget.
       test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/127.0.0.1/8000'"]
@@ -572,12 +578,102 @@ services:
     mem_limit: 2g
     cpus: 2.0
 
+  api:
+    container_name: hasheemstudio-api
+    build:
+      context: ../..
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    networks:
+      default: {}
+      # See the "api-gw" service's comment above — same purpose, for Traefik to reach this
+      # container by name from the static dynamic-config file.
+      coolify: {}
+    depends_on:
+      supavisor:
+        condition: service_healthy
+      api-gw:
+        condition: service_healthy
+    environment:
+      API_HOST: "0.0.0.0"
+      API_PORT: "8787"
+      API_DB_HOST: supavisor
+      API_DB_PORT: "6543"
+      API_STORAGE_HOST: api-gw
+      API_STORAGE_PORT: "8000"
+      SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL}
+      # Hardcoded here, deliberately NOT read from the shared env file: a bare host `pnpm dev`
+      # apps/api process also loads that same file directly (see apps/api/src/env.ts), so putting
+      # the production origins there would silently break local dev's own CORS allowlist. This
+      # container is the only thing that should ever see the production origins.
+      CORS_ALLOWED_ORIGINS: "https://hasheemstudio.com,https://www.hasheemstudio.com"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+      # Real bug found and fixed 2026-09-17: this was missing on first deploy of this service,
+      # which made every authenticated route 500 with "Missing required env var JWT_SECRET" —
+      # found via a real browser upload attempt against the live public domain, not a code review.
+      JWT_SECRET: ${JWT_SECRET}
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:8787/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    mem_limit: 512m
+    cpus: 1.0
+
+  web:
+    container_name: hasheemstudio-web
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_SUPABASE_URL: ${SUPABASE_PUBLIC_URL}
+        VITE_SUPABASE_ANON_KEY: ${ANON_KEY}
+        VITE_API_URL: ${PUBLIC_API_URL:-http://127.0.0.1:8787}
+    restart: unless-stopped
+    networks:
+      default: {}
+      coolify: {}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,size=32m
+      - /var/cache/nginx:mode=1777,size=32m
+      - /var/run:mode=1777,size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 64
+    mem_limit: 128m
+    cpus: 0.5
+
 networks:
   default: {}
   # No internet route. Only db, redis and api-gw are additionally attached here so the worker can
   # reach them by internal service name; the worker joins ONLY this network.
   worker_internal:
     internal: true
+  # The host's pre-existing Coolify-managed Traefik proxy network (see docs/ENVIRONMENTS.md —
+  # `coolify-proxy`/Traefik binds host 80/443 and is shared across every project on this VPS).
+  # Declared external: Hasheem Studio never creates or owns this network, only attaches specific
+  # ingress-facing containers to it, per docs/ARCHITECTURE.md's "declarative attachment to the
+  # existing edge proxy ONLY for intended ingress services. No new service may claim public 80/443."
+  coolify:
+    external: true
 
 volumes:
   db-config:

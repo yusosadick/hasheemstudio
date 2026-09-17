@@ -1,0 +1,69 @@
+http:
+  routers:
+    hasheemstudio-site-http-redirect:
+      rule: 'Host(`hasheemstudio.com`) || Host(`www.hasheemstudio.com`)'
+      entryPoints:
+        - http
+      service: hasheemstudio-web
+      middlewares:
+        - hasheemstudio-redirect-https
+    hasheemstudio-site-https:
+      rule: Host(`hasheemstudio.com`)
+      entryPoints:
+        - https
+      service: hasheemstudio-web
+      tls:
+        certResolver: letsencrypt
+    hasheemstudio-site-https-www:
+      rule: Host(`www.hasheemstudio.com`)
+      entryPoints:
+        - https
+      service: hasheemstudio-web
+      tls:
+        certResolver: letsencrypt
+    hasheemstudio-api-http-redirect:
+      rule: Host(`api.hasheemstudio.com`)
+      entryPoints:
+        - http
+      service: hasheemstudio-api
+      middlewares:
+        - hasheemstudio-redirect-https
+    hasheemstudio-api-https:
+      rule: Host(`api.hasheemstudio.com`)
+      entryPoints:
+        - https
+      service: hasheemstudio-api
+      tls:
+        certResolver: letsencrypt
+    hasheemstudio-supabase-http-redirect:
+      rule: Host(`supabase.hasheemstudio.com`)
+      entryPoints:
+        - http
+      service: hasheemstudio-supabase
+      middlewares:
+        - hasheemstudio-redirect-https
+    hasheemstudio-supabase-https:
+      rule: Host(`supabase.hasheemstudio.com`)
+      entryPoints:
+        - https
+      service: hasheemstudio-supabase
+      tls:
+        certResolver: letsencrypt
+  middlewares:
+    hasheemstudio-redirect-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+  services:
+    hasheemstudio-web:
+      loadBalancer:
+        servers:
+          - url: 'http://hasheemstudio-web:8080'
+    hasheemstudio-api:
+      loadBalancer:
+        servers:
+          - url: 'http://hasheemstudio-api:8787'
+    hasheemstudio-supabase:
+      loadBalancer:
+        servers:
+          - url: 'http://hasheemstudio-envoy:8000'

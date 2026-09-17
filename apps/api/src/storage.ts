@@ -5,8 +5,22 @@ import { requireEnv } from "./env.js";
 
 const BUCKET = "media";
 
+// Server-to-server calls (bucket admin, resumable-upload creation, list/download/upload) use the
+// internal gateway address — 127.0.0.1 + the published port for a bare host process, overridden
+// to the in-container Docker service name/port in infra/compose/docker-compose.yml's "api"
+// service (same pattern as apps/worker/src/db.ts).
 function base(): string {
-  return `http://127.0.0.1:${requireEnv("API_GW_HTTP_PORT")}`;
+  const host = process.env.API_STORAGE_HOST ?? "127.0.0.1";
+  const port = process.env.API_STORAGE_PORT ?? requireEnv("API_GW_HTTP_PORT");
+  const protocol = process.env.API_STORAGE_PROTOCOL ?? "http";
+  return `${protocol}://${host}:${port}`;
+}
+
+// Signed download URLs are handed directly to the browser, so — unlike base() — this must be a
+// hostname the public internet can actually resolve and reach, not an internal Docker service
+// name. Falls back to base() for local/dev use before a public hostname exists.
+function publicBase(): string {
+  return process.env.SUPABASE_PUBLIC_URL ?? base();
 }
 
 function headers(extra: Record<string, string> = {}): Record<string, string> {
@@ -55,7 +69,7 @@ export async function createSignedDownloadUrl(objectKey: string, expiresInSecond
   });
   if (!res.ok) throw new Error(`createSignedDownloadUrl failed: ${res.status} ${await res.text()}`);
   const body = (await res.json()) as { signedURL: string };
-  return `${base()}/storage/v1${body.signedURL}`;
+  return `${publicBase()}/storage/v1${body.signedURL}`;
 }
 
 export async function objectInfo(objectKey: string): Promise<{ exists: boolean; sizeBytes?: number }> {

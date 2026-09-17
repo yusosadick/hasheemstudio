@@ -15,9 +15,18 @@ of where Phase 4 ended.
 testing, a real isolated backup/restore rehearsal, an accessibility audit with real fixes, working
 local dev commands tested from a fresh clone (two real bugs found and fixed), a tested
 least-privilege deploy identity, and a P0 account-deletion regression found and fixed. See "Phase 7
-— launch-readiness verification" below. **Resend/DNS remain fully blocked** (Vaultwarden still
-locked, no session handoff received) — signup email and the public domain are not live, and this
-must not be declared launch-ready.
+— launch-readiness verification" below.
+
+**Updated again:** 2026-09-17 (same day, second follow-on session): Vaultwarden unlocked and
+resynced by the owner, `RESEND_API_KEY`/`CLOUDFLARE_API_TOKEN` provisioned, DNS/TLS wired live for
+`hasheemstudio.com`, `apps/api`/`apps/web` containerized for real production use, and a full real
+browser journey (signup, login, upload, process, download) verified against the live public domain
+— three real bugs found and fixed along the way (a signup email-verification-bypass bug, a missing
+`JWT_SECRET` in the new API container, and a CORS-config leak into local dev). **Still open: real
+inbox receipt of the confirmation email is not independently verified** (Gmail MCP needs
+re-authentication), and **both freshly-provisioned secrets should be rotated** after an accidental
+transcript exposure this session (not launch-ready until both are resolved). See Priority 6 under
+"Phase 7 — launch-readiness verification" below for full detail.
 
 ## Current phase: Phase 5 (compatibility recipes, reliability, security hardening) — done, scoped, real
 
@@ -543,17 +552,51 @@ commands against this VPS.
 
 ### Priority 6 — Resend / DNS / TLS
 
-**Still fully blocked.** `bw status` on this host reports `"status":"locked"`; no
-`~/.hasheemstudio_bw_session` handoff file exists. Public self-service `/signup` still fails with a
-real 500 (`"Error sending confirmation email"`) — confirmed directly against the live Auth service,
-not assumed. **No workaround was applied to make signup "look" like it works.** Cloudflare NS is
-confirmed but no API token is available, so no DNS records are published and hasheemstudio.com is
-not publicly reachable over TLS yet. Exact secret names (`RESEND_API_KEY`,
-`CLOUDFLARE_API_TOKEN`) and the safe Vaultwarden-based provisioning method (`bw unlock` on a
-terminal the owner controls, handed off via a `BW_SESSION` file, never pasted in chat) are in
-`docs/DECISIONS.md`, unchanged from the prior session and still accurate. Until this unblocks,
-the full public browser journey (real signup → real inbox email → confirm → login → upload →
-process → download on `https://hasheemstudio.com`) **cannot be verified** and is not claimed.
+**Resolved 2026-09-17, in a follow-on same-day session, with one real open gap.** The owner
+unlocked and freshly synced Vaultwarden and handed off a session file; both secrets
+(`RESEND_API_KEY`, `CLOUDFLARE_API_TOKEN`) were retrieved via `scripts/ops/fetch-vaultwarden-secret.sh`
+(a first attempt failed on a stale sync — fixed by the owner re-syncing) and the vault was
+immediately re-locked and the session file deleted, per protocol. Full detail, evidence and the
+exact bugs found while wiring this up: `docs/evidence/phase7-launch/public-launch-verification.json`
+and `docs/DECISIONS.md` items 1–2. Summary:
+
+- **DNS/TLS**: A records added for apex/`www`/`api`/`supabase`, all pointing at this host; real
+  Let's Encrypt certificates issued via the existing shared `coolify-proxy` (Traefik), using a new,
+  purely additive static config file — no pre-existing routing was touched. `https://hasheemstudio.com`
+  is publicly live. See `docs/ENVIRONMENTS.md` "Ingress URLs" / "Public ingress wiring".
+- **Resend**: wired into `SMTP_PASS`/GoTrue; a real public signup through the live browser at
+  `https://hasheemstudio.com/signup` returns a real 200 with `confirmation_sent_at` populated and
+  no SMTP error — **provider acceptance verified**, not assumed.
+- **Real production containerization**: `apps/api` and `apps/web` (previously bare host
+  processes/dev server only) now have real Dockerfiles and run as containers in
+  `infra/compose/docker-compose.yml`, non-root, read-only rootfs, no published host ports —
+  reachable only via the shared proxy's internal Docker network attachment.
+- **Three real bugs found and fixed while wiring this up** (not found by code review — by actually
+  running it against the live domain): (1) the frontend was treating an unconfirmed signup response
+  as a logged-in session (a real email-verification-bypass bug, now fixed — see
+  `apps/web/src/lib/auth.ts`/`Signup.tsx`); (2) the new `api` container was missing `JWT_SECRET`,
+  making every authenticated route 500 (found via a real Playwright run against the live domain);
+  (3) `CORS_ALLOWED_ORIGINS` was initially set via the shared env file, which would have silently
+  broken local bare-host dev's CORS allowlist — fixed by hardcoding the production origins directly
+  in the container's compose config instead.
+- **Full real browser journey verified against `https://hasheemstudio.com`**: login → upload →
+  process → download → verification report, 8/8 checks passed, 82,239 real downloaded bytes
+  (`tests/e2e/browser-upload-to-download.mjs`, `WEB_URL=https://hasheemstudio.com`). Real public
+  signup through the browser reaches a genuine "check your email" state, 4/4 checks passed.
+- **Still open: real inbox receipt is not independently verified.** Provider acceptance (the SMTP
+  transaction succeeding) is confirmed; whether the email actually lands in an inbox is not, because
+  the Gmail MCP connector available in this environment needs re-authentication (`/mcp`) and two
+  attempts this session both failed with "needs you to sign in again." The owner should either
+  re-authenticate that connector or manually check
+  `yuso.sadick+hasheemstudio-publicsignup-1789621992@gmail.com` (including spam) for the email sent
+  at 2026-09-17T05:13:19Z. **This is the one remaining honest gap in an otherwise-verified item —
+  do not treat provider acceptance as equivalent to inbox receipt.**
+- **Security incident, disclosed immediately when it happened**: a raw `sed` edit (not the safe
+  helper scripts) to `/etc/hasheemstudio/local.env` triggered the session harness's automatic
+  file-diff notification, which printed the real values of `RESEND_API_KEY` and
+  `CLOUDFLARE_API_TOKEN` into the conversation transcript. Not deliberate, but both values should be
+  treated as exposed. **Recommend the owner rotate both credentials** and re-provision the new
+  values through the same Vaultwarden flow.
 
 ### Regression found and fixed this session: account deletion (P0, affected 100% of users)
 
@@ -637,12 +680,24 @@ with no evidence behind it.
 
 ## Launch-readiness gate status (explicit, per owner instruction not to declare launch-ready early)
 
-**Not launch-ready.** Mandatory gates still unmet:
-- Resend email delivery: blocked (vault locked).
-- DNS/TLS for `hasheemstudio.com`: blocked (no Cloudflare token).
-- Real public signup→confirm→login→upload→process→download browser journey on the live domain:
-  unverified (depends on the two items above).
+**Not launch-ready — closer, but real gates remain.** As of the 2026-09-17 follow-on session:
+- Resend email delivery: **provider acceptance verified** (real 200, no SMTP error, real public
+  signup through the live browser). **Inbox receipt not independently verified** — Gmail MCP needs
+  re-authentication; owner action needed (see Priority 6 above).
+- DNS/TLS for `hasheemstudio.com`: **live** — real Let's Encrypt certs, publicly reachable.
+- Real public signup→login→upload→process→download browser journey on the live domain: **verified**
+  (8/8 + 4/4 checks passed against `https://hasheemstudio.com` itself, not a proxy or localhost).
+  The one piece not verified end-to-end in a single run is clicking the real confirmation link from
+  a real received email — blocked on the same inbox-receipt gap above.
+- **New**: `RESEND_API_KEY` and `CLOUDFLARE_API_TOKEN` should be rotated — both were accidentally
+  printed into this session's transcript by an automatic file-diff notification (not a deliberate
+  print). Not yet done; owner action needed.
 - API latency PRD target (p95 < 300ms): met at concurrency ≤25, **not met at concurrency 50** under
-  real host contention this session — see `docs/CAPACITY.md`.
+  real host contention in the prior session — see `docs/CAPACITY.md`. Not re-measured against the
+  new production topology (extra containers now share the host) — should be re-run.
 - External Mac-to-VPS deploy workflow: mechanism built, but unverified from a real external machine.
 - Encode-recipe load benchmark: not done (only remux measured).
+- Local bare-host `pnpm dev` for `apps/api` may now collide with an unrelated process on this
+  shared host that happens to already bind `127.0.0.1:8787` (observed while verifying no port
+  conflicts for the new containers — the containers themselves publish no host ports and are
+  unaffected, but bare-host local dev of `apps/api` specifically was not re-verified this session).

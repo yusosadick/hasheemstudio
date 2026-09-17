@@ -55,10 +55,23 @@ async function authRequest(path: string, body: unknown): Promise<Session> {
   return data as Session;
 }
 
-export async function signUp(email: string, password: string): Promise<Session> {
-  const session = await authRequest("/auth/v1/signup", { email, password });
-  saveSession(session);
-  return session;
+// GoTrue's /signup response only includes access_token/refresh_token when the account is
+// immediately usable (email confirmation disabled, or the address was already confirmed). With
+// ENABLE_EMAIL_AUTOCONFIRM=false (the real configured value — see docs/ENVIRONMENTS.md), a fresh
+// signup gets back a user object with NO access_token until the confirmation link is clicked.
+// Real bug found and fixed 2026-09-17: this used to be treated as a real Session unconditionally
+// (saved to localStorage, caller always navigated to /app/upload) — an unconfirmed "session" with
+// access_token: undefined would render the UI as if logged in, even though every subsequent
+// authenticated API call would silently fail with a real 401. That is exactly the kind of
+// email-verification bypass this project must never claim as "signup works" — callers must check
+// requiresConfirmation and show a real "check your email" state instead of navigating in.
+export async function signUp(email: string, password: string): Promise<Session | { requiresConfirmation: true }> {
+  const result = await authRequest("/auth/v1/signup", { email, password });
+  if (!result.access_token) {
+    return { requiresConfirmation: true };
+  }
+  saveSession(result);
+  return result;
 }
 
 export async function signIn(email: string, password: string): Promise<Session> {

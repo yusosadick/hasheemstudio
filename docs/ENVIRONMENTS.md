@@ -43,7 +43,35 @@ No dedicated deploy SSH key exists yet for Hasheem Studio. `~/.ssh/id_ed25519` (
 
 ## Ingress URLs
 
-None resolve yet. `hasheemstudio.com` NS records point to Cloudflare (`christian.ns.cloudflare.com`, `cora.ns.cloudflare.com`) as observed 2026-09-16, but no A/AAAA/CNAME records are published for apex, `www`, `api`, `supabase`, or `media`. See `docs/DECISIONS.md` for the DNS access blocker.
+**Live as of 2026-09-17.** `hasheemstudio.com` NS records point to Cloudflare
+(`christian.ns.cloudflare.com`, `cora.ns.cloudflare.com`). A/records were added for apex, `www`,
+`api` and `supabase`, all pointing at this host's public IP, all DNS-only (not Cloudflare-proxied).
+Real Let's Encrypt certificates were issued via the existing shared `coolify-proxy` (Traefik v3)
+using a new static dynamic-config file — see "Public ingress wiring" below. No `media` subdomain
+exists yet (not needed; media is served through the `supabase` storage API path). Full verification
+evidence: `docs/evidence/phase7-launch/public-launch-verification.json`.
+
+| URL | Serves |
+|---|---|
+| `https://hasheemstudio.com`, `https://www.hasheemstudio.com` | `hasheemstudio-web` (production Vite build, served by nginx) |
+| `https://api.hasheemstudio.com` | `hasheemstudio-api` (Fastify) |
+| `https://supabase.hasheemstudio.com` | `hasheemstudio-envoy` (Supabase gateway — auth/rest/storage) |
+
+## Public ingress wiring
+
+Two new containers were added to `infra/compose/docker-compose.yml`: `api` (`apps/api/Dockerfile`)
+and `web` (`apps/web/Dockerfile`, a production Vite build served by `nginxinc/nginx-unprivileged`).
+Neither publishes a host port. `hasheemstudio-api`, `hasheemstudio-web` and the pre-existing
+`hasheemstudio-envoy` each additionally join the host's pre-existing external `coolify` Docker
+network — the same network `coolify-proxy` (Traefik) and every other routed app on this host
+already share — solely so Traefik can resolve them by container name. Routing itself is defined in
+a new static file, `infra/coolify-proxy-dynamic/hasheemstudio-site.yaml` (tracked in this repo),
+deployed to `/data/coolify/proxy/dynamic/hasheemstudio-site.yaml` on the host (root-owned, mode
+644, matching every pre-existing file in that directory). This mirrors the exact pattern already
+used there for the Hasheem Gaming site and its Supabase API (`hasheemgaming-site.yaml`,
+`hasheem-kong.yaml`) — found by inspecting those pre-existing files, not invented. Only a new file
+was added; every pre-existing file in that directory was verified untouched (byte-identical
+directory listing before/after).
 
 ## Supabase database identity marker
 
