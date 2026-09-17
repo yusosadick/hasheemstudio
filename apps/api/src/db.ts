@@ -16,5 +16,12 @@ export function getPool(): pg.Pool {
     database: requireEnv("POSTGRES_DB"),
     max: 10,
   });
+  // Real bug found and fixed 2026-09-17: node-postgres emits 'error' on the pool when an IDLE
+  // client's connection is dropped out from under it (e.g. the Supavisor pooler container
+  // restarting) — with no listener, that's an unhandled EventEmitter error, which crashes the
+  // whole Node process. A transient pooler restart should not take the API down.
+  pool.on("error", (err) => {
+    console.error("Postgres pool error on an idle client (connection likely dropped externally):", err.message);
+  });
   return pool;
 }

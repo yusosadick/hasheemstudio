@@ -25,6 +25,26 @@ function run(cmd, args, opts = {}) {
   execFileSync(cmd, args, { stdio: "inherit", ...opts });
 }
 
+// Real bug found and fixed 2026-09-17: running `pnpm dev:up` from a second clone of this repo
+// (a different absolute path) while the stack is already running from a first clone causes Docker
+// Compose to see a different resolved config-file path for the same project name, decide the
+// config changed, and try to recreate shared containers — which briefly took hasheemstudio-pooler
+// and hasheemstudio-worker down and crashed the API (a related pg.Pool bug, also fixed, see
+// apps/api/src/db.ts) mid-test. Guard against repeating that: refuse if a hasheemstudio container
+// is already running from a different checkout path.
+const composeFilePath = join(composeDir, "docker-compose.yml");
+try {
+  const existingLabel = execFileSync("docker", [
+    "inspect", "-f", "{{ index .Config.Labels \"com.docker.compose.project.config_files\" }}", "hasheemstudio-db",
+  ], { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+  if (existingLabel && existingLabel !== composeFilePath) {
+    console.error(`The hasheemstudio stack is already running from a different checkout:\n  ${existingLabel}\nThis checkout is:\n  ${composeFilePath}\nRunning dev:up from here would make Compose try to recreate shared containers and can cause a disruptive restart (found the hard way — see this script's comments). Use the checkout at the path above, or stop that stack first if you really mean to switch checkouts.`);
+    process.exit(1);
+  }
+} catch {
+  // hasheemstudio-db doesn't exist yet — nothing running to conflict with, proceed normally.
+}
+
 if (!existsSync(secretsFile)) {
   console.log(`No secrets file at ${secretsFile} yet — generating (first run for this environment).`);
   run("node", [join(repoRoot, "scripts", "ops", "generate-supabase-secrets.mjs"), "--env", envName]);

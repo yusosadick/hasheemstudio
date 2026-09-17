@@ -47,4 +47,4 @@ if (!allOk) {
   console.error("\ndoctor found missing prerequisites. Install them before continuing.");
   process.exit(1);
 }
-console.log("\nAll checked prerequisites are present. This does not yet confirm running services (dev:up is not implemented).");
+console.log("\nAll checked prerequisites are present. This does not yet confirm running services — run `pnpm dev:up` for that.");

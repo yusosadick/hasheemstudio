@@ -16,5 +16,10 @@ export function getPool(): pg.Pool {
     database: requireEnv("POSTGRES_DB"),
     max: 5,
   });
+  // Same fix as apps/api/src/db.ts: an unhandled pool 'error' event (e.g. the pooler container
+  // restarting) would otherwise crash the whole worker process instead of just logging it.
+  pool.on("error", (err) => {
+    console.error("Postgres pool error on an idle client (connection likely dropped externally):", err.message);
+  });
   return pool;
 }
