@@ -248,10 +248,11 @@ export async function processJob(jobId: string): Promise<void> {
       // Conditional on status = 'processing' in the same statement that publishes success — closes
       // the TOCTOU gap an earlier separate isStillActive() read-then-write would leave open. If a
       // cancellation landed in that gap, this UPDATE affects 0 rows and we correctly skip publishing.
+      const outputRetainUntil = outputObjectKey ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null;
       const updateRes = await commitClient.query(
-        `update jobs set status = 'succeeded', output_object_key = $2, output_size_bytes = $3, error_message = null
+        `update jobs set status = 'succeeded', output_object_key = $2, output_size_bytes = $3, error_message = null, output_retain_until = $4
          where id = $1 and status = 'processing'`,
-        [claimed.id, outputObjectKey, outputSizeBytes],
+        [claimed.id, outputObjectKey, outputSizeBytes, outputRetainUntil],
       );
       published = (updateRes.rowCount ?? 0) > 0;
       if (published) {
