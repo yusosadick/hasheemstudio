@@ -6,12 +6,21 @@
 
 **Last updated:** 2026-09-16, during initial Phase 0 session.
 
-## Current phase: Phase 4 (upload-to-download vertical slice) is next unblocked work
+**Updated again:** 2026-09-17, during a follow-on Phase 5 session (worker sandboxing, resumable
+uploads, H.264 encode, real entitlements, retention). See the "Phase 5" section below for full
+detail; this replaces the "Current phase" line further down, which is left as a historical marker
+of where Phase 4 ended.
 
-Phase 0 gate: met in full. Phase 1: first-pass prototype done, **owner-approved** in this session.
-Phase 2: dedicated Supabase+Redis stack running and verified, not yet publicly reachable (DNS
-blocked). Phase 3: tenancy/RLS/migration-runner core done and verified with real tests, scoped
-deliberately to exclude job/media tables (that's Phase 4/5's job). Details for each phase below.
+## Current phase: Phase 5 (compatibility recipes, reliability, security hardening) — done, scoped, real
+
+Phase 0 gate: met in full. Phase 1: first-pass prototype done, **owner-approved**. Phase 2:
+dedicated Supabase+Redis+containerized-worker stack running and verified, not yet publicly
+reachable (DNS blocked). Phase 3: tenancy/RLS/migration-runner core done and verified. Phase 4:
+real upload-to-download vertical slice, verified through an actual browser. **Phase 5: worker
+sandboxing, real resumable uploads, H.264 encode, real entitlements with atomic reservations, and
+a retention sweeper — all done and verified with real tests against the live stack, detailed
+below.** Remaining real blockers are exactly two: Resend (email) and DNS, both waiting on the same
+owner Vaultwarden handoff — see `docs/DECISIONS.md`.
 
 ### Phase 0 — done, with evidence
 
@@ -273,15 +282,153 @@ gitleaks scanning runs on every push going forward via `.github/workflows/ci.yml
 - **Only `inspect` and `remux` recipes work.** `compat_encode` (H.264/AAC re-encode) is explicitly
   rejected by the API with a 400 — Phase 5.
 - **No retention sweeper** (expiring old uploads/outputs) yet.
-- **`apps/api` and `apps/worker` are run manually** (plain `node`/`tsx` processes with a protected
-  env file), not under a process supervisor, not in Docker/K8s, and not started by any `pnpm dev`
-  command yet — `pnpm dev:up`/`pnpm dev` remain explicit not-implemented stubs.
-- Duplicated `env.ts`/`storage.ts` between `apps/api` and `apps/worker` — flagged for consolidation
-  once resumable uploads make the shared interface worth designing properly (see ADR-0003).
+- **`apps/api` and `apps/worker` were run manually** at the time this paragraph was first written
+  (plain `node`/`tsx` processes) — **`apps/worker` is now containerized** (see Phase 5 below);
+  `apps/api` still runs as a bare host process, not yet under a process supervisor or in a
+  container, and not started by any `pnpm dev` command — `pnpm dev:up`/`pnpm dev` remain explicit
+  not-implemented stubs.
+- Duplicated `env.ts`/`storage.ts` between `apps/api` and `apps/worker` — still true after Phase 5;
+  flagged for consolidation into a shared package once the interface is stable.
+
+## Phase 5 — compatibility recipes, reliability, security hardening (done, real, verified)
+
+Everything below was built and verified against the live stack in this session, in this order,
+re-running the full test suite after each change to catch regressions immediately. Full commit
+history has the detailed evidence per change; this is the rollup.
+
+### 1. Worker sandboxing (done)
+
+- `apps/worker/Dockerfile` + `infra/compose/docker-compose.yml` "worker" service: non-root user,
+  read-only root filesystem with `tmpfs` scratch/tmp, all Linux capabilities dropped,
+  `no-new-privileges`, hard `pids_limit`/`mem_limit`/`cpus`, **no published ports at all**, and
+  attached ONLY to a new `worker_internal` Docker network marked `internal: true` — it has no
+  route to the internet. `db`/`redis`/`api-gw` are additionally attached to that same internal
+  network so the worker can reach them by service name without ever touching the project's normal
+  (internet-capable) network.
+- `apps/worker/src/ffmpeg.ts` hardened: `-protocol_whitelist file` on every FFmpeg/FFprobe
+  invocation (blocks SSRF via a crafted playlist/concat/HLS-style input regardless of the network
+  isolation above), `-nostdin`, a per-job thread cap, a hard output-size ceiling, and a scratch-dir
+  path containment check.
+- **Verified**: the full e2e suite passes with the containerized worker actually processing real
+  jobs (not just "container is healthy" — `tool_versions.worker` in the verification report shows
+  `worker-1-<pid>`, confirming the container's own process handled it). `docs/evidence/` doesn't
+  yet have a dedicated screenshot for this since it's infra, not UI — the passing test output *is*
+  the evidence, reproducible via `pnpm test:e2e`.
+- **Known remaining gap**: `apps/api` is not containerized yet, and neither service runs under a
+  restart-supervising init system beyond Docker's own `restart: unless-stopped` for the worker.
+
+### 2. Resumable uploads (done)
+
+- Switched from a single-shot signed-PUT upload to real TUS 1.0.0 resumable uploads (Supabase
+  Storage's native TUS support, confirmed via its own `OPTIONS` response). `apps/api` creates the
+  TUS resource server-side (service-role); the client PATCHes chunks directly to storage using
+  its own session — genuinely direct-to-storage, not proxied through the API.
+- `supabase/migrations/0008`: `storage.objects` RLS policies scoping authenticated users to their
+  own workspace-id-prefixed path — required so the browser can PATCH chunks authenticated as
+  itself, not just via service-role bypass.
+- **Verified** (`tests/e2e/resumable-upload-interruption.mjs`, 12/12): upload half a file,
+  confirm a second tenant cannot write into the first tenant's in-progress upload (**RLS-enforced,
+  403, not just application logic**) and that the rejected attempt didn't corrupt the offset,
+  resume from the server's own reported offset (never a locally-cached one — verified in both the
+  test and `apps/web/src/lib/upload.ts`), and confirm the finalized object is **byte-for-byte
+  identical (SHA-256 match)** to the original file. Also verified: re-finalizing an
+  already-completed session is rejected (409, not silently re-run), an over-plan-limit declared
+  size is rejected (413) and the same limit is re-checked against the *actual* uploaded size at
+  finalize time (not just the client's declared size), and an untouched session is left in
+  'pending' with a real expiry for the retention sweeper.
+- **Verified through the real browser too**: `apps/web/src/pages/Upload.tsx` +
+  `src/lib/upload.ts` do the same chunked-PATCH-with-HEAD-resume flow; the resume-after-reload
+  case (same file re-selected) resumes the existing session instead of opening a new one.
+- **Known remaining gap**: no UI test for the actual "drop connection mid-upload in a real
+  browser tab" case — the interruption/resume logic is proven at the protocol level and unit-level
+  in the browser client, not yet via a Playwright network-throttling test.
+
+### 3. H.264/AAC compatibility encode (done)
+
+- `apps/worker/src/ffmpeg.ts` `compatEncode()`: H.264 high profile, `yuv420p`, AAC audio, no
+  upscale by default (only a bounded downscale filter when requested). `apps/api` now accepts
+  `compat_encode` as a real recipe (previously rejected with 400).
+- **Verified** (`tests/e2e/compat-encode.mjs`, 8/8), deliberately using tools **independent of the
+  worker's own self-report** — a fresh `ffprobe`/`ffmpeg` run against the downloaded file, not just
+  trusting `verification_reports`: real H.264 video codec, real AAC audio codec, audio/video stream
+  durations matching (sync check), and a full independent playback decode. The verification report
+  itself honestly sets `frames_re_encoded: true` (distinct from remux's `false`) and
+  `qualityMetric: "not_computed"` rather than fabricating an SSIM/VMAF score it doesn't compute.
+
+### 4. Real entitlements, atomic usage reservations, and a real bug fix (done)
+
+- `supabase/migrations/0007`: real `plans` (`verified_free`, `pro_beta`) and
+  `workspace_entitlements` tables, replacing the Phase 4 hardcoded `MAX_UPLOAD_BYTES`/
+  `MAX_JOBS_PER_DAY`/`MAX_ACTIVE_JOBS` constants. `usage_reservations` tracks one row per admitted
+  job (`reserved` → `released` on refunded cancellation, or `settled` on completion/failure/
+  non-refunded cancellation).
+- **Found and fixed a real, pre-existing correctness bug**: three places (`uploads.ts` finalize,
+  the Phase-4 `jobs.ts` cancel handler, `processor.ts`'s success commit) used
+  `pool.query("begin")` directly on the connection pool instead of a dedicated client — under a
+  pool this does not guarantee BEGIN/COMMIT and the statements between them share one backend
+  connection, so the transaction boundary was not actually atomic under concurrency. Fixed all
+  three with `pool.connect()` + one client for the whole transaction, and closed two TOCTOU gaps
+  (job cancellation and worker success-publish now use row locking / a conditional `UPDATE ...
+  WHERE status = ...` instead of a separate read-then-write).
+- **Verified with a real concurrency test** (`tests/integration/quota-race.mjs`, 4/4): 20
+  concurrent job-creation requests against a temporary 5-per-day test plan — **exactly 5 admitted,
+  15 correctly rejected**, and the database (`usage_reservations`, `jobs`) agrees exactly with what
+  the API told clients. This is the test that would have caught the bug above.
+- **Known remaining gap**: only one plan can be assigned per workspace (no plan-change flow yet,
+  no billing); the daily-quota window is a plain UTC calendar day, not a rolling 24h window.
+
+### 5. Retention/expiry cleanup (done)
+
+- `supabase/migrations/0010`: `jobs.output_retain_until`/`output_deleted_at`.
+- `scripts/ops/retention-sweep.mjs` (also `pnpm ops:retention-sweep`): three independent sweeps —
+  abandoned upload sessions (best-effort TUS termination, then marked `expired`), expired media
+  assets with **no active job** referencing them (checked under a row lock that a concurrent
+  job-creation attempt genuinely can't race past, via the same foreign-key lock Postgres already
+  takes), and expired job outputs on terminal jobs. `apps/api`'s job-detail endpoint now checks
+  `output_deleted_at` before offering a download link, so a swept output never produces a broken
+  signed URL — it returns an honest `outputExpired` flag instead, which `apps/web` renders.
+- **Verified** (`tests/integration/retention-sweep.mjs`, 13/13): a media asset past its retention
+  window **with** an active job survives untouched (object included); one with **no** job is
+  deleted (object included); an abandoned session is marked expired; a real succeeded job's output
+  past its retention is deleted and the API correctly stops offering (and honestly flags) the
+  link. Deliberately constructs the "active job" case by inserting the job directly via SQL rather
+  than through the real API, after an earlier version raced the real containerized worker (which
+  legitimately finished the job before the test's manipulation landed) and produced a misleading
+  false failure — documented in the test itself.
+- **Known remaining gap**: not yet scheduled (no cron/systemd timer wired up) — it's a real,
+  tested script, run manually or via `pnpm ops:retention-sweep`; recurring execution is
+  operational follow-up, see `docs/RUNBOOKS.md`.
+
+### 6. Hostile-input testing (done)
+
+- `tests/integration/hostile-media-inputs.mjs` (8/8): a truncated real video and a random-bytes
+  file wearing a `.mov` extension both correctly finalize (the server can't know a file is hostile
+  until it's actually probed) and then correctly end in a real `'failed'` job with a real
+  `ffprobe` error (`moov atom not found` / `Invalid data found when processing input`) — never a
+  fake success. The API and the worker container are both confirmed still healthy afterward.
+
+### 7. Real bugs found and fixed this phase (rollup, see individual commits for detail)
+
+1. The connection-pool transaction-atomicity bug above (§4) — the most significant one; directly
+   enabled the quota-bypass race the user asked to be tested for.
+2. `tsx`'s internal child-process forking left an orphaned worker alive after a "kill" in
+   `tests/integration/worker-crash-recovery.mjs` (found in Phase 4, still relevant context here).
+3. The same test raced the *containerized* worker once it existed — fixed by having the test
+   `docker stop`/`docker start` the real container around its run.
+4. A Redis healthcheck missing its own `REDIS_PASSWORD` env var (found in Phase 2, listed here only
+   for completeness of "things a naive read of the compose file would miss").
+
+### Items 6 and 7 (Resend, DNS) — still blocked, not bypassed
+
+Confirmed directly against the live Auth service (not assumed): public self-service `/signup`
+fails with a real 500 (`"Error sending confirmation email"`) because Resend SMTP isn't configured.
+**No workaround was applied to make signup "look" like it works** — this remains an honest,
+reported gap. Exact secret names and the safe Vaultwarden-based provisioning method are documented
+in `docs/DECISIONS.md`. DNS is in the same state: Cloudflare NS confirmed, no token, no records
+published, nothing configured. Both wait on the same owner action (a `bw unlock` handoff) — see
+`docs/DECISIONS.md` for the exact steps.
 
 ## Not started yet
-- Phase 5 (compatibility recipes, reliability — partially covered above: crash recovery, exactly-
-  once-ish settlement via claim/lease already real; fair queue and full usage ledger are not)
 - Phase 6 (Resend, admin, compliance UX)
 - Phase 7 (performance, resilience, launch gate)
 - Phase 8 (Kubernetes)
@@ -314,8 +461,15 @@ with no evidence behind it.
    `hasheem studio DNS` from the owner's self-hosted Vaultwarden. Blocked on the owner (or a
    separate terminal they control) running `bw unlock` and handing off a `BW_SESSION` value via a
    file — **not** through this chat. See `scripts/ops/fetch-vaultwarden-secret.sh` and
-   `docs/DECISIONS.md`. Once in hand: wire Resend SMTP, add DNS records, begin Phase 2's
-   public-ingress step.
-2. Independently unblocked: Phase 5 items — `compat_encode` recipe, retention sweeper, real
-   plans/entitlements + usage ledger, worker sandboxing/containerization per `docs/SECURITY.md`,
-   resumable uploads.
+   `docs/DECISIONS.md` for the exact secret names (`RESEND_API_KEY`, `CLOUDFLARE_API_TOKEN`) and
+   step-by-step handoff. Once in hand: wire Resend SMTP, add DNS records, begin Phase 2's
+   public-ingress step, and verify real inbox delivery (separately from provider-API acceptance).
+2. Independently unblocked, not yet done: containerize `apps/api` (currently a bare host process);
+   schedule `scripts/ops/retention-sweep.mjs` (cron/systemd timer — it's tested and safe to run
+   repeatedly, just not automated yet); a Playwright network-throttling test for real
+   mid-transfer upload interruption in the browser (current coverage proves the protocol-level
+   interrupt/resume and the browser client's logic separately, not together in one browser test);
+   `packages/contracts` codegen for generated TypeScript types from the migrated schema.
+3. Phase 7 prep: this is the point to start real load/capacity measurement
+   (`docs/CAPACITY.md`), an accessibility audit, and the backup/restore rehearsal
+   (`docs/BACKUP-RESTORE.md`) — none of that has been done yet and all of it is unblocked.
