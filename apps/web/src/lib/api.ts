@@ -17,7 +17,7 @@ async function authedFetch(path: string, init: RequestInit = {}): Promise<Respon
 export interface UploadSession {
   sessionId: string;
   objectKey: string;
-  uploadUrl: string;
+  tusUploadPath: string;
   expiresAt: string;
 }
 
@@ -35,22 +35,13 @@ export async function createUploadSession(file: File): Promise<UploadSession> {
   return res.json();
 }
 
-export async function putFileToStorage(uploadUrl: string, file: File, anonKey: string): Promise<void> {
-  const res = await fetch(uploadUrl, {
-    method: "PUT",
-    headers: { apikey: anonKey, "Content-Type": file.type || "application/octet-stream" },
-    body: file,
-  });
-  if (!res.ok) throw new Error(`Upload to storage failed: ${res.status} ${await res.text()}`);
-}
-
 export async function finalizeUpload(sessionId: string): Promise<{ mediaAssetId: string }> {
   const res = await authedFetch(`/v1/uploads/sessions/${sessionId}/finalize`, { method: "POST" });
   if (!res.ok) throw new Error(`Finalize failed: ${res.status} ${await res.text()}`);
   return res.json();
 }
 
-export async function createJob(mediaAssetId: string, recipe: "inspect" | "remux"): Promise<{ jobId: string; status: string }> {
+export async function createJob(mediaAssetId: string, recipe: "inspect" | "remux" | "compat_encode"): Promise<{ jobId: string; status: string }> {
   const res = await authedFetch("/v1/jobs", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

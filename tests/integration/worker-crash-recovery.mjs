@@ -12,6 +12,7 @@ import { promisify } from "node:util";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
+import { tusUploadFile } from "../lib/tus-client.mjs";
 
 const execFileAsync = promisify(execFile);
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -118,7 +119,7 @@ try {
       body: JSON.stringify({ filename: "crash-test.mov", declaredSizeBytes: fixtureBuffer.length, declaredMimeType: "video/quicktime" }),
     })
   ).json();
-  await fetch(uploadSession.uploadUrl, { method: "PUT", headers: { apikey: anonKey, "Content-Type": "video/quicktime" }, body: fixtureBuffer });
+  await tusUploadFile({ gatewayBase, tusUploadPath: uploadSession.tusUploadPath, anonKey, accessToken: session.access_token, buffer: fixtureBuffer });
   const finalized = await (
     await fetch(`${apiBase}/v1/uploads/sessions/${uploadSession.sessionId}/finalize`, { method: "POST", headers: authHeader })
   ).json();

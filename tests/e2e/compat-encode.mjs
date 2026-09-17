@@ -8,6 +8,7 @@
 // Usage: node tests/e2e/compat-encode.mjs --env local --fixture tests/fixtures/media/synthetic-remux-test.mov
 
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { tusUploadFile } from "../lib/tus-client.mjs";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { join, dirname } from "node:path";
@@ -80,7 +81,7 @@ try {
     headers: { ...authHeader, "Content-Type": "application/json" },
     body: JSON.stringify({ filename: "compat-test.mov", declaredSizeBytes: fixtureBuffer.length, declaredMimeType: "video/quicktime" }),
   })).json();
-  await fetch(uploadSession.uploadUrl, { method: "PUT", headers: { apikey: anonKey, "Content-Type": "video/quicktime" }, body: fixtureBuffer });
+  await tusUploadFile({ gatewayBase, tusUploadPath: uploadSession.tusUploadPath, anonKey, accessToken: session.access_token, buffer: fixtureBuffer });
   const finalized = await (await fetch(`${apiBase}/v1/uploads/sessions/${uploadSession.sessionId}/finalize`, { method: "POST", headers: authHeader })).json();
 
   const jobRes = await fetch(`${apiBase}/v1/jobs`, {

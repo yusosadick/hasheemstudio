@@ -14,6 +14,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
+import { tusUploadFile } from "../lib/tus-client.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, "..", "..");
@@ -100,7 +101,7 @@ try {
     headers: { ...authHeader, "Content-Type": "application/json" },
     body: JSON.stringify({ filename: "race-test.mov", declaredSizeBytes: fixtureBuffer.length, declaredMimeType: "video/quicktime" }),
   })).json();
-  await fetch(uploadSession.uploadUrl, { method: "PUT", headers: { apikey: anonKey, "Content-Type": "video/quicktime" }, body: fixtureBuffer });
+  await tusUploadFile({ gatewayBase, tusUploadPath: uploadSession.tusUploadPath, anonKey, accessToken: session.access_token, buffer: fixtureBuffer });
   const finalized = await (await fetch(`${apiBase}/v1/uploads/sessions/${uploadSession.sessionId}/finalize`, { method: "POST", headers: authHeader })).json();
 
   // Fire all requests essentially simultaneously — the real race condition window.

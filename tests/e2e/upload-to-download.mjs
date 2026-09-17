@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Real end-to-end test: real user, real HTTP calls to the real API (localhost:8787), a real
-// synthetic fixture PUT directly to Supabase Storage via a signed URL, real worker processing,
-// and a real downloaded+decoded output file. No mocks, no stubbed responses. Per
-// docs/IMPLEMENTATION-PLAN.md Phase 4 gate. Cleans up the test user it creates on exit.
+// synthetic fixture uploaded directly to Supabase Storage via the real resumable (TUS) upload
+// path, real worker processing, and a real downloaded+decoded output file. No mocks, no stubbed
+// responses. Per docs/IMPLEMENTATION-PLAN.md Phase 4 gate. Cleans up the test user it creates on
+// exit. See tests/e2e/resumable-upload-interruption.mjs for the actual interrupt/resume test.
 //
 // Usage: node tests/e2e/upload-to-download.mjs --env local --fixture <path/to/video>
 
@@ -11,6 +12,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { tusUploadFile } from "../lib/tus-client.mjs";
 
 const execFileAsync = promisify(execFile);
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -111,14 +113,14 @@ try {
   const uploadSession = await createSessionRes.json();
   record("upload session created via real API", createSessionRes.ok, JSON.stringify(uploadSession));
 
-  // 2. Upload the real fixture directly to storage via the signed URL — bypassing the API's own
-  //    body, matching docs/ARCHITECTURE.md "upload media directly to the media/storage path."
-  const putRes = await fetch(uploadSession.uploadUrl, {
-    method: "PUT",
-    headers: { apikey: anonKey, "Content-Type": "video/quicktime" },
-    body: fixtureBuffer,
+  // 2. Upload the real fixture directly to storage via the real resumable (TUS) upload path —
+  //    bypassing the API's own body, matching docs/ARCHITECTURE.md "upload media directly to the
+  //    media/storage path." See tests/e2e/resumable-upload-interruption.mjs for the actual
+  //    interruption/resume test; this is just a normal, uninterrupted upload.
+  const finalOffset = await tusUploadFile({
+    gatewayBase, tusUploadPath: uploadSession.tusUploadPath, anonKey, accessToken: session.access_token, buffer: fixtureBuffer,
   });
-  record("real fixture PUT directly to storage", putRes.ok, `status=${putRes.status}`);
+  record("real fixture uploaded directly to storage via TUS", finalOffset === fixtureBuffer.length, `offset=${finalOffset}`);
 
   // 3. Finalize.
   const finalizeRes = await fetch(`${apiBase}/v1/uploads/sessions/${uploadSession.sessionId}/finalize`, {
@@ -174,7 +176,7 @@ try {
       body: JSON.stringify({ filename: "cancel-test.mov", declaredSizeBytes: fixtureBuffer.length, declaredMimeType: "video/quicktime" }),
     })
   ).json();
-  await fetch(secondFixtureUploadSession.uploadUrl, { method: "PUT", headers: { apikey: anonKey, "Content-Type": "video/quicktime" }, body: fixtureBuffer });
+  await tusUploadFile({ gatewayBase, tusUploadPath: secondFixtureUploadSession.tusUploadPath, anonKey, accessToken: session.access_token, buffer: fixtureBuffer });
   const secondFinalized = await (
     await fetch(`${apiBase}/v1/uploads/sessions/${secondFixtureUploadSession.sessionId}/finalize`, { method: "POST", headers: authHeader })
   ).json();
@@ -205,7 +207,7 @@ try {
         body: JSON.stringify({ filename: `quota-${i}.mov`, declaredSizeBytes: fixtureBuffer.length, declaredMimeType: "video/quicktime" }),
       })
     ).json();
-    await fetch(extraSession.uploadUrl, { method: "PUT", headers: { apikey: anonKey, "Content-Type": "video/quicktime" }, body: fixtureBuffer });
+    await tusUploadFile({ gatewayBase, tusUploadPath: extraSession.tusUploadPath, anonKey, accessToken: session.access_token, buffer: fixtureBuffer });
     const extraFinalized = await (
       await fetch(`${apiBase}/v1/uploads/sessions/${extraSession.sessionId}/finalize`, { method: "POST", headers: authHeader })
     ).json();
