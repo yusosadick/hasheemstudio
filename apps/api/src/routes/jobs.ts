@@ -140,9 +140,17 @@ export async function jobsRoutes(app: FastifyInstance): Promise<void> {
       [id],
     );
 
+    // Never offer a download link for an output the retention sweeper has already deleted
+    // (scripts/ops/retention-sweep.mjs sets output_deleted_at) — the object genuinely no longer
+    // exists in storage, so a signed URL for it would be a broken link, not an honest state.
     let downloadUrl: string | null = null;
+    let outputExpired = false;
     if (job.status === "succeeded" && job.output_object_key) {
-      downloadUrl = await createSignedDownloadUrl(job.output_object_key, 900);
+      if (job.output_deleted_at) {
+        outputExpired = true;
+      } else {
+        downloadUrl = await createSignedDownloadUrl(job.output_object_key, 900);
+      }
     }
 
     return {
@@ -155,6 +163,8 @@ export async function jobsRoutes(app: FastifyInstance): Promise<void> {
       updatedAt: job.updated_at,
       verificationReport: reportRes.rows[0] ?? null,
       downloadUrl,
+      outputExpired,
+      outputRetainUntil: job.output_retain_until,
     };
   });
 

@@ -97,13 +97,26 @@ export default function JobResult() {
       )}
 
       {job.downloadUrl && (
-        <a
-          href={job.downloadUrl}
-          className="mt-8 inline-flex min-h-touch items-center gap-2 rounded-md bg-gradient-primary px-6 text-sm font-medium text-foreground-on-accent hover:opacity-90"
-        >
-          <IconDownload width={18} height={18} />
-          Download output
-        </a>
+        <>
+          <a
+            href={job.downloadUrl}
+            className="mt-8 inline-flex min-h-touch items-center gap-2 rounded-md bg-gradient-primary px-6 text-sm font-medium text-foreground-on-accent hover:opacity-90"
+          >
+            <IconDownload width={18} height={18} />
+            Download output
+          </a>
+          {job.outputRetainUntil && (
+            <p className="mt-2 text-xs text-foreground-muted">
+              Available until {new Date(job.outputRetainUntil).toLocaleString()}, then permanently deleted.
+            </p>
+          )}
+        </>
+      )}
+      {job.outputExpired && (
+        <p className="mt-8 flex items-center gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">
+          <IconAlertTriangle width={18} height={18} className="shrink-0 text-warning" />
+          This output has passed its retention period and been permanently deleted.
+        </p>
       )}
     </div>
   );

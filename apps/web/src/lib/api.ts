@@ -59,6 +59,8 @@ export interface JobView {
   errorMessage: string | null;
   verificationReport: Record<string, unknown> | null;
   downloadUrl: string | null;
+  outputExpired: boolean;
+  outputRetainUntil: string | null;
 }
 
 export async function getJob(jobId: string): Promise<JobView> {
