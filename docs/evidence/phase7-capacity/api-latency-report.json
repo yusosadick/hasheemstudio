@@ -1,0 +1,49 @@
+{
+  "timestamp": "2026-09-17T00:42:20.497Z",
+  "target": "GET /v1/jobs/:id (authenticated, indexed lookup + join)",
+  "hostBefore": {
+    "load": "28.17 25.39 24.30 24/4832 781288",
+    "mem": "25005MB used / 48174MB total"
+  },
+  "hostAfter": {
+    "load": "29.60 25.73 24.42 22/4827 781933",
+    "mem": "25038MB used / 48174MB total"
+  },
+  "results": [
+    {
+      "concurrency": 10,
+      "requests": 100,
+      "errors": 0,
+      "errorRate": 0,
+      "p50": 57.79239499999949,
+      "p95": 214.0650770000002,
+      "p99": 290.1927209999999,
+      "max": 290.1927209999999,
+      "min": 14.52298299999984
+    },
+    {
+      "concurrency": 25,
+      "requests": 250,
+      "errors": 0,
+      "errorRate": 0,
+      "p50": 97.09318199999962,
+      "p95": 155.90720300000066,
+      "p99": 174.6969479999998,
+      "max": 184.64216099999976,
+      "min": 34.57868700000017
+    },
+    {
+      "concurrency": 50,
+      "requests": 500,
+      "errors": 0,
+      "errorRate": 0,
+      "p50": 181.07745299999988,
+      "p95": 289.00321200000053,
+      "p99": 307.1759060000004,
+      "max": 340.8885390000005,
+      "min": 111.20868999999948
+    }
+  ],
+  "prdTarget": "p95 < 300ms, error rate < 1%, excluding auth providers/uploads/media work",
+  "verdict": "MEETS PRD TARGET at tested concurrency levels"
+}

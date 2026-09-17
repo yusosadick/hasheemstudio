@@ -11,8 +11,8 @@
   },
   "scripts": {
     "doctor": "node scripts/ops/doctor.mjs",
-    "dev:up": "node scripts/ops/not-implemented.mjs dev:up",
-    "dev": "node scripts/ops/not-implemented.mjs dev",
+    "dev:up": "node scripts/ops/dev-up.mjs",
+    "dev": "node scripts/ops/dev.mjs",
     "build": "pnpm -r --if-present build",
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck",
@@ -30,7 +30,7 @@
     "test:e2e:resumable": "node tests/e2e/resumable-upload-interruption.mjs --env local",
     "test:e2e:browser": "node tests/e2e/browser-upload-to-download.mjs --env local",
     "ops:retention-sweep": "node scripts/ops/retention-sweep.mjs --env local",
-    "db:local:migrate": "node scripts/ops/not-implemented.mjs db:local:migrate",
+    "db:local:migrate": "node scripts/ops/db-local-migrate.mjs",
     "db:remote": "node scripts/db/remote.mjs",
     "deploy:plan": "node scripts/ops/not-implemented.mjs deploy:plan",
     "deploy": "node scripts/ops/not-implemented.mjs deploy",
@@ -40,6 +40,7 @@
     "pg": "^8.13.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "playwright": "^1.63.0"
   }
 }

@@ -65,7 +65,7 @@ export default function JobResult() {
               <li key={s} className="flex items-center gap-2">
                 <span
                   className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs ${
-                    i <= stageIndex ? "border-accent bg-accent/10 text-accent" : "border-border text-foreground-muted"
+                    i <= stageIndex ? "border-accent bg-accent/10 text-accent-text" : "border-border text-foreground-muted"
                   }`}
                 >
                   {i + 1}

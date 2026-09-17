@@ -10,6 +10,7 @@ export default {
         surface1: "var(--color-surface-1)",
         surface2: "var(--color-surface-2)",
         accent: "var(--color-accent)",
+        "accent-text": "var(--color-accent-text)",
         secondary: "var(--color-secondary)",
         foreground: "var(--color-foreground)",
         "foreground-muted": "var(--color-foreground-muted)",

@@ -18,6 +18,13 @@
   --color-foreground: #f5f5f5; /* on background #121212 -> ~16.9:1 */
   --color-foreground-muted: #b3b3b3; /* on background #121212 -> ~8.6:1 */
   --color-foreground-on-accent: #ffffff; /* on accent #e91e63 -> ~4.6:1, meets AA for UI text >=14px bold / >=18px */
+  /* The pure brand accent (#e91e63) measures 4.31:1 on #121212 — a real automated axe-core scan
+     (docs/evidence/phase7-accessibility/) caught this as a WCAG AA failure for small normal-weight
+     text (needs 4.5:1). --color-accent itself is kept exactly as specified (used for icons/large
+     surfaces, which only need the 3:1 non-text threshold); --color-accent-text is a same-hue,
+     same-saturation, lightened variant (measured 4.97:1) for small body-sized accent-colored text
+     and links specifically. */
+  --color-accent-text: #e8457b;
   --color-border: #3a3a3a;
   --color-focus-ring: #ff6b35; /* warm end of gradient, distinct from accent, ~AA on charcoal */
   --color-success: #4caf50;
@@ -54,6 +61,9 @@
     --color-foreground: #201a15; /* on cream #fdf8f0 -> ~16.5:1 */
     --color-foreground-muted: #5c554c; /* on cream -> ~6.1:1 */
     --color-foreground-on-accent: #ffffff; /* on accent #e91e63 -> ~4.6:1 */
+    /* Darkened same-hue/saturation variant for AA text contrast on cream — measured 4.82:1 on
+       #fdf8f0 (base #e91e63 measures 4.11:1, also a real axe-core-caught failure). */
+    --color-accent-text: #d51a59;
     --color-border: #ddd6c7;
     --color-focus-ring: #d1420a; /* darker warm tone for AA on cream background */
     --color-success: #2e7d32;
@@ -69,6 +79,7 @@
   --color-foreground: #201a15;
   --color-foreground-muted: #5c554c;
   --color-foreground-on-accent: #ffffff;
+  --color-accent-text: #d51a59;
   --color-border: #ddd6c7;
   --color-focus-ring: #d1420a;
   --color-success: #2e7d32;

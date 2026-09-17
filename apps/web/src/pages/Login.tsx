@@ -58,7 +58,7 @@ export default function Login() {
       </form>
       <p className="mt-6 text-sm text-foreground-muted">
         No account yet?{" "}
-        <Link to="/signup" className="text-accent underline underline-offset-4">
+        <Link to="/signup" className="text-accent-text underline underline-offset-4">
           Sign up
         </Link>
       </p>

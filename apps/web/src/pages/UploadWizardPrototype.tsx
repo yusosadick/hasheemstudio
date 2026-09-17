@@ -95,7 +95,7 @@ export default function UploadWizardPrototype() {
                     done
                       ? "border-success bg-success/10 text-success"
                       : active
-                        ? "border-accent bg-accent/10 text-accent"
+                        ? "border-accent bg-accent/10 text-accent-text"
                         : "border-border text-foreground-muted"
                   }`}
                 >

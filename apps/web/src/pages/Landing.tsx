@@ -82,7 +82,7 @@ export default function Landing() {
         <ol className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {["Upload", "Inspect", "Choose a recipe", "Verify & download"].map((step, i) => (
             <li key={step} className="rounded-lg border border-border p-5">
-              <span className="text-sm font-medium text-accent">Step {i + 1}</span>
+              <span className="text-sm font-medium text-accent-text">Step {i + 1}</span>
               <p className="mt-1 font-medium">{step}</p>
             </li>
           ))}
@@ -90,13 +90,13 @@ export default function Landing() {
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <a
             href="/prototypes/upload"
-            className="text-sm font-medium text-accent underline underline-offset-4"
+            className="text-sm font-medium text-accent-text underline underline-offset-4"
           >
             View upload wizard prototype →
           </a>
           <a
             href="/prototypes/job-result"
-            className="text-sm font-medium text-accent underline underline-offset-4"
+            className="text-sm font-medium text-accent-text underline underline-offset-4"
           >
             View job result prototype →
           </a>
