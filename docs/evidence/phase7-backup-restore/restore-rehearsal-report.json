@@ -1,24 +1,24 @@
 {
-  "timestamp": "2026-09-17T00:56:36.415Z",
-  "backupFile": "/home/yuso/hasheemstudio-backups/hasheemstudio-local-2026-09-17T00-55-26-963Z.dump.enc",
-  "backupTakenAt": "2026-09-17T00:55:26.966Z",
-  "restoreDurationMs": 9202,
+  "timestamp": "2026-09-17T01:15:00.894Z",
+  "backupFile": "/home/yuso/hasheemstudio-backups/hasheemstudio-local-2026-09-17T01-14-44-911Z.dump.enc",
+  "backupTakenAt": "2026-09-17T01:14:44.913Z",
+  "restoreDurationMs": 9361,
   "restoredCounts": {
-    "users": "104",
-    "workspaces": "104",
-    "jobs": "102"
+    "users": "15",
+    "workspaces": "15",
+    "jobs": "7"
   },
   "honestNote": "This backup/restore covers the Postgres database only (auth, tenancy, jobs, verification metadata, checksums) — not the actual media file bytes in Storage's file backend, per docs/BACKUP-RESTORE.md's documented policy (short-retention media is intentionally excluded from backup scope). 'Media integrity' verified here means the recorded checksums/metadata survive restore intact, not that original video bytes are recoverable from this backup alone.",
   "results": [
     {
       "name": "a backup file exists to restore from",
       "pass": true,
-      "detail": "/home/yuso/hasheemstudio-backups/hasheemstudio-local-2026-09-17T00-55-26-963Z.dump.enc"
+      "detail": "/home/yuso/hasheemstudio-backups/hasheemstudio-local-2026-09-17T01-14-44-911Z.dump.enc"
     },
     {
       "name": "decrypted dump's checksum matches the manifest recorded at backup time",
       "pass": true,
-      "detail": "ec70e7ad44b6d6efe00f1e7df695c160d582d9c11772882b7b583f28b41a603e vs ec70e7ad44b6d6efe00f1e7df695c160d582d9c11772882b7b583f28b41a603e"
+      "detail": "2cf711ea7d12b0689c864aa51efcff203101a8a4d63a74245d428aaab8f21b60 vs 2cf711ea7d12b0689c864aa51efcff203101a8a4d63a74245d428aaab8f21b60"
     },
     {
       "name": "isolated restore target became ready",
@@ -27,22 +27,22 @@
     {
       "name": "pg_restore completed (exit code non-zero — verifying via real queries below, not trusting exit code alone)",
       "pass": true,
-      "detail": "Command failed: docker exec -e PGPASSWORD=ATKN0vzrjKkFLFvS8p25BaD7l/LtbaFx hasheemstudio-restore-rehearsal pg_restore -U postgres -d postgres --no-owner --no-privileges -j 2 /tmp/restore.dump\npg_resto"
+      "detail": "Command failed: docker exec -e PGPASSWORD=6dbvNQtHV8uAYE0jIl4ZR02wmg8L8Tls hasheemstudio-restore-rehearsal pg_restore -U postgres -d postgres --no-owner --no-privileges -j 2 /tmp/restore.dump\npg_resto"
     },
     {
       "name": "restored database contains real auth.users rows",
       "pass": true,
-      "detail": "count=104"
+      "detail": "count=15"
     },
     {
       "name": "restored database contains real workspace rows",
       "pass": true,
-      "detail": "count=104"
+      "detail": "count=15"
     },
     {
       "name": "restored database contains real job rows",
       "pass": true,
-      "detail": "count=102"
+      "detail": "count=7"
     },
     {
       "name": "a specific restored job's verification-report checksum exactly matches the live database (media integrity of METADATA — see note)",

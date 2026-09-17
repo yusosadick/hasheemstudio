@@ -11,6 +11,14 @@ uploads, H.264 encode, real entitlements, retention). See the "Phase 5" section 
 detail; this replaces the "Current phase" line further down, which is left as a historical marker
 of where Phase 4 ended.
 
+**Updated again:** 2026-09-17 (same day, follow-on Phase 7 session): measured load/capacity
+testing, a real isolated backup/restore rehearsal, an accessibility audit with real fixes, working
+local dev commands tested from a fresh clone (two real bugs found and fixed), a tested
+least-privilege deploy identity, and a P0 account-deletion regression found and fixed. See "Phase 7
+— launch-readiness verification" below. **Resend/DNS remain fully blocked** (Vaultwarden still
+locked, no session handoff received) — signup email and the public domain are not live, and this
+must not be declared launch-ready.
+
 ## Current phase: Phase 5 (compatibility recipes, reliability, security hardening) — done, scoped, real
 
 Phase 0 gate: met in full. Phase 1: first-pass prototype done, **owner-approved**. Phase 2:
@@ -428,11 +436,151 @@ in `docs/DECISIONS.md`. DNS is in the same state: Cloudflare NS confirmed, no to
 published, nothing configured. Both wait on the same owner action (a `bw unlock` handoff) — see
 `docs/DECISIONS.md` for the exact steps.
 
+## Phase 7 — launch-readiness verification (2026-09-17, this session)
+
+Scope: every unfinished acceptance criterion from the PRD, not just the next phase number, per the
+owner's explicit instruction. Six priorities, in the order given.
+
+### Priority 1 — measured load/capacity testing
+
+Real runs against the local `dev:up` stack (same sandboxed-worker/Postgres/Supavisor topology as
+staging/production). Full write-up with all numbers: `docs/CAPACITY.md`. Evidence:
+`docs/evidence/phase7-capacity/{api-latency-report.json,queue-throughput-remux-report.json}`.
+
+- **API latency** (`GET /v1/jobs/:id`): p95 = 139ms at concurrency 10, 191ms at 25, **391ms at
+  50 — fails the PRD's p95 < 300ms target** at the highest tested concurrency under real host
+  contention (load ~31-33/12 cores). An earlier same-day run at lower contention (~26 load) met the
+  target (p95=289ms). Both runs are real; reported honestly rather than keeping only the favorable
+  one. Error rate 0% at every level.
+- **Queue throughput** (remux recipe, one tenant per job to isolate from quota limits): 10/10
+  succeeded, 0 failed. ~4,454 jobs/day at the current hard-coded `concurrency: 1` BullMQ setting.
+  Worker CPU spikes to ~100-127% (one core) only while actively transcoding, near-0% between jobs —
+  **confirms jobs run strictly serially**, and that CPU/memory headroom exists to raise
+  concurrency, which is untested. This is a **documented, known bottleneck**
+  (`apps/worker/src/queue.ts`), not a hardware ceiling.
+- **Disclosed confound**: 4 long-running `certutil` processes from an unrelated security-sandbox
+  project on this shared host consumed ~3 cores' worth of sustained background load throughout
+  testing. Not touched (out of scope), but material to every number above — see `docs/CAPACITY.md`
+  for full disclosure.
+- **Gaps**: only the remux recipe was load-tested, not H.264 encode (PRD requires both,
+  separately); no isolated-staging sustained/burst test was run (PRD calls for both a local
+  measurement and a staging-scale one); disk IOPS and egress were not measured.
+
+### Priority 2 — backup/restore rehearsal
+
+Real `pg_dump` → AES-256-GCM encrypt → isolated throwaway Postgres container (own volume, not on
+the `hasheemstudio` Docker network) → `pg_restore` → verification via real queries (not trusted
+exit code, since `pg_restore` commonly exits non-zero on benign ownership warnings even on a fully
+successful restore). **9/9 checks passed** on the latest run: backup exists, decrypted checksum
+matches the manifest, restore target came up isolated, restored `auth.users`/workspaces/jobs row
+counts are correct (15/15/7), a specific job's verification checksum matches the live DB exactly,
+and RLS is enabled on 14 restored tables. Evidence:
+`docs/evidence/phase7-backup-restore/restore-rehearsal-report.json`. Scripts:
+`scripts/ops/backup-db.mjs`, `tests/integration/backup-restore-rehearsal.mjs` (also wired into
+`pnpm test:integration`). **Scope note, stated in the report itself**: this covers the Postgres
+database (auth, tenancy, jobs, verification checksums) only, not raw media bytes in Storage's file
+backend, per `docs/BACKUP-RESTORE.md`'s documented short-retention-media-excluded policy — "media
+integrity" here means checksummed metadata survives restore intact, not that original video bytes
+are recoverable from this backup alone. Never touched production or replayed a live job during this
+rehearsal — the restore target was a disposable container, torn down after verification.
+
+### Priority 3 — accessibility and responsive testing
+
+Automated `@axe-core/playwright` scans of landing/login/signup at 390px and 1440px, in both light
+and dark theme, plus manual keyboard-only navigation (Tab through a full form, submit via Enter),
+a computed-style focus-outline check, and a horizontal-overflow check at mobile width. Script:
+`tests/e2e/accessibility.mjs` (`pnpm test:a11y`). Evidence + screenshots:
+`docs/evidence/phase7-accessibility/`.
+
+- **Found real WCAG 2.2 AA failures**: the `#E91E63` accent color measured 4.31:1 on the dark
+  background and 4.11:1 on the light background — both below the 4.5:1 threshold required for the
+  small (14px) "Step N" labels and links it was used on. **Fixed** by adding a dedicated
+  `--color-accent-text` token (hue/saturation-preserved, lightness-adjusted: `#e8457b` dark =
+  4.97:1, `#d51a59` light = 4.82:1 — both measured, not assumed) in `packages/ui/src/tokens.css`,
+  applied only to small text/links; the original `--color-accent` is kept unchanged for icons,
+  which only need the more lenient 3:1 non-text threshold.
+  Result: **16/28 automated checks passing before the fix → 28/28 after**, across both themes and
+  both viewport widths.
+- Keyboard navigation, focus-visible outlines, and no horizontal overflow at 390px all verified
+  directly, not just via the axe scan.
+
+### Priority 4 — local development commands
+
+`pnpm dev:up` (brings up the dedicated Supabase+Redis+sandboxed-worker Compose stack, generating
+secrets on first run) and `pnpm dev` (runs `apps/api` + `apps/web` concurrently, prefixed stdio,
+clean shutdown) are now real, implemented scripts
+(`scripts/ops/{dev-up,dev,db-local-migrate}.mjs`), not stubs. **Tested against a genuine fresh
+clone** of the repo into a separate directory — this is what surfaced two real bugs, both fixed:
+
+1. Running `dev:up` from a second clone (different absolute path, same Compose project name)
+   caused Docker Compose to see a different resolved compose-file path, decide the config had
+   changed, and recreate shared containers (`hasheemstudio-pooler`, `hasheemstudio-worker`) —
+   disruptively, mid-way through an unrelated load-test run. **Fixed**: `dev-up.mjs` now checks the
+   `com.docker.compose.project.config_files` label on the existing `hasheemstudio-db` container and
+   refuses to proceed if it doesn't match the current checkout, with an explanatory error.
+2. That disruption exposed a second, independent bug: an unhandled `pg.Pool` `'error'` event (fired
+   when the Supavisor pooler container restarts and drops an idle client) crashed the whole API/
+   worker Node process instead of just logging it. **Fixed** in both `apps/api/src/db.ts` and
+   `apps/worker/src/db.ts` with a `pool.on("error", ...)` handler.
+
+`scripts/ops/doctor.mjs` checks node/pnpm/git/docker/ssh presence and `.env`/`.env.example`
+presence without ever printing secret values. Prerequisites and full sequence documented in
+`docs/MACBOOK-TO-VPS.md`.
+
+### Priority 5 — least-privilege deployment identity
+
+Built and tested for real, but **only from this VPS itself, using a throwaway keypair** —
+generated, added to `authorized_keys` with a forced-command wrapper, exercised, then fully removed
+(original `authorized_keys` restored from backup). The wrapper
+(`scripts/ops/deploy-ssh-wrapper.sh`) uses `command=`+`restrict` in `authorized_keys` to allow only
+an explicit allow-list: `git fetch`/`git pull`, and `node scripts/db/remote.mjs
+{status,plan,apply,verify}` for `local`/`staging` with SHA-format validation, plus
+`pnpm ops:retention-sweep` — everything else is refused. Exact Mac-side commands (key generation,
+the `authorized_keys` line format, and verification steps) are documented in `docs/DEPLOYMENT.md`.
+**Stated honestly, per explicit instruction not to relabel this: no real external Mac has exercised
+this workflow yet.** This remains an unverified gap until a real MacBook runs the documented
+commands against this VPS.
+
+### Priority 6 — Resend / DNS / TLS
+
+**Still fully blocked.** `bw status` on this host reports `"status":"locked"`; no
+`~/.hasheemstudio_bw_session` handoff file exists. Public self-service `/signup` still fails with a
+real 500 (`"Error sending confirmation email"`) — confirmed directly against the live Auth service,
+not assumed. **No workaround was applied to make signup "look" like it works.** Cloudflare NS is
+confirmed but no API token is available, so no DNS records are published and hasheemstudio.com is
+not publicly reachable over TLS yet. Exact secret names (`RESEND_API_KEY`,
+`CLOUDFLARE_API_TOKEN`) and the safe Vaultwarden-based provisioning method (`bw unlock` on a
+terminal the owner controls, handed off via a `BW_SESSION` file, never pasted in chat) are in
+`docs/DECISIONS.md`, unchanged from the prior session and still accurate. Until this unblocks,
+the full public browser journey (real signup → real inbox email → confirm → login → upload →
+process → download on `https://hasheemstudio.com`) **cannot be verified** and is not claimed.
+
+### Regression found and fixed this session: account deletion (P0, affected 100% of users)
+
+While cleaning up test accounts, `DELETE /auth/v1/admin/users/:id` returned a real 500
+(`23503` FK violation). Root cause: `workspaces.created_by` and several other `created_by`/
+`granted_by`/`assigned_by` foreign keys to `auth.users(id)` had no `ON DELETE` action at all. Since
+every user gets a personal workspace at registration, **this broke account deletion for every
+account on the platform**, not an edge case. Found the complete list of affected constraints via
+`pg_constraint`/`confrelid` introspection rather than continued trial-and-error, and fixed in two
+migrations: `supabase/migrations/0011_fix_deletion_cascades.sql` (workspaces, usage_reservations)
+and `0012_fix_remaining_deletion_cascades.sql` (jobs, media_assets, upload_sessions → CASCADE;
+platform_admins.granted_by, workspace_entitlements.assigned_by → SET NULL, since deleting the
+grantor shouldn't delete the grant). Verified with a new regression test,
+`tests/integration/account-deletion.mjs` (4/4 passing, wired into `pnpm test:integration`), and by
+successfully cleaning up 103 accumulated test accounts afterward. **Known remaining gap**: several
+earlier test scripts' own cleanup steps were silently failing all along, because they used
+`fetch(...).catch(() => {})` without checking `res.ok` — `fetch()` doesn't reject on 4xx/5xx. Not
+fully audited/fixed across every script; flagged here rather than left silent.
+
 ## Not started yet
-- Phase 6 (Resend, admin, compliance UX)
-- Phase 7 (performance, resilience, launch gate)
+- Phase 6 (admin console, compliance UX) — Resend itself is covered under Phase 7 Priority 6 above
 - Phase 8 (Kubernetes)
 - Phase 9 (growth features)
+- Encode-recipe (not just remux) load benchmarking
+- `scripts/verify/capacity.mjs` executable calculator
+- Real external-Mac deploy-workflow verification
+- Full audit of `fetch().catch()` cleanup-error-swallowing across test scripts
 
 ### Open blockers (owner input needed — see `docs/DECISIONS.md` for full detail)
 
@@ -457,19 +605,44 @@ with no evidence behind it.
 
 ## Next unblocked task
 
-1. Owner-approved next step for credentials: retrieve `hasheemstudio-resend-api` and
-   `hasheem studio DNS` from the owner's self-hosted Vaultwarden. Blocked on the owner (or a
-   separate terminal they control) running `bw unlock` and handing off a `BW_SESSION` value via a
-   file — **not** through this chat. See `scripts/ops/fetch-vaultwarden-secret.sh` and
-   `docs/DECISIONS.md` for the exact secret names (`RESEND_API_KEY`, `CLOUDFLARE_API_TOKEN`) and
-   step-by-step handoff. Once in hand: wire Resend SMTP, add DNS records, begin Phase 2's
-   public-ingress step, and verify real inbox delivery (separately from provider-API acceptance).
-2. Independently unblocked, not yet done: containerize `apps/api` (currently a bare host process);
+1. **Still the single owner-blocked item**: retrieve `hasheemstudio-resend-api` and
+   `hasheem studio DNS` from the owner's self-hosted Vaultwarden. As of this session, `bw status`
+   on this host still reports `"status":"locked"` and no `~/.hasheemstudio_bw_session` handoff file
+   exists — unchanged from last session. Blocked on the owner (or a separate terminal they control)
+   running `bw unlock` and handing off a `BW_SESSION` value via a file — **not** through this chat.
+   See `scripts/ops/fetch-vaultwarden-secret.sh` and `docs/DECISIONS.md` for the exact secret names
+   (`RESEND_API_KEY`, `CLOUDFLARE_API_TOKEN`) and step-by-step handoff. Once in hand: wire Resend
+   SMTP, add DNS records, begin the public-ingress step, and verify **real inbox delivery**
+   (separately from provider-API acceptance), then run the full public browser journey (signup →
+   confirm → login → upload → process → download) on `https://hasheemstudio.com` before any
+   launch-ready claim.
+2. Real external-Mac verification of the deploy workflow: the mechanism is built and tested from
+   this VPS with a throwaway key (see Phase 7 Priority 5 above), but a genuine separate machine has
+   not yet run the documented `docs/DEPLOYMENT.md` commands against this VPS. This remains the
+   honest gap, not relabeled.
+3. Encode-recipe (H.264) load benchmarking — only the remux recipe was measured this session (see
+   `docs/CAPACITY.md`); PRD requires both, separately.
+4. Consider raising the worker's hard-coded `concurrency: 1` (`apps/worker/src/queue.ts`) and
+   re-measuring — CPU/memory headroom was observed between job spikes in this session's throughput
+   run, but a higher setting has not been tested against the sandboxed worker's own resource limits.
+5. Independently unblocked, not yet done: containerize `apps/api` (currently a bare host process);
    schedule `scripts/ops/retention-sweep.mjs` (cron/systemd timer — it's tested and safe to run
    repeatedly, just not automated yet); a Playwright network-throttling test for real
    mid-transfer upload interruption in the browser (current coverage proves the protocol-level
    interrupt/resume and the browser client's logic separately, not together in one browser test);
-   `packages/contracts` codegen for generated TypeScript types from the migrated schema.
-3. Phase 7 prep: this is the point to start real load/capacity measurement
-   (`docs/CAPACITY.md`), an accessibility audit, and the backup/restore rehearsal
-   (`docs/BACKUP-RESTORE.md`) — none of that has been done yet and all of it is unblocked.
+   `packages/contracts` codegen for generated TypeScript types from the migrated schema; a full
+   audit of `fetch().catch()` cleanup-error-swallowing across test scripts (found in the
+   account-deletion regression work this session, not yet fixed everywhere); `scripts/verify/capacity.mjs`
+   as a real executable calculator from the formulas in `docs/CAPACITY.md`.
+
+## Launch-readiness gate status (explicit, per owner instruction not to declare launch-ready early)
+
+**Not launch-ready.** Mandatory gates still unmet:
+- Resend email delivery: blocked (vault locked).
+- DNS/TLS for `hasheemstudio.com`: blocked (no Cloudflare token).
+- Real public signup→confirm→login→upload→process→download browser journey on the live domain:
+  unverified (depends on the two items above).
+- API latency PRD target (p95 < 300ms): met at concurrency ≤25, **not met at concurrency 50** under
+  real host contention this session — see `docs/CAPACITY.md`.
+- External Mac-to-VPS deploy workflow: mechanism built, but unverified from a real external machine.
+- Encode-recipe load benchmark: not done (only remux measured).

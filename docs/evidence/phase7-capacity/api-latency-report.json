@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-09-17T00:42:20.497Z",
+  "timestamp": "2026-09-17T01:15:20.512Z",
   "target": "GET /v1/jobs/:id (authenticated, indexed lookup + join)",
   "hostBefore": {
-    "load": "28.17 25.39 24.30 24/4832 781288",
-    "mem": "25005MB used / 48174MB total"
+    "load": "31.61 28.74 27.31 32/5137 1230553",
+    "mem": "25479MB used / 48174MB total"
   },
   "hostAfter": {
-    "load": "29.60 25.73 24.42 22/4827 781933",
-    "mem": "25038MB used / 48174MB total"
+    "load": "32.92 29.06 27.42 29/5111 1231524",
+    "mem": "25462MB used / 48174MB total"
   },
   "results": [
     {
@@ -15,35 +15,35 @@
       "requests": 100,
       "errors": 0,
       "errorRate": 0,
-      "p50": 57.79239499999949,
-      "p95": 214.0650770000002,
-      "p99": 290.1927209999999,
-      "max": 290.1927209999999,
-      "min": 14.52298299999984
+      "p50": 68.27544899999975,
+      "p95": 138.70856500000036,
+      "p99": 207.32293400000026,
+      "max": 207.32293400000026,
+      "min": 17.326804999999695
     },
     {
       "concurrency": 25,
       "requests": 250,
       "errors": 0,
       "errorRate": 0,
-      "p50": 97.09318199999962,
-      "p95": 155.90720300000066,
-      "p99": 174.6969479999998,
-      "max": 184.64216099999976,
-      "min": 34.57868700000017
+      "p50": 104.96154399999978,
+      "p95": 190.66334900000038,
+      "p99": 208.77446400000008,
+      "max": 216.45190300000013,
+      "min": 39.63109599999916
     },
     {
       "concurrency": 50,
       "requests": 500,
       "errors": 0,
       "errorRate": 0,
-      "p50": 181.07745299999988,
-      "p95": 289.00321200000053,
-      "p99": 307.1759060000004,
-      "max": 340.8885390000005,
-      "min": 111.20868999999948
+      "p50": 250.11347399999977,
+      "p95": 390.6226660000002,
+      "p99": 408.66256499999963,
+      "max": 436.74542199999996,
+      "min": 128.12910999999986
     }
   ],
   "prdTarget": "p95 < 300ms, error rate < 1%, excluding auth providers/uploads/media work",
-  "verdict": "MEETS PRD TARGET at tested concurrency levels"
+  "verdict": "DOES NOT MEET PRD TARGET at all tested concurrency levels — see per-level results"
 }
