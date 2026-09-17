@@ -3,11 +3,16 @@
 // mid-flight, force-expires the lease (so the test doesn't have to sleep for the real ~10 minute
 // lease TTL), restarts the worker, and confirms the reconciler requeues it and it completes
 // successfully — per docs/IMPLEMENTATION-PLAN.md Phase 5 acceptance: "a killed worker leads to
-// bounded retry/recovery, not endless processing." Requires the API to already be running; starts
-// and stops its own worker process.
+// bounded retry/recovery, not endless processing." Requires the API to already be running.
+//
+// The real deployment now runs the worker as the `hasheemstudio-worker` Docker container
+// (infra/compose/docker-compose.yml). If that container is up, this test stops it for the
+// duration of the run (so its dispatcher/reconciler don't race the test's own throwaway worker
+// process for the same job) and restarts it again in the `finally` block — leaving the real
+// deployment exactly as it found it, whether or not the test passes.
 
 import { readFileSync, existsSync } from "node:fs";
-import { spawn, execFile } from "node:child_process";
+import { spawn, execFile, execFileSync } from "node:child_process";
 import { promisify } from "node:util";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -78,10 +83,23 @@ async function signIn(email, password) {
   return res.json();
 }
 
+function isContainerRunning() {
+  try {
+    return execFileSync("docker", ["inspect", "-f", "{{.State.Running}}", "hasheemstudio-worker"]).toString().trim() === "true";
+  } catch {
+    return false; // container doesn't exist at all — nothing to pause
+  }
+}
+
 const suffix = Date.now();
 const user = { email: `crash-test-${suffix}@example.invalid`, password: `Cc1!${suffix}xx` };
 let created;
 let workerProc;
+const containerWasRunning = isContainerRunning();
+if (containerWasRunning) {
+  console.log("Pausing the real hasheemstudio-worker container for the duration of this test (will restart it in `finally`)...");
+  execFileSync("docker", ["stop", "hasheemstudio-worker"]);
+}
 
 // Use Node's native --import flag to load tsx's ESM loader directly, rather than running tsx's
 // own CLI (`tsx src/index.ts` / `npx tsx ...`) — the tsx CLI forks a child process internally to
@@ -191,6 +209,10 @@ try {
   if (workerProc) killWorkerGroup(workerProc);
   if (created) await adminDeleteUser(created.id);
   await client.end();
+  if (containerWasRunning) {
+    console.log("Restarting the real hasheemstudio-worker container...");
+    execFileSync("docker", ["start", "hasheemstudio-worker"]);
+  }
   console.log("Cleaned up test user and worker process.");
 }
 
