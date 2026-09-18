@@ -28,6 +28,14 @@ re-authentication), and **both freshly-provisioned secrets should be rotated** a
 transcript exposure this session (not launch-ready until both are resolved). See Priority 6 under
 "Phase 7 — launch-readiness verification" below for full detail.
 
+**Updated again:** 2026-09-18 (follow-on session): credential rotation is in progress on the
+owner's side (env file untouched this session, per explicit instruction); in the meantime, closed
+out every independently unblocked gate — corrected a misattributed local-dev port-collision finding
+(it was our own orphaned processes, not an unrelated project), ran a real H.264 encode-recipe load
+benchmark, and wrote `docs/MAC-HANDOFF.md`, the ready-to-use runbook for the one still-genuinely-
+unverified gate (a real external Mac exercising the deploy/migration workflow). See "Phase 7
+continued — 2026-09-18 session" below for full detail.
+
 ## Current phase: Phase 5 (compatibility recipes, reliability, security hardening) — done, scoped, real
 
 Phase 0 gate: met in full. Phase 1: first-pass prototype done, **owner-approved**. Phase 2:
@@ -616,6 +624,94 @@ earlier test scripts' own cleanup steps were silently failing all along, because
 `fetch(...).catch(() => {})` without checking `res.ok` — `fetch()` doesn't reject on 4xx/5xx. Not
 fully audited/fixed across every script; flagged here rather than left silent.
 
+## Phase 7 continued — 2026-09-18 session (rotation in progress, remaining gates)
+
+Owner reported both `RESEND_API_KEY` and `CLOUDFLARE_API_TOKEN` compromised (accidentally printed
+into the 2026-09-17 session transcript — see that date's entry above) and started rotating both
+through their provider dashboards. Per explicit instruction, **the protected env file was not
+touched, read, or worked around this session** — Gate 1 (credential rotation) stays blocked on the
+owner confirming the new values are provisioned. All other, independent gates were worked in the
+meantime:
+
+### Gate 2 — inbox receipt verification
+
+Attempted Gmail MCP re-authentication again this session (`list_labels` call) — still returns
+`"needs you to sign in again (run /mcp to re-authenticate)"`. `/mcp` is an interactive, client-side
+command that only the owner can run in their own terminal; it cannot be invoked programmatically
+from here. **Owner action needed**: either run `/mcp` to reauth the Gmail connector (so a future
+session can check inbox receipt directly), or manually confirm receipt of the email already sent to
+`yuso.sadick+hasheemstudio-publicsignup-1789621992@gmail.com` at 2026-09-17T05:13:19Z (check spam
+too). Once new Resend credentials are confirmed provisioned (Gate 1), a **fresh** confirmation
+email should be sent and checked, since the original test predates the rotation.
+
+### Gate 3 — local dev port collision — corrected finding
+
+**The 2026-09-17 write-up mis-identified this.** It attributed the port-8787 conflict to an
+unrelated `ubuntu`-owned process matched by a loose `ps aux | grep` on the substring
+`apps/api/src/server.ts`. Re-investigated properly this session using `ss -ltnp` (to find the
+actual PID holding the port) cross-referenced with `/proc/<pid>/cwd` (to find its real working
+directory) rather than a text grep that can match unrelated processes by coincidence:
+
+```bash
+ss -ltnp | grep -E ':5173|:8787'                 # find the PID actually holding the port
+readlink /proc/<PID>/cwd                          # confirm whose process it really is
+```
+
+The real cause: **two of our own orphaned bare-host dev processes**, left running since
+2026-09-17T03:11 and T03:13 (`node --import tsx/esm src/index.ts` under
+`/home/yuso/hasheemstudio/apps/api`, and Vite under `/home/yuso/hasheemstudio/apps/web`) from
+earlier local-dev-command testing in the prior session — never stopped afterward. Not a conflict
+with any other project at all. **Fix applied**: `kill -TERM` on both PIDs; verified with `ss -ltnp`
+that both `127.0.0.1:8787` and `127.0.0.1:5173` freed immediately, then smoke-tested `pnpm dev`
+end-to-end (both ports bound cleanly, API and Vite both started) before stopping it again the same
+way to avoid recreating the same problem for the next session. Separately confirmed real, unrelated
+`wazuh-indexer`-owned processes (uid 999) do coincidentally contain the substring `src/index.ts` in
+their command line (from an unrelated `pentester`/Strix security-sandbox project already disclosed
+in `docs/CAPACITY.md`'s contention note) — these were checked and confirmed to hold neither port,
+and were left untouched.
+
+**Lesson for future sessions, recorded so it isn't repeated**: always stop bare-host dev processes
+started for local testing (`kill` the PIDs, or prefer a bounded `timeout N pnpm dev` for smoke
+tests) — don't leave them running across a session boundary, and identify port holders by PID/cwd
+ownership, never by a text-matching `ps|grep`, which can misattribute a coincidental substring
+match to the wrong process.
+
+### Gate 4 — H.264 encode-recipe load benchmark
+
+Run via a temporary bare-host `apps/api` process (started, benchmarked, then stopped — see Gate 3
+lesson above; this did not touch the production `hasheemstudio-api` container) against the real
+containerized, resource-limited worker (`mem_limit: 2g`, `cpus: 2.0`, `pids_limit: 256` — same
+sandboxed container used for every other benchmark). Evidence:
+`docs/evidence/phase7-capacity/queue-throughput-compat_encode-report.json`.
+
+- 5/5 jobs succeeded, 0 failed, recipe=`compat_encode` (real H.264 re-encode path, not remux).
+- Total wall clock: 102.6s for 5 jobs → ~0.049 jobs/sec ⇒ **~4,212 jobs/day at the current
+  `concurrency: 1` setting** — close to the remux figure (~4,454/day) measured in the prior
+  session, because the only available test fixture is a small synthetic file where fixed overhead
+  (upload, DB writes, process bookkeeping) dominates over actual encode time.
+- Per-job total time: p50=14.27s, p95=14.39s, max=14.39s — markedly higher than remux's p50=8.16s/
+  p95=14.24s from the same fixture, consistent with encode being genuinely more expensive than a
+  container remux.
+- Worker container CPU samples spiked as high as **172%** during active encoding (vs. remux's
+  ~98-127% peak) — encode uses more of the container's 2.0-CPU budget, confirming it is the more
+  CPU-intensive path, as expected.
+- **Explicitly not extrapolated further**: this used one small synthetic fixture at
+  `concurrency: 1`. It does not predict throughput for real user-sized/longer videos, and does not
+  support any capacity claim beyond "the sandboxed worker successfully completed 5/5 real H.264
+  encodes under its existing resource limits, at the rate measured." A benchmark against
+  realistic-duration files remains a real gap — see `docs/MAC-HANDOFF.md` §6.
+
+### Gate 5 — Mac handoff document
+
+Written: `docs/MAC-HANDOFF.md`. Contains exact clone/checkout/install commands, `pnpm dev:up`/
+`pnpm dev` usage (including the real Compose-project-collision gotcha found in the prior session),
+an honest note that `pnpm test` itself currently no-ops (no workspace package defines a `test`
+script — the real commands are `pnpm typecheck`, `pnpm test:integration`, `pnpm test:e2e`,
+`pnpm test:a11y`, `pnpm test:load:*`), an SSH tunnel command for reaching the VPS-internal-only
+Supabase Studio dashboard from a Mac browser, a clearly labelled list of every item that remains
+genuinely unverified from a real external machine, and a step-by-step first-test checklist for the
+owner to work through on the Mac.
+
 ## Not started yet
 - Phase 6 (admin console, compliance UX) — Resend itself is covered under Phase 7 Priority 6 above
 - Phase 8 (Kubernetes)
@@ -680,24 +776,34 @@ with no evidence behind it.
 
 ## Launch-readiness gate status (explicit, per owner instruction not to declare launch-ready early)
 
-**Not launch-ready — closer, but real gates remain.** As of the 2026-09-17 follow-on session:
+**Not launch-ready — closer, but real gates remain.** As of the 2026-09-18 session:
+- **Credential rotation: IN PROGRESS, blocking.** `RESEND_API_KEY` and `CLOUDFLARE_API_TOKEN` were
+  accidentally printed into the 2026-09-17 transcript; the owner is rotating both through their
+  provider dashboards now. The protected env file was not touched this session per explicit
+  instruction. Once the owner confirms new values are provisioned: restart the affected containers
+  (`auth`, `studio`, `storage`, `api-gw`/envoy — same set recreated when these URLs were first
+  wired), re-run health checks, and send a **fresh** real signup to re-verify SMTP with the new key.
 - Resend email delivery: **provider acceptance verified** (real 200, no SMTP error, real public
-  signup through the live browser). **Inbox receipt not independently verified** — Gmail MCP needs
-  re-authentication; owner action needed (see Priority 6 above).
+  signup through the live browser) — but that test predates the credential rotation above and
+  should be re-verified once rotation completes. **Inbox receipt still not independently
+  verified** — Gmail MCP re-auth attempted again this session, still fails; needs owner action (see
+  Gate 2 above).
 - DNS/TLS for `hasheemstudio.com`: **live** — real Let's Encrypt certs, publicly reachable.
+  (`CLOUDFLARE_API_TOKEN` rotation does not affect already-issued DNS records or certs.)
 - Real public signup→login→upload→process→download browser journey on the live domain: **verified**
-  (8/8 + 4/4 checks passed against `https://hasheemstudio.com` itself, not a proxy or localhost).
-  The one piece not verified end-to-end in a single run is clicking the real confirmation link from
-  a real received email — blocked on the same inbox-receipt gap above.
-- **New**: `RESEND_API_KEY` and `CLOUDFLARE_API_TOKEN` should be rotated — both were accidentally
-  printed into this session's transcript by an automatic file-diff notification (not a deliberate
-  print). Not yet done; owner action needed.
+  as of 2026-09-17 (8/8 + 4/4 checks passed against `https://hasheemstudio.com` itself). Should be
+  re-run once credential rotation completes, since it exercised the pre-rotation Resend key.
 - API latency PRD target (p95 < 300ms): met at concurrency ≤25, **not met at concurrency 50** under
-  real host contention in the prior session — see `docs/CAPACITY.md`. Not re-measured against the
-  new production topology (extra containers now share the host) — should be re-run.
-- External Mac-to-VPS deploy workflow: mechanism built, but unverified from a real external machine.
-- Encode-recipe load benchmark: not done (only remux measured).
-- Local bare-host `pnpm dev` for `apps/api` may now collide with an unrelated process on this
-  shared host that happens to already bind `127.0.0.1:8787` (observed while verifying no port
-  conflicts for the new containers — the containers themselves publish no host ports and are
-  unaffected, but bare-host local dev of `apps/api` specifically was not re-verified this session).
+  real host contention in an earlier session — see `docs/CAPACITY.md`. Not re-measured against the
+  current production topology (extra containers now share the host) — should be re-run.
+- External Mac-to-VPS deploy workflow: mechanism built, still unverified from a real external
+  machine. `docs/MAC-HANDOFF.md` (new this session) is the exact, ready-to-use runbook for closing
+  this gap — nothing in it has been executed from an actual Mac yet.
+- Encode-recipe (H.264) load benchmark: **done this session** — 5/5 jobs succeeded, ~4,212 jobs/day
+  at `concurrency: 1` on one small synthetic fixture; explicitly not extrapolated to a general
+  capacity claim (see Gate 4 above and `docs/evidence/phase7-capacity/queue-throughput-compat_encode-report.json`).
+  A benchmark against realistic (non-synthetic) file sizes/durations remains a real gap.
+- Local dev port collision: **root-caused and fixed this session** — it was our own orphaned
+  bare-host dev processes, not an unrelated project (the 2026-09-17 write-up misattributed this; see
+  Gate 3 above for the correction and the exact check/fix commands). `pnpm dev` smoke-tested clean
+  afterward.
