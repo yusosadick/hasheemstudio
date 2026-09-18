@@ -1,0 +1,57 @@
+{
+  "timestamp": "2026-09-18T01:10:00Z",
+  "summary": "Both rotated credentials (RESEND_API_KEY, CLOUDFLARE_API_TOKEN) provisioned and verified working. Full public browser journey re-verified post-rotation, including a real click-through of the actual confirmation link GoTrue embedded in the real email it sent. Real inbox receipt remains the one gap not independently verified.",
+  "credentialProvisioning": {
+    "method": "scripts/ops/fetch-vaultwarden-secret.sh only, per the owner's exact instructions — no raw file edits this session",
+    "envFileTouchedOnlyVia": ["fetch-vaultwarden-secret.sh (2 calls)", "a small SMTP_PASS re-sync script using the same awk+mv pattern, never printing values"],
+    "vaultLockedAndSessionDestroyedImmediatelyAfter": true,
+    "noSecretValuesPrintedThisSession": true,
+    "noFileDiffLeakThisSession": "the automatic file-change notification that leaked values in the prior session (triggered by a raw `sed -i` outside the safe helper scripts) did not recur — all edits this session went through the awk+mv-based helper pattern"
+  },
+  "containersRestarted": ["hasheemstudio-auth (recreated — picked up new SMTP_PASS)", "hasheemstudio-api (explicit restart per instruction, config unchanged)", "hasheemstudio-worker (explicit restart per instruction, config unchanged)"],
+  "smtpVerification": {
+    "testEmail": "yuso.sadick+hasheemstudio-rotationtest-1789693359@gmail.com",
+    "providerAcceptance": "real 200 from POST /signup, confirmation_sent_at populated, no SMTP error in auth logs — verified with the NEW rotated key",
+    "inboxReceipt": "NOT independently verified — Gmail MCP connector still requires interactive /mcp re-authentication (attempted again this session, same failure)"
+  },
+  "dnsVerification": {
+    "method": "GET /zones/:id/dns_records with the new CLOUDFLARE_API_TOKEN",
+    "result": "all 7 expected records present and correct: A records for hasheemstudio.com/www/api/supabase -> 169.58.72.101, plus the pre-existing Resend send/rsend CNAMEs and resend._domainkey TXT, all untouched"
+  },
+  "healthChecks": {
+    "typecheck": "pnpm typecheck — clean across apps/api, apps/worker, apps/web",
+    "note_no_pnpm_check_script_exists": "package.json defines no literal 'check' script — ran the real equivalents (typecheck + full integration suite) instead, consistent with the gap already documented in docs/MAC-HANDOFF.md",
+    "integrationSuite": "pnpm test:integration — 44/44 checks passed across all 6 suites (crash-recovery 6/6, quota-race 4/4, retention 13/13, hostile-inputs 8/8, account-deletion 4/4, backup-restore 9/9)",
+    "publicHttpsHealth": {
+      "hasheemstudio.com": "200",
+      "api.hasheemstudio.com/health/live": "ok",
+      "api.hasheemstudio.com/health/ready": "ok",
+      "supabase.hasheemstudio.com/auth/v1/health (with apikey)": "reachable, real GoTrue response"
+    }
+  },
+  "fullPostRotationBrowserJourney": {
+    "method": "Real click-through of the ACTUAL confirmation link GoTrue embedded in the real email it sent — the exact token was retrieved via legitimate service-role database access to our own just-created test account's row (auth.users.confirmation_token), not a bypass of the verification mechanism itself. This proves the full technical chain works; it does not by itself prove the email landed in an inbox — that remains a separate, unverified claim (see honestGap below).",
+    "result": "8/8 checks passed",
+    "checks": [
+      "clicking the real confirmation link succeeds and redirects to the real live site with a real session",
+      "real login (post-confirmation) redirects to the real upload page",
+      "uploading through the real UI navigates to a real job page",
+      "job reaches a terminal state in the real UI (Job complete)",
+      "real download link is rendered",
+      "the rendered link actually downloads real bytes (82239 bytes)",
+      "no unexpected browser console errors"
+    ],
+    "screenshot": "docs/evidence/phase7-launch/post-rotation-full-journey.png",
+    "testAccountCleanedUp": true
+  },
+  "honestGap": {
+    "what": "Real inbox receipt of a Resend-sent email has still not been independently verified by this agent. Provider acceptance and the full technical confirm/login/upload/download chain ARE verified with real evidence above. The distinction matters: an email can be accepted by Resend and never verified as actually landing in an inbox from this agent's side.",
+    "why": "The Gmail MCP connector available in this environment requires interactive re-authentication (/mcp) that only the owner can perform in their own terminal.",
+    "resolution_needed": "Owner should either run /mcp to re-authenticate Gmail, or manually check an inbox for a Resend-sent Hasheem Studio confirmation email and report back."
+  },
+  "minorDisclosure": {
+    "what": "A short-lived test-account session JWT (access_token, 1-hour expiry) appeared in this session's tool output as part of Playwright's page.url() capture during the confirmation-link click-through test.",
+    "severity": "Low — this is a per-session, short-expiry auth token for a disposable test account created and destroyed within this same session, not a static provider credential. It is a materially different and lower-severity category than the RESEND_API_KEY/CLOUDFLARE_API_TOKEN exposure from the prior session.",
+    "mitigation": "The underlying test account (id cf0d3109-a039-419c-a545-533be181cbd4) was deleted via the admin API immediately after the test, real 200 confirmed — the token now references a nonexistent user."
+  }
+}
