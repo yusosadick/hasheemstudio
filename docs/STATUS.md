@@ -897,3 +897,9 @@ with no evidence behind it.
   passwords now use 48-character hexadecimal values, preserving entropy while
   remaining safe in the existing URL interpolation. The empty first-run local
   volumes were reset before regenerating the local secret file.
+- Network-path startup then exposed that `supabase_admin` was omitted from the
+  role-password bootstrap SQL. The role is now updated alongside Auth, Storage,
+  PostgREST, and pooler roles. The bootstrap explicitly switches to the image's
+  protected `supabase_admin` administrator before altering those reserved roles.
+  Verification uses a real TCP connection from a separate container because the
+  database container trusts its own loopback.
