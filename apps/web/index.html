@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,23 +8,6 @@
       name="description"
       content="Inspect, verify and prepare your video for social publishing, with honest technical reports before you upload."
     />
-    <script>
-      // Applied before paint to avoid a theme flash. Respects saved preference, else OS theme.
-      (function () {
-        try {
-          var saved = localStorage.getItem("hasheemstudio-theme");
-          var theme =
-            saved === "light" || saved === "dark"
-              ? saved
-              : window.matchMedia("(prefers-color-scheme: light)").matches
-                ? "light"
-                : "dark";
-          document.documentElement.setAttribute("data-theme", theme);
-        } catch (e) {
-          document.documentElement.setAttribute("data-theme", "dark");
-        }
-      })();
-    </script>
   </head>
   <body>
     <div id="root"></div>

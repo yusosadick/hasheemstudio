@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import { ThemeToggle } from "./ThemeToggle";
 import { IconFilm } from "./Icons";
 
 const links = [
@@ -33,7 +32,6 @@ export function Nav() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <ThemeToggle />
           <a
             href="/signup"
             className="hidden min-h-touch items-center rounded-md bg-gradient-primary px-5 text-sm font-medium text-foreground-on-accent shadow-sm transition-opacity hover:opacity-90 sm:inline-flex"

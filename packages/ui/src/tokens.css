@@ -2,7 +2,7 @@
  * Hasheem Studio design tokens.
  * Exact brand values per docs/DESIGN-SYSTEM.md. Derived accessible tokens (foreground, muted,
  * border, focus, success, warning, danger) are chosen for measured WCAG contrast, not guessed —
- * ratios noted inline. Dark is the default OS-respecting theme; both are first-class.
+ * ratios noted inline. The application uses this dark palette exclusively.
  */
 
 :root {
@@ -49,42 +49,6 @@
 
   --touch-target-min: 44px;
   --font-size-base: 16px;
-}
-
-/* Light theme: explicit override, applied via [data-theme="light"] or prefers-color-scheme */
-:root[data-theme="light"],
-:root:not([data-theme="dark"]) {
-  @media (prefers-color-scheme: light) {
-    --color-background: #fdf8f0; /* cream */
-    --color-surface-1: #f5f5ec; /* beige */
-    --color-surface-2: #ebe8dc; /* tested contrasting neutral derived from beige */
-    --color-foreground: #201a15; /* on cream #fdf8f0 -> ~16.5:1 */
-    --color-foreground-muted: #5c554c; /* on cream -> ~6.1:1 */
-    --color-foreground-on-accent: #ffffff; /* on accent #e91e63 -> ~4.6:1 */
-    /* Darkened same-hue/saturation variant for AA text contrast on cream — measured 4.82:1 on
-       #fdf8f0 (base #e91e63 measures 4.11:1, also a real axe-core-caught failure). */
-    --color-accent-text: #d51a59;
-    --color-border: #ddd6c7;
-    --color-focus-ring: #d1420a; /* darker warm tone for AA on cream background */
-    --color-success: #2e7d32;
-    --color-warning: #b06a00;
-    --color-danger: #c62828;
-  }
-}
-
-:root[data-theme="light"] {
-  --color-background: #fdf8f0;
-  --color-surface-1: #f5f5ec;
-  --color-surface-2: #ebe8dc;
-  --color-foreground: #201a15;
-  --color-foreground-muted: #5c554c;
-  --color-foreground-on-accent: #ffffff;
-  --color-accent-text: #d51a59;
-  --color-border: #ddd6c7;
-  --color-focus-ring: #d1420a;
-  --color-success: #2e7d32;
-  --color-warning: #b06a00;
-  --color-danger: #c62828;
 }
 
 body {

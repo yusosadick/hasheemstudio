@@ -920,3 +920,10 @@ with no evidence behind it.
   HTTP 200 from `http://127.0.0.1:8787/health/live`; and Vite returned HTTP 200
   from `http://127.0.0.1:5173/`. The `pnpm dev` supervisor remains active for
   the owner to use the local application.
+
+# Dark-only interface — 2026-09-20
+
+- The web application now declares the dark theme directly on its root HTML element.
+- Removed operating-system theme detection, saved light-theme preferences, the navigation theme
+  toggle, and the light palette overrides. All users now receive the dark palette consistently.
+- Verification: `pnpm typecheck` and `pnpm --filter @hasheemstudio/web build` passed.
