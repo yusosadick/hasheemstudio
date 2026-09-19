@@ -7,6 +7,7 @@
 -- trusted local socket, so switch roles before assigning service passwords.
 \connect - supabase_admin
 
+ALTER USER postgres WITH PASSWORD :'pgpass';
 ALTER USER authenticator WITH PASSWORD :'pgpass';
 ALTER USER pgbouncer WITH PASSWORD :'pgpass';
 ALTER USER supabase_admin WITH PASSWORD :'pgpass';

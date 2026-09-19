@@ -903,6 +903,10 @@ with no evidence behind it.
   protected `supabase_admin` administrator before altering those reserved roles.
   Verification uses a real TCP connection from a separate container because the
   database container trusts its own loopback.
+- The same TCP check showed the migration identity (`postgres.<tenant>`) still
+  used the image's bootstrap password. The bootstrap now assigns the generated
+  password to `postgres` as well, allowing the documented migration runner to
+  authenticate through Supavisor's session endpoint.
 - The local migration runner now selects the same macOS secret-file default as
   `dev:up`, so the documented `pnpm db:local:migrate` command works without an
   extra shell export.
