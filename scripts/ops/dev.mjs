@@ -4,7 +4,7 @@
 // shutting both down cleanly on Ctrl+C. Assumes `pnpm dev:up` has already brought up the
 // Supabase/Redis/worker stack (checked below, not assumed).
 import { spawn, execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -34,6 +34,17 @@ try {
 
 const children = [];
 
+function parseEnvFile(text) {
+  return Object.fromEntries(text.split("\n").flatMap((line) => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) return [];
+    const eq = trimmed.indexOf("=");
+    return eq === -1 ? [] : [[trimmed.slice(0, eq), trimmed.slice(eq + 1)]];
+  }));
+}
+
+const localEnv = parseEnvFile(readFileSync(secretsFile, "utf8"));
+
 function startProcess(name, cmd, args, cwd, extraEnv = {}) {
   const proc = spawn(cmd, args, {
     cwd,
@@ -52,8 +63,15 @@ function startProcess(name, cmd, args, cwd, extraEnv = {}) {
 
 console.log("Starting apps/api (http://127.0.0.1:8787) and apps/web (http://127.0.0.1:5173)...\n");
 
-startProcess("api", "node", ["--import", "tsx/esm", "src/index.ts"], join(repoRoot, "apps", "api"));
-startProcess("web", "npx", ["vite", "--port", "5173", "--host", "127.0.0.1"], join(repoRoot, "apps", "web"));
+startProcess("api", "node", ["--import", "tsx/esm", "src/index.ts"], join(repoRoot, "apps", "api"), {
+  ...localEnv,
+  HASHEEMSTUDIO_ENV_FILE: secretsFile,
+});
+startProcess("web", "npx", ["vite", "--port", "5173", "--host", "127.0.0.1"], join(repoRoot, "apps", "web"), {
+  VITE_SUPABASE_URL: localEnv.SUPABASE_PUBLIC_URL,
+  VITE_SUPABASE_ANON_KEY: localEnv.ANON_KEY,
+  VITE_API_URL: localEnv.PUBLIC_API_URL ?? "http://127.0.0.1:8787",
+});
 
 function shutdown() {
   console.log("\nShutting down dev processes...");

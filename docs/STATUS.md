@@ -910,3 +910,7 @@ with no evidence behind it.
 - The local migration runner now selects the same macOS secret-file default as
   `dev:up`, so the documented `pnpm db:local:migrate` command works without an
   extra shell export.
+- The first host-process start found that `dev.mjs` checked the selected secret
+  file but did not pass it to the API child. It now supplies the parsed local
+  environment to the API and maps only the public Supabase URL, anon key, and
+  API URL to Vite's `VITE_*` variables.
