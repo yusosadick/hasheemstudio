@@ -1,139 +1,106 @@
-import { IconGauge, IconShield, IconFilm } from "../components/Icons";
+import {
+  IconCheckCircle,
+  IconDownload,
+  IconFilm,
+  IconGauge,
+  IconShield,
+  IconUploadCloud,
+} from "../components/Icons";
 
-const features = [
-  {
-    icon: IconFilm,
-    title: "See what your file actually is",
-    body: "Duration, codec, frame rate, VFR/CFR, rotation and colour metadata — inspected server-side, not guessed from the browser.",
-  },
-  {
-    icon: IconShield,
-    title: "Know what changed, and what didn't",
-    body: "Remux and re-encode are shown separately. We never imply a compatibility pass added detail your source didn't have.",
-  },
-  {
-    icon: IconGauge,
-    title: "Fast paths when you don't need a full encode",
-    body: "Files that are already compatible get a quick remux instead of a slow, unnecessary re-encode.",
-  },
+const steps = [
+  { icon: IconUploadCloud, title: "Upload your video", body: "Add an MP4 or MOV file. Interrupted uploads can resume safely." },
+  { icon: IconGauge, title: "Choose what it needs", body: "Inspect it, create a compatible MP4, or re-encode to H.264 and AAC." },
+  { icon: IconDownload, title: "Verify & download", body: "Review what changed, then download the finished file with confidence." },
+];
+
+const benefits = [
+  { icon: IconShield, title: "Private & secure", body: "Your file stays tied to your account." },
+  { icon: IconGauge, title: "Fast when possible", body: "Compatible files use a quick remux." },
+  { icon: IconFilm, title: "Made for video", body: "MP4 and MOV, up to 1080p60 free." },
+  { icon: IconCheckCircle, title: "Honest results", body: "Every transformation is explained." },
 ];
 
 export default function Landing() {
   return (
-    <div>
-      <section className="mx-auto max-w-6xl px-4 pb-20 pt-16 sm:px-6 sm:pt-24">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="mb-4 inline-flex rounded-full border border-border bg-surface1 px-3 py-1 text-xs font-medium text-foreground-muted">
-            Public beta — hard limits apply, see pricing
-          </p>
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
-            Your video&apos;s{" "}
-            <span className="bg-gradient-primary bg-clip-text text-transparent">
-              best upload
-            </span>{" "}
-            starts here.
-          </h1>
-          <p className="mx-auto mt-6 max-w-xl text-lg text-foreground-muted">
-            Inspect a video, understand what needs changing, create a platform-appropriate
-            output, and verify what changed before you publish.
-          </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <a
-              href="/signup"
-              className="inline-flex min-h-touch w-full items-center justify-center rounded-md bg-gradient-primary px-6 text-base font-medium text-foreground-on-accent shadow-sm transition-opacity hover:opacity-90 sm:w-auto"
-            >
-              Start for free
-            </a>
-            <a
-              href="/tools/video-inspector"
-              className="inline-flex min-h-touch w-full items-center justify-center rounded-md border border-border px-6 text-base font-medium text-foreground transition-colors hover:bg-surface1 sm:w-auto"
-            >
-              Try the inspector
-            </a>
-          </div>
-          <p className="mt-4 text-xs text-foreground-muted">
-            Verified Free plan: 100&nbsp;MB/file, 2 minutes, 1080p60, 3 jobs/day. No card required.
-          </p>
-        </div>
-      </section>
+    <div className="overflow-hidden">
+      <section className="relative border-b border-border">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_10%,rgba(233,30,99,0.10),transparent_42%)]" />
+        <div className="relative mx-auto max-w-6xl px-4 pb-14 pt-5 sm:px-6 sm:pb-16">
+          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-foreground-muted">
+            <a href="/" className="transition-colors hover:text-foreground">Home</a>
+            <span aria-hidden="true">›</span><span>Video tools</span><span aria-hidden="true">›</span>
+            <span className="text-foreground">Prepare video</span>
+          </nav>
 
-      <section id="features" className="border-t border-border bg-surface1/40">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-          <h2 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
-            Built on one principle: explain every transformation
-          </h2>
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((f) => (
-              <div
-                key={f.title}
-                className="rounded-lg border border-border bg-surface1 p-6 sm:p-8"
-              >
-                <f.icon className="text-accent" />
-                <h3 className="mt-4 text-lg font-medium">{f.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-foreground-muted">{f.body}</p>
-              </div>
+          <div className="mx-auto mt-8 max-w-3xl text-center">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-accent-text">Hasheem Studio video tools</p>
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl">Prepare your video for upload</h1>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-foreground-muted sm:text-base">
+              Inspect, fix compatibility issues, and create a platform-ready video—with a clear report of exactly what changed.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-8 max-w-4xl rounded-2xl border border-border bg-surface1/95 p-3 shadow-2xl shadow-black/30 sm:p-4">
+            <div className="rounded-xl border-2 border-dashed border-border bg-background/60 px-5 py-9 text-center sm:py-11">
+              <img
+                src="/assets/video-verified-hero.png"
+                alt=""
+                width="1774"
+                height="887"
+                className="mx-auto -my-5 w-full max-w-xs select-none object-contain sm:max-w-sm"
+              />
+              <h2 className="mt-1 text-base font-semibold sm:text-lg">Drop your video here</h2>
+              <p className="mt-1 text-sm text-foreground-muted">or choose a file to get started</p>
+              <a href="/signup" className="mt-5 inline-flex min-h-touch items-center justify-center gap-2 rounded-md bg-gradient-primary px-7 text-sm font-semibold text-foreground-on-accent shadow-lg shadow-accent/10 transition hover:opacity-90">
+                <IconUploadCloud width={18} height={18} /> Choose video
+              </a>
+              <p className="mt-3 text-xs text-foreground-muted">MP4 or MOV · Up to 100 MB and 2 minutes on the free plan</p>
+            </div>
+          </div>
+
+          <div id="how-it-works" className="mx-auto mt-10 max-w-5xl">
+            <div className="flex items-center gap-4">
+              <div className="h-px flex-1 bg-border" /><h2 className="text-center text-sm font-semibold sm:text-base">How it works — 3 simple steps</h2><div className="h-px flex-1 bg-border" />
+            </div>
+            <ol className="mt-4 grid gap-3 md:grid-cols-3">
+              {steps.map((step, index) => (
+                <li key={step.title} className="relative rounded-xl border border-border bg-surface1 p-5 text-center">
+                  <span className="absolute left-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-accent/15 text-xs font-bold text-accent-text">{index + 1}</span>
+                  <step.icon className="mx-auto text-accent-text" width={34} height={34} />
+                  <h3 className="mt-4 text-sm font-semibold">{step.title}</h3>
+                  <p className="mx-auto mt-1 max-w-[16rem] text-xs leading-5 text-foreground-muted">{step.body}</p>
+                  {index < steps.length - 1 && <span className="absolute -right-3 top-1/2 z-10 hidden -translate-y-1/2 rounded-full border border-border bg-background px-1.5 text-accent-text md:block" aria-hidden="true">→</span>}
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <ul id="features" className="mx-auto mt-5 grid max-w-5xl gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
+            {benefits.map((benefit) => (
+              <li key={benefit.title} className="flex gap-3 bg-background p-4">
+                <benefit.icon className="shrink-0 text-foreground-muted" width={22} height={22} />
+                <div><h3 className="text-xs font-semibold">{benefit.title}</h3><p className="mt-1 text-xs leading-4 text-foreground-muted">{benefit.body}</p></div>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       </section>
 
-      <section id="how-it-works" className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">How it works</h2>
-        <ol className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {["Upload", "Inspect", "Choose a recipe", "Verify & download"].map((step, i) => (
-            <li key={step} className="rounded-lg border border-border p-5">
-              <span className="text-sm font-medium text-accent-text">Step {i + 1}</span>
-              <p className="mt-1 font-medium">{step}</p>
-            </li>
-          ))}
-        </ol>
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <a
-            href="/prototypes/upload"
-            className="text-sm font-medium text-accent-text underline underline-offset-4"
-          >
-            View upload wizard prototype →
-          </a>
-          <a
-            href="/prototypes/job-result"
-            className="text-sm font-medium text-accent-text underline underline-offset-4"
-          >
-            View job result prototype →
-          </a>
-        </div>
-      </section>
-
-      <section id="pricing" className="border-t border-border">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            Beta limits, not final pricing
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm text-foreground-muted">
-            These are configurable hypotheses for the beta, metered per job — not a committed
-            price list. Checkout is disabled until a payment processor is approved and tested.
-          </p>
-          <div className="mt-8 grid gap-6 sm:grid-cols-3">
-            {[
-              { name: "Verified Free", detail: "100 MB/file · 2 min · 1080p60 · 3 jobs/day" },
-              { name: "Pro Beta", detail: "500 MB/file · 10 min · select 4K recipes · 2 concurrent jobs" },
-              { name: "Agency", detail: "Negotiated storage/compute/bandwidth · team membership" },
-            ].map((p) => (
-              <div key={p.name} className="rounded-lg border border-border p-6">
-                <h3 className="font-medium">{p.name}</h3>
-                <p className="mt-2 text-sm text-foreground-muted">{p.detail}</p>
-              </div>
-            ))}
+      <section id="pricing" className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+        <div className="flex flex-col justify-between gap-6 rounded-2xl border border-border bg-surface1 p-6 sm:flex-row sm:items-center sm:p-8">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-text">Public beta</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight">Start with the Verified Free plan</h2>
+            <p className="mt-2 text-sm text-foreground-muted">3 jobs per day · 100 MB per file · 2 minutes · 1080p60 · no card required</p>
           </div>
+          <a href="/signup" className="inline-flex min-h-touch shrink-0 items-center justify-center rounded-md bg-gradient-primary px-6 text-sm font-semibold text-foreground-on-accent transition hover:opacity-90">Get started free</a>
         </div>
       </section>
 
       <footer className="border-t border-border">
-        <div className="mx-auto max-w-6xl px-4 py-10 text-sm text-foreground-muted sm:px-6">
-          © Bisso Technologies Ltd. Hasheem Studio is in public beta — see{" "}
-          <a href="/status" className="underline underline-offset-4">
-            status
-          </a>{" "}
-          for current limitations.
+        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-8 text-xs text-foreground-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <span>© Bisso Technologies Ltd. Hasheem Studio is in public beta.</span>
+          <a href="/status" className="hover:text-foreground">Service status</a>
         </div>
       </footer>
     </div>

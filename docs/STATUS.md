@@ -927,3 +927,15 @@ with no evidence behind it.
 - Removed operating-system theme detection, saved light-theme preferences, the navigation theme
   toggle, and the light palette overrides. All users now receive the dark palette consistently.
 - Verification: `pnpm typecheck` and `pnpm --filter @hasheemstudio/web build` passed.
+
+# Landing-page redesign — 2026-09-20
+
+- Rebuilt the landing page around a focused tool layout: compact navigation, video-preparation
+  headline, prominent upload call to action, three processing steps, trust benefits, and a concise
+  beta-plan callout. Copy matches the implemented MP4/MOV upload, inspect/remux/encode, verification,
+  resumability, and Verified Free limits.
+- Added an original generated transparent hero illustration at
+  `apps/web/public/assets/video-verified-hero.png`, using the product's dark graphite and
+  magenta/orange palette. No third-party reference artwork or branding is included.
+- Verified desktop (1440 px) and mobile (390 px) renders in headless Chrome with no horizontal
+  overflow. `pnpm typecheck` and `pnpm --filter @hasheemstudio/web build` passed.

@@ -3,9 +3,9 @@ import { useState } from "react";
 import { IconFilm } from "./Icons";
 
 const links = [
-  { href: "/#features", label: "Features" },
-  { href: "/#pricing", label: "Pricing" },
   { href: "/#how-it-works", label: "How it works" },
+  { href: "/#features", label: "Why Hasheem" },
+  { href: "/#pricing", label: "Pricing" },
 ];
 
 export function Nav() {
@@ -13,7 +13,7 @@ export function Nav() {
 
   return (
     <header className="border-b border-border">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
         <Link to="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
           <IconFilm className="text-accent" />
           Hasheem Studio
@@ -32,6 +32,9 @@ export function Nav() {
         </nav>
 
         <div className="flex items-center gap-3">
+          <a href="/login" className="hidden min-h-touch items-center px-2 text-sm font-medium text-foreground-muted transition-colors hover:text-foreground sm:inline-flex">
+            Log in
+          </a>
           <a
             href="/signup"
             className="hidden min-h-touch items-center rounded-md bg-gradient-primary px-5 text-sm font-medium text-foreground-on-accent shadow-sm transition-opacity hover:opacity-90 sm:inline-flex"
@@ -67,6 +70,9 @@ export function Nav() {
               {l.label}
             </a>
           ))}
+          <a href="/login" className="min-h-touch rounded-md px-2 py-2 text-sm text-foreground-muted hover:bg-surface1 hover:text-foreground" onClick={() => setOpen(false)}>
+            Log in
+          </a>
           <a
             href="/signup"
             className="mt-2 inline-flex min-h-touch items-center justify-center rounded-md bg-gradient-primary px-5 text-sm font-medium text-foreground-on-accent"
