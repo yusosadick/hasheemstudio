@@ -903,3 +903,6 @@ with no evidence behind it.
   protected `supabase_admin` administrator before altering those reserved roles.
   Verification uses a real TCP connection from a separate container because the
   database container trusts its own loopback.
+- The local migration runner now selects the same macOS secret-file default as
+  `dev:up`, so the documented `pnpm db:local:migrate` command works without an
+  extra shell export.

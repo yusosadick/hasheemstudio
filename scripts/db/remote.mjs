@@ -12,6 +12,7 @@ import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { join, dirname } from "node:path";
+import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -54,8 +55,9 @@ function resolveEnvironment(envName) {
   if (!cfg) {
     throw new Error(`Unknown environment '${envName}'. Known: ${Object.keys(envs).filter((k) => k !== "_comment").join(", ")}`);
   }
-  const secretsFile = envName === "local" && process.env.HASHEEMSTUDIO_ENV_FILE
-    ? process.env.HASHEEMSTUDIO_ENV_FILE
+  const macLocalSecretsFile = join(homedir(), ".config", "hasheemstudio", "local.env");
+  const secretsFile = envName === "local"
+    ? (process.env.HASHEEMSTUDIO_ENV_FILE ?? (process.platform === "darwin" ? macLocalSecretsFile : cfg.secretsFile))
     : cfg.secretsFile;
   if (!existsSync(secretsFile)) {
     throw new Error(
