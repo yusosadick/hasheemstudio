@@ -914,3 +914,9 @@ with no evidence behind it.
   file but did not pass it to the API child. It now supplies the parsed local
   environment to the API and maps only the public Supabase URL, anon key, and
   API URL to Vite's `VITE_*` variables.
+- Final Mac evidence: all 13 `hasheemstudio` Compose containers reported healthy
+  or running; `pnpm db:local:migrate` applied migrations `0001` through `0012`
+  and verified no pending versions or checksum drift; the bare-host API returned
+  HTTP 200 from `http://127.0.0.1:8787/health/live`; and Vite returned HTTP 200
+  from `http://127.0.0.1:5173/`. The `pnpm dev` supervisor remains active for
+  the owner to use the local application.
