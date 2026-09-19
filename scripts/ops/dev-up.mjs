@@ -37,6 +37,10 @@ function run(cmd, args, opts = {}) {
 // apps/api/src/db.ts) mid-test. Guard against repeating that: refuse if a hasheemstudio container
 // is already running from a different checkout path.
 const composeFilePath = join(composeDir, "docker-compose.yml");
+const composeFiles = ["-f", composeFilePath];
+if (process.platform === "darwin") {
+  composeFiles.push("-f", join(composeDir, "docker-compose.mac.yml"));
+}
 try {
   const existingLabel = execFileSync("docker", [
     "inspect", "-f", "{{ index .Config.Labels \"com.docker.compose.project.config_files\" }}", "hasheemstudio-db",
@@ -60,7 +64,7 @@ console.log("\nBringing up the hasheemstudio Compose stack (Supabase + Redis + s
 run("docker", [
   "compose",
   "--env-file", secretsFile,
-  "-f", join(composeDir, "docker-compose.yml"),
+  ...composeFiles,
   "-p", "hasheemstudio",
   "up", "-d", "--build",
 ]);
@@ -70,7 +74,7 @@ const deadline = Date.now() + 90_000;
 let allHealthy = false;
 while (Date.now() < deadline) {
   const psOut = execFileSync("docker", [
-    "compose", "--env-file", secretsFile, "-f", join(composeDir, "docker-compose.yml"), "-p", "hasheemstudio", "ps", "--format", "json",
+    "compose", "--env-file", secretsFile, ...composeFiles, "-p", "hasheemstudio", "ps", "--format", "json",
   ]).toString();
   const services = psOut.trim().split("\n").filter(Boolean).map((l) => JSON.parse(l));
   const unhealthy = services.filter((s) => s.Health && s.Health !== "healthy");
@@ -83,7 +87,7 @@ while (Date.now() < deadline) {
 
 if (!allHealthy) {
   console.error("\nSome services did not report healthy within 90s. Check with:");
-  console.error(`  docker compose --env-file ${secretsFile} -f ${join(composeDir, "docker-compose.yml")} -p hasheemstudio ps`);
+  console.error(`  docker compose --env-file ${secretsFile} ${composeFiles.join(" ")} -p hasheemstudio ps`);
   process.exit(1);
 }
 

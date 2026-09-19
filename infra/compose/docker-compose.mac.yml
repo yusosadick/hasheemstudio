@@ -1,0 +1,7 @@
+# Local macOS override: production attaches ingress services to the VPS-owned
+# external Coolify proxy network. A Mac has no such shared network, so Compose
+# owns a harmless project-local substitute with the same attachment points.
+networks:
+  coolify:
+    external: false
+    name: hasheemstudio-coolify-local

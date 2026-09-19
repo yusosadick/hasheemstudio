@@ -887,3 +887,7 @@ with no evidence behind it.
 - Added `package-lock.json` to `.gitignore`; pnpm is the declared package manager
   and an npm-generated lockfile otherwise makes the migration runner reject the
   working tree as dirty.
+- The first Compose start also found that the base file always required the
+  VPS-owned external `coolify` network. macOS `dev:up` now layers a local override
+  that creates a project-owned substitute network while preserving the same
+  service attachments and leaving the production Compose behavior unchanged.
