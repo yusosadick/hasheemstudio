@@ -106,7 +106,9 @@ function main() {
   );
 
   const generated = new Map([
-    ["POSTGRES_PASSWORD", randomBase64(24)],
+    // This value is interpolated into postgres:// and ecto:// URLs by Compose.
+    // Keep it URL-safe without relying on every consumer to encode it first.
+    ["POSTGRES_PASSWORD", randomHex(24)],
     ["JWT_SECRET", jwtSecret],
     ["ANON_KEY", anonKey],
     ["SERVICE_ROLE_KEY", serviceRoleKey],

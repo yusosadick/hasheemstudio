@@ -891,3 +891,9 @@ with no evidence behind it.
   VPS-owned external `coolify` network. macOS `dev:up` now layers a local override
   that creates a project-owned substitute network while preserving the same
   service attachments and leaving the production Compose behavior unchanged.
+- The first container boot exposed another fresh-Mac bug: the generated
+  `POSTGRES_PASSWORD` used standard Base64, whose reserved characters could make
+  Auth and Supavisor parse their connection URLs incorrectly. New database
+  passwords now use 48-character hexadecimal values, preserving entropy while
+  remaining safe in the existing URL interpolation. The empty first-run local
+  volumes were reset before regenerating the local secret file.
