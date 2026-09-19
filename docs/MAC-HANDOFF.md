@@ -50,7 +50,8 @@ Priority 4). They have **not yet** been run from an actual Mac.
 ```bash
 pnpm dev:up              # brings up a dedicated Supabase + Redis + sandboxed-worker Compose
                           # stack, project name `hasheemstudio`; generates secrets on first run
-                          # into /etc/hasheemstudio/local.env-equivalent for your machine.
+                          # into ~/.config/hasheemstudio/local.env on macOS
+                          # (/etc/hasheemstudio/local.env on Linux).
                           # Safe to re-run.
 pnpm db:local:migrate     # applies + verifies all migrations against that local stack
 pnpm dev                  # runs apps/api (:8787) and apps/web (:5173) as bare host processes

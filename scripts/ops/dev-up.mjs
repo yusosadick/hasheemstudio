@@ -6,6 +6,7 @@
 import { existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join, dirname } from "node:path";
+import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -18,7 +19,10 @@ function arg(name, fallback) {
 }
 
 const envName = arg("--env", "local");
-const secretsFile = `/etc/hasheemstudio/${envName}.env`;
+const defaultSecretsDir = process.platform === "darwin"
+  ? join(homedir(), ".config", "hasheemstudio")
+  : "/etc/hasheemstudio";
+const secretsFile = process.env.HASHEEMSTUDIO_ENV_FILE ?? join(defaultSecretsDir, `${envName}.env`);
 
 function run(cmd, args, opts = {}) {
   console.log(`+ ${cmd} ${args.join(" ")}`);

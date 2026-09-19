@@ -872,3 +872,18 @@ with no evidence behind it.
   bare-host dev processes, not an unrelated project (the 2026-09-17 write-up misattributed this; see
   Gate 3 above for the correction and the exact check/fix commands). `pnpm dev` smoke-tested clean
   afterward.
+
+# Mac local-development bootstrap — 2026-09-19
+
+- Installed the project-required host tooling with Homebrew: Docker CLI 29.8.1,
+  Docker Compose 5.5.1, Colima 0.10.3, and pnpm 9.15.0. Colima is configured with
+  4 CPUs, 6 GiB memory, and a 60 GiB disk for the project-scoped local stack.
+- The first real Mac run found that local secret generation assumed Linux's
+  `/etc/hasheemstudio` and therefore required an interactive root password. The
+  local scripts now default to `~/.config/hasheemstudio/local.env` on macOS and
+  continue using `/etc/hasheemstudio/local.env` on Linux. An explicit
+  `HASHEEMSTUDIO_ENV_FILE` still overrides both defaults, including for local
+  migrations.
+- Added `package-lock.json` to `.gitignore`; pnpm is the declared package manager
+  and an npm-generated lockfile otherwise makes the migration runner reject the
+  working tree as dirty.

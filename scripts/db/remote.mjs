@@ -54,12 +54,15 @@ function resolveEnvironment(envName) {
   if (!cfg) {
     throw new Error(`Unknown environment '${envName}'. Known: ${Object.keys(envs).filter((k) => k !== "_comment").join(", ")}`);
   }
-  if (!existsSync(cfg.secretsFile)) {
+  const secretsFile = envName === "local" && process.env.HASHEEMSTUDIO_ENV_FILE
+    ? process.env.HASHEEMSTUDIO_ENV_FILE
+    : cfg.secretsFile;
+  if (!existsSync(secretsFile)) {
     throw new Error(
-      `Environment '${envName}' is not provisioned: ${cfg.secretsFile} does not exist. ${cfg.description}`,
+      `Environment '${envName}' is not provisioned: ${secretsFile} does not exist. ${cfg.description}`,
     );
   }
-  const secrets = parseEnvFile(readFileSync(cfg.secretsFile, "utf8"));
+  const secrets = parseEnvFile(readFileSync(secretsFile, "utf8"));
   const password = secrets.get("POSTGRES_PASSWORD");
   const port = secrets.get(cfg.sessionPortEnvVar);
   if (!password || !port) {

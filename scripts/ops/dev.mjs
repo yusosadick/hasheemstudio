@@ -6,12 +6,16 @@
 import { spawn, execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join, dirname } from "node:path";
+import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, "..", "..");
 
-const secretsFile = process.env.HASHEEMSTUDIO_ENV_FILE ?? "/etc/hasheemstudio/local.env";
+const defaultSecretsFile = process.platform === "darwin"
+  ? join(homedir(), ".config", "hasheemstudio", "local.env")
+  : "/etc/hasheemstudio/local.env";
+const secretsFile = process.env.HASHEEMSTUDIO_ENV_FILE ?? defaultSecretsFile;
 if (!existsSync(secretsFile)) {
   console.error(`No secrets file at ${secretsFile}. Run \`pnpm dev:up\` first.`);
   process.exit(1);

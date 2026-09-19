@@ -16,6 +16,7 @@ import { randomBytes } from "node:crypto";
 import { createHmac } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -75,8 +76,11 @@ function main() {
     process.exit(1);
   }
 
-  const targetDir = "/etc/hasheemstudio";
-  const targetFile = join(targetDir, `${env}.env`);
+  const defaultTargetDir = process.platform === "darwin"
+    ? join(homedir(), ".config", "hasheemstudio")
+    : "/etc/hasheemstudio";
+  const targetFile = process.env.HASHEEMSTUDIO_ENV_FILE ?? join(defaultTargetDir, `${env}.env`);
+  const targetDir = dirname(targetFile);
 
   if (existsSync(targetFile) && !force) {
     console.error(`Refusing to overwrite existing ${targetFile} without --force.`);
