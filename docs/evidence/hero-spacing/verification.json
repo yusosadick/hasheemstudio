@@ -1,0 +1,62 @@
+{
+  "viewports": [
+    {
+      "width": 1440,
+      "overflow": false,
+      "allHeroContentInViewport": true,
+      "overlap": false,
+      "uploadClearance": 99,
+      "ring": "rgba(255, 255, 255, 0.043)"
+    },
+    {
+      "width": 1024,
+      "overflow": false,
+      "allHeroContentInViewport": true,
+      "overlap": false,
+      "uploadClearance": 98,
+      "ring": "rgba(255, 255, 255, 0.043)"
+    },
+    {
+      "width": 768,
+      "overflow": false,
+      "allHeroContentInViewport": true,
+      "overlap": false,
+      "uploadClearance": 105,
+      "ring": "rgba(255, 255, 255, 0.043)"
+    },
+    {
+      "width": 390,
+      "overflow": false,
+      "allHeroContentInViewport": true,
+      "overlap": false,
+      "uploadClearance": 96,
+      "ring": "rgba(255, 255, 255, 0.043)"
+    },
+    {
+      "width": 320,
+      "overflow": false,
+      "allHeroContentInViewport": true,
+      "overlap": false,
+      "uploadClearance": 96,
+      "ring": "rgba(255, 255, 255, 0.043)"
+    }
+  ],
+  "motion": {
+    "initial": {
+      "mov": 1,
+      "mp4": 0,
+      "rotation": "matrix(1, 0, 0, 1, 0, 0)"
+    },
+    "nextFormat": {
+      "mov": 0,
+      "mp4": 1,
+      "rotation": "matrix(1, 0, 0, 1, 0, 0)"
+    },
+    "pauseVerified": true,
+    "resumeVerified": true,
+    "reducedMotion": {
+      "visibleSource": "none",
+      "activeAnimations": 0
+    }
+  }
+}

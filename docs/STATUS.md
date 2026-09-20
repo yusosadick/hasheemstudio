@@ -1028,3 +1028,23 @@ with no evidence behind it.
   for space; desktop retains the full cards and codec detail.
 - Verified desktop (1440 px) and mobile (390 px) renders with no horizontal overflow;
   `pnpm typecheck` and `pnpm --filter @hasheemstudio/web build` passed.
+
+# Hero spacing and motion correction — 2026-09-20
+
+- Inspected the live CloudConvert page in Chrome, including format transitions, connector sweeps,
+  pulsed rotation, output glow, and low-opacity orbit lines. Implemented original corresponding
+  motion for the supported MOV/MP4 illustration; added a pause control and a static reduced-motion
+  presentation without repeatedly announcing decorative format changes to screen readers.
+- Replaced the nested rounded hero and absolute copy placement with a broad background and a
+  responsive content grid. Widened and dimmed the page guides, reduced desktop format cards from
+  128×160 to 106×116 px, and narrowed the upload panel from 672 to 560 px. The upload panel now has
+  approximately 100 px clearance below the format cards on desktop.
+- Fixed invalid token/opacity border combinations in the hero and margin guides by using explicit
+  alpha colors. Rings now render at 4.5–6% opacity rather than inherited bright foreground white.
+- The approved workflow cards, generated images, benefit row, pricing, and footer markup compare
+  exactly with the previous commit. Extracted hero styling into ConversionHero.tsx / .css.
+- Verification: workspace typecheck and production web build passed. Chrome checks at widths 320,
+  390, 768, 1024, and 1440 verify that copy and animation do not overlap, all hero content remains
+  within the viewport, and the upload card clears the format cards. Format cycling, pause/resume,
+  and reduced-motion checks passed. Screenshots and measurement output are saved in
+  `docs/evidence/hero-spacing/`.

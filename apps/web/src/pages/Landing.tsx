@@ -1,8 +1,5 @@
-import { useEffect, useState } from "react";
-import { IconUploadCloud } from "../components/Icons";
-import { BadgeCheck, ChevronDown, FileCheck, FileVideo, Gauge, MonitorSmartphone, RefreshCw, ShieldCheck } from "lucide-react";
-
-const sourceFormats = ["MOV", "MP4"] as const;
+import { ConversionHero } from "../components/ConversionHero";
+import { BadgeCheck, Gauge, MonitorSmartphone, ShieldCheck } from "lucide-react";
 
 const steps = [
   { image: "/assets/steps/upload.png", title: "Upload your video", body: "Add an MP4 or MOV file. Interrupted uploads can resume safely." },
@@ -18,80 +15,17 @@ const benefits = [
 ];
 
 export default function Landing() {
-  const [sourceFormatIndex, setSourceFormatIndex] = useState(0);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setSourceFormatIndex((current) => (current + 1) % sourceFormats.length);
-    }, 2800);
-    return () => window.clearInterval(timer);
-  }, []);
-
   return (
     <div className="overflow-hidden">
       <section className="relative border-b border-border">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_10%,rgba(233,30,99,0.10),transparent_42%)]" />
-        <div className="relative mx-auto max-w-6xl px-4 pb-14 pt-5 sm:px-6 sm:pb-16">
-          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-foreground-muted">
+        <div className="landing-content relative mx-auto pb-14 pt-5 sm:pb-16">
+          <nav aria-label="Breadcrumb" className="relative z-10 flex items-center gap-2 text-xs text-foreground-muted">
             <a href="/" className="transition-colors hover:text-foreground">Home</a>
             <span aria-hidden="true">›</span><span>Video tools</span><span aria-hidden="true">›</span>
             <span className="text-foreground">Prepare video</span>
           </nav>
 
-          <div className="relative mx-auto mt-7 max-w-5xl pb-32">
-            <div className="relative h-[420px] overflow-hidden rounded-2xl border border-border bg-[linear-gradient(135deg,rgba(30,30,30,0.96),rgba(18,18,18,0.98))] sm:h-[350px]">
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_72%_45%,rgba(233,30,99,0.14),transparent_35%)]" />
-              <div className="pointer-events-none absolute inset-0 opacity-40 [background-image:linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] [background-size:48px_48px]" />
-              <div className="pointer-events-none absolute left-1/2 top-[67%] h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border/50 sm:left-[76%] sm:top-[45%] sm:h-[430px] sm:w-[430px]" />
-              <div className="pointer-events-none absolute left-1/2 top-[67%] h-52 w-52 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border/60 sm:left-[76%] sm:top-[45%] sm:h-72 sm:w-72" />
-
-              <div className="absolute inset-x-5 top-7 z-10 text-center sm:inset-x-auto sm:left-8 sm:top-10 sm:w-[43%] sm:text-left">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent-text">Hasheem Studio video tools</p>
-                <h1 className="mt-3 text-3xl font-semibold leading-[1.05] tracking-tight sm:text-4xl lg:text-[42px]">Prepare your video for upload</h1>
-                <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-foreground-muted sm:mx-0 sm:text-base sm:leading-7">
-                  Inspect, fix compatibility issues, and create a platform-ready video—with a clear report of exactly what changed.
-                </p>
-              </div>
-
-              <div className="absolute inset-x-3 top-[184px] flex items-center justify-center gap-3 sm:left-auto sm:right-9 sm:top-[72px] sm:w-[49%] sm:gap-6">
-                <div className="relative flex h-[92px] w-20 flex-col items-center justify-center rounded-xl border border-border bg-[linear-gradient(145deg,#333135,#222124)] shadow-[0_18px_45px_rgba(0,0,0,0.35)] sm:h-40 sm:w-32">
-                  <FileVideo strokeWidth={1.5} className="h-7 w-7 text-foreground sm:h-9 sm:w-9" aria-hidden="true" />
-                  <span className="mt-1 text-base font-semibold tracking-wide sm:mt-3 sm:text-lg" aria-live="polite">{sourceFormats[sourceFormatIndex]}</span>
-                  <ChevronDown size={15} className="absolute bottom-3 right-3 hidden text-foreground-muted sm:block" aria-hidden="true" />
-                </div>
-
-                <div className="flex min-w-16 flex-col items-center sm:min-w-24">
-                  <div className="flex w-full items-center gap-2">
-                    <span className="h-px flex-1 bg-gradient-to-r from-transparent to-accent/70" />
-                    <span className="flex h-12 w-12 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-accent-text shadow-[0_0_35px_rgba(233,30,99,0.16)]">
-                      <RefreshCw size={22} strokeWidth={1.6} className="animate-[spin_4s_linear_infinite] motion-reduce:animate-none" aria-hidden="true" />
-                    </span>
-                    <span className="h-px flex-1 bg-gradient-to-r from-accent/70 to-transparent" />
-                  </div>
-                  <span className="mt-2 font-mono text-[9px] font-semibold uppercase tracking-[0.2em] text-foreground-muted">Prepare</span>
-                </div>
-
-                <div className="relative flex h-[92px] w-20 flex-col items-center justify-center rounded-xl border border-accent/40 bg-[linear-gradient(145deg,#352b2f,#242124)] shadow-[0_18px_50px_rgba(233,30,99,0.13)] sm:h-40 sm:w-32">
-                  <FileCheck strokeWidth={1.5} className="h-7 w-7 text-[#f2a3ad] sm:h-9 sm:w-9" aria-hidden="true" />
-                  <span className="mt-1 text-base font-semibold tracking-wide text-[#f4c4ca] sm:mt-3 sm:text-lg">MP4</span>
-                  <span className="mt-1 hidden font-mono text-[8px] uppercase tracking-wider text-foreground-muted sm:block">H.264 + AAC</span>
-                </div>
-              </div>
-              <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-background via-background/60 to-transparent" />
-            </div>
-
-            <div className="absolute inset-x-3 bottom-0 z-20 mx-auto max-w-2xl rounded-xl border border-white/60 bg-[#f7f5f2] px-5 py-6 text-center text-[#171717] shadow-[0_24px_70px_rgba(0,0,0,0.55)] sm:px-8 sm:py-7">
-              <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[#171717] text-white shadow-sm">
-                <IconUploadCloud width={20} height={20} />
-              </span>
-              <h2 className="mt-3 text-lg font-semibold tracking-tight sm:text-xl">Select your video to prepare</h2>
-              <p className="mt-1 text-sm text-[#696969]">or drop an MP4 or MOV file here</p>
-              <a href="/signup" className="mt-4 inline-flex min-h-touch items-center justify-center gap-2 rounded-md bg-[#171717] px-7 text-sm font-semibold text-white shadow-sm transition hover:bg-[#303030]">
-                <IconUploadCloud width={17} height={17} /> Choose video
-              </a>
-              <p className="mt-3 text-[11px] text-[#777]">Free plan · 100 MB · 2 minutes · 1080p60</p>
-            </div>
-          </div>
+          <ConversionHero />
 
           <div id="how-it-works" className="mx-auto mt-10 max-w-5xl">
             <div className="flex items-center gap-4">
