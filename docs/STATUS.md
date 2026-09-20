@@ -960,3 +960,14 @@ with no evidence behind it.
   generated workflow artwork as the section's visual focus.
 - Verified the completed desktop layout in headless Chrome with no horizontal overflow.
   `pnpm typecheck` and `pnpm --filter @hasheemstudio/web build` passed.
+
+# Flat social-output hero — 2026-09-20
+
+- Removed the original 3D hero artwork and replaced it with a flat, front-facing progressive
+  diagram at `apps/web/public/assets/video-social-progress.png`.
+- The new visual shows a source video becoming progressively more compact before branching into
+  landscape, square, and vertical social-ready formats. Supporting labels clarify the sequence;
+  copy describes preserved visual quality without making a lossless-compression claim.
+- Optimized the transparent artwork to a 1200×468 PNG (318 KB). Verified desktop (1440 px) and
+  mobile (390 px) renders in headless Chrome with no horizontal overflow; `pnpm typecheck` and
+  `pnpm --filter @hasheemstudio/web build` passed.

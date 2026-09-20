@@ -36,13 +36,16 @@ export default function Landing() {
           <div className="mx-auto mt-8 max-w-4xl rounded-2xl border border-border bg-surface1/95 p-3 shadow-2xl shadow-black/30 sm:p-4">
             <div className="rounded-xl border-2 border-dashed border-border bg-background/60 px-5 py-9 text-center sm:py-11">
               <img
-                src="/assets/video-verified-hero.png"
-                alt=""
-                width="1774"
-                height="887"
-                className="mx-auto -my-5 w-full max-w-xs select-none object-contain sm:max-w-sm"
+                src="/assets/video-social-progress.png"
+                alt="A source video progressively optimized into landscape, square, and vertical social-media formats"
+                width="1200"
+                height="468"
+                className="mx-auto w-full max-w-2xl select-none object-contain"
               />
-              <h2 className="mt-1 text-base font-semibold sm:text-lg">Drop your video here</h2>
+              <div className="mx-auto -mt-1 grid max-w-lg grid-cols-3 font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-foreground-muted" aria-hidden="true">
+                <span>Original</span><span>Optimize</span><span>Social-ready</span>
+              </div>
+              <h2 className="mt-5 text-base font-semibold sm:text-lg">Drop your video here</h2>
               <p className="mt-1 text-sm text-foreground-muted">or choose a file to get started</p>
               <a href="/signup" className="mt-5 inline-flex min-h-touch items-center justify-center gap-2 rounded-md bg-gradient-primary px-7 text-sm font-semibold text-foreground-on-accent shadow-lg shadow-accent/10 transition hover:opacity-90">
                 <IconUploadCloud width={18} height={18} /> Choose video
