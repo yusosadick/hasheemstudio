@@ -971,3 +971,12 @@ with no evidence behind it.
 - Optimized the transparent artwork to a 1200×468 PNG (318 KB). Verified desktop (1440 px) and
   mobile (390 px) renders in headless Chrome with no horizontal overflow; `pnpm typecheck` and
   `pnpm --filter @hasheemstudio/web build` passed.
+
+# Benefit-row Lucide icons — 2026-09-20
+
+- Added `lucide-react` to the web workspace and paired the four benefit claims with consistent
+  outline icons: `ShieldCheck`, `Gauge`, `MonitorSmartphone`, and `BadgeCheck`.
+- Retained the compact numeric markers as secondary navigation cues while making each benefit
+  faster to recognize visually.
+- Verified all four SVG icons render in headless Chrome at 1440 px with no horizontal overflow;
+  `pnpm typecheck` and `pnpm --filter @hasheemstudio/web build` passed.

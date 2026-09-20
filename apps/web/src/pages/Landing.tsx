@@ -1,4 +1,5 @@
 import { IconUploadCloud } from "../components/Icons";
+import { BadgeCheck, Gauge, MonitorSmartphone, ShieldCheck } from "lucide-react";
 
 const steps = [
   { image: "/assets/steps/upload.png", title: "Upload your video", body: "Add an MP4 or MOV file. Interrupted uploads can resume safely." },
@@ -7,10 +8,10 @@ const steps = [
 ];
 
 const benefits = [
-  { marker: "01", title: "Private & secure", body: "Your file stays tied to your account." },
-  { marker: "02", title: "Fast when possible", body: "Compatible files use a quick remux." },
-  { marker: "03", title: "Made for video", body: "MP4 and MOV, up to 1080p60 free." },
-  { marker: "04", title: "Honest results", body: "Every transformation is explained." },
+  { icon: ShieldCheck, marker: "01", title: "Private & secure", body: "Your file stays tied to your account." },
+  { icon: Gauge, marker: "02", title: "Fast when possible", body: "Compatible files use a quick remux." },
+  { icon: MonitorSmartphone, marker: "03", title: "Made for video", body: "MP4 and MOV, up to 1080p60 free." },
+  { icon: BadgeCheck, marker: "04", title: "Honest results", body: "Every transformation is explained." },
 ];
 
 export default function Landing() {
@@ -75,8 +76,16 @@ export default function Landing() {
           <ul id="features" className="mx-auto mt-5 grid max-w-5xl gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
             {benefits.map((benefit) => (
               <li key={benefit.title} className="flex gap-3 bg-background p-4">
-                <span className="font-mono text-[10px] font-semibold tracking-widest text-accent-text">{benefit.marker}</span>
-                <div><h3 className="text-xs font-semibold">{benefit.title}</h3><p className="mt-1 text-xs leading-4 text-foreground-muted">{benefit.body}</p></div>
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-surface1 text-accent-text">
+                  <benefit.icon size={18} strokeWidth={1.75} aria-hidden="true" />
+                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[9px] font-semibold tracking-widest text-accent-text">{benefit.marker}</span>
+                    <h3 className="text-xs font-semibold">{benefit.title}</h3>
+                  </div>
+                  <p className="mt-1 text-xs leading-4 text-foreground-muted">{benefit.body}</p>
+                </div>
               </li>
             ))}
           </ul>
