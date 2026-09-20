@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "scope": "Local browser presentation; does not prove Google or email delivery",
+  "checks": [
+    "landing 1440: navigation, CTA, no overflow",
+    "login 1440: navigation, CTA, no overflow",
+    "signup 1440: navigation, CTA, no overflow",
+    "forgot 1440: navigation, CTA, no overflow",
+    "reset 1440: navigation, CTA, no overflow",
+    "verify 1440: navigation, CTA, no overflow",
+    "callback 1440: navigation, CTA, no overflow",
+    "landing 390: navigation, CTA, no overflow",
+    "login 390: navigation, CTA, no overflow",
+    "signup 390: navigation, CTA, no overflow",
+    "forgot 390: navigation, CTA, no overflow",
+    "reset 390: navigation, CTA, no overflow",
+    "verify 390: navigation, CTA, no overflow",
+    "callback 390: navigation, CTA, no overflow",
+    "landing 320: navigation, CTA, no overflow",
+    "login 320: navigation, CTA, no overflow",
+    "signup 320: navigation, CTA, no overflow",
+    "forgot 320: navigation, CTA, no overflow",
+    "reset 320: navigation, CTA, no overflow",
+    "verify 320: navigation, CTA, no overflow",
+    "callback 320: navigation, CTA, no overflow"
+  ]
+}

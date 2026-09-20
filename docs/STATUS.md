@@ -1,5 +1,11 @@
 # Status
 
+## Landing-design auth milestone — 2026-09-21
+
+- [IMPLEMENTED] Shared LandingAuthShell reuses the public navigation, Studio brand, charcoal surfaces, gradient accent and pausable/reduced-motion landing background across all auth routes. Removed the tourism panel; Landing.tsx remains unchanged. Get Started remains visible at 320px and for both auth states. Existing safe return-path and PKCE exchange logic are preserved.
+- [TESTED-LOCAL] Full workspace typecheck and production build pass. Chromium checked seven public/auth routes at 1440, 390 and 320px (21 combinations), visible CTA/mobile sign-in and no horizontal overflow. Evidence: [landing-auth](evidence/landing-auth/results.json). Authenticated navigation and real guest flow regression follow in the deployment milestone.
+- [BLOCKED] Studio payment price/configuration absent; exact approved Snippe Vaultwarden item and sandbox mode not established. Requested plan/price/duration/download allowance/methods and approved email test inbox. Checkout remains disabled. Email OTP work and deployment are not included in this milestone.
+
 ## Google OAuth enabled in production — 2026-09-21 (Europe/Berlin)
 
 - [VERIFIED-LIVE] Owner confirmed organization **Bisso VPS Automation**, collection **Hasheem

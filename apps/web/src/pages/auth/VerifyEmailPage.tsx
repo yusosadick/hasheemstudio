@@ -10,7 +10,6 @@ import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { PageSEO } from '@/components/shared/PageSEO'
-import { AuthBrandLink } from '@/components/auth/AuthBrandLink'
 
 export default function VerifyEmailPage() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
@@ -29,16 +28,16 @@ export default function VerifyEmailPage() {
         canonicalPath="/verify-email"
         noIndex
       />
-    <div data-public-dark="true" className="relative min-h-screen flex items-center justify-center bg-background px-4">
+    <div data-public-dark="true" className="relative w-full">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="w-full max-w-md"
       >
-        <AuthBrandLink className="mb-8 justify-center" titleClassName="text-2xl" />
 
-        <Card className="border-border/50 bg-surface/80 backdrop-blur-xl">
+
+        <Card className="border-0 bg-transparent shadow-none">
           <CardContent className="pt-8 pb-8 text-center space-y-6">
             {status === 'loading' && (
               <>

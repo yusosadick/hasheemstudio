@@ -1,8 +1,7 @@
-import { Link } from "react-router-dom";
+import { AuthBrandLink } from "./auth/AuthBrandLink";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { signOut, type Session } from "../lib/auth";
-import { IconFilm } from "./Icons";
 
 const links = [
   { href: "/#features", label: "Tools", menu: true },
@@ -24,12 +23,7 @@ export function Nav() {
   return (
     <header className="border-b border-dashed border-border bg-background/95 backdrop-blur">
       <div className="mx-auto flex min-h-[76px] max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Link to="/" className="flex items-center gap-3 text-xl font-semibold tracking-tight">
-          <span className="flex h-9 w-9 items-center justify-center border border-border bg-surface1">
-            <IconFilm className="text-accent" width={20} height={20} />
-          </span>
-          <span>Hasheem Studio</span>
-        </Link>
+        <AuthBrandLink />
 
         <nav className="hidden items-center gap-10 lg:flex" aria-label="Primary">
           {links.map((l) => (
@@ -44,15 +38,15 @@ export function Nav() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {session ? <button type="button" onClick={() => void logout()} className="hidden min-h-touch px-3 font-mono text-xs sm:inline-flex sm:items-center">Log out</button> : <a href="/login" className="hidden min-h-touch items-center px-3 font-mono text-xs font-semibold uppercase tracking-wider text-foreground-muted transition-colors hover:text-foreground sm:inline-flex">
-            Log in
+            Sign in
           </a>}
           <a
             href="/app/upload"
-            className="hidden min-h-touch items-center rounded-md bg-foreground px-6 font-mono text-xs font-semibold uppercase tracking-wider text-background transition-colors hover:bg-foreground/85 sm:inline-flex"
+            className="inline-flex min-h-touch items-center rounded-md bg-foreground px-3 sm:px-6 font-mono text-xs font-semibold uppercase tracking-wider text-background transition-colors hover:bg-foreground/85"
           >
-            Start free
+            Get Started
           </a>
           <button
             type="button"
@@ -84,13 +78,13 @@ export function Nav() {
             </a>
           ))}
           {session ? <button type="button" onClick={() => void logout()} className="min-h-touch px-2 py-2 text-left text-sm">Log out</button> : <a href="/login" className="min-h-touch rounded-md px-2 py-2 text-sm text-foreground-muted hover:bg-surface1 hover:text-foreground" onClick={() => setOpen(false)}>
-            Log in
+            Sign in
           </a>}
           <a
             href="/app/upload"
             className="mt-2 inline-flex min-h-touch items-center justify-center rounded-md bg-foreground px-5 font-mono text-xs font-semibold uppercase tracking-wider text-background"
           >
-            Start free
+            Get Started
           </a>
         </nav>
       )}

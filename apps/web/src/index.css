@@ -9,3 +9,9 @@ body,
 #root {
   min-height: 100%;
 }
+
+/* Landing and auth share visible keyboard focus. */
+:where(a, button, input, select):focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 3px;
+}

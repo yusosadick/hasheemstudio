@@ -8,9 +8,7 @@ import { ArrowLeft, ArrowRight, Eye, EyeOff, Globe, Lock, Mail, User } from 'luc
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
-import { authHeroSrc } from '@/lib/authHero'
 import { PageSEO } from '@/components/shared/PageSEO'
-import { AuthBrandLink } from '@/components/auth/AuthBrandLink'
 import { AUTH_RETURN_KEY, safeReturnPath } from '@/lib/authReturn'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -164,16 +162,15 @@ export default function LoginPage() {
         canonicalPath="/login"
         noIndex
       />
-      <div data-public-dark="true" className="flex min-h-screen bg-background">
+      <div>
         {/* Left: progressive form */}
-        <div className="flex w-full flex-col justify-center px-8 py-10 md:w-1/2 md:px-16 lg:px-24">
+        <div className="w-full">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4 }}
             className="mx-auto w-full max-w-md"
           >
-            <AuthBrandLink className="mb-10" />
 
             {/* Heading + chrome */}
             <AnimatePresence mode="wait" initial={false}>
@@ -408,24 +405,7 @@ export default function LoginPage() {
           </motion.div>
         </div>
 
-        {/* Right: decorative image (preserves the existing two-column layout) */}
-        <div className="relative hidden md:block md:w-1/2">
-          <img
-            src={authHeroSrc(step === 'signup' ? 'register' : 'login')}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover"
-            width={1200}
-            height={1600}
-            decoding="async"
-          />
-          <div className="absolute inset-0 bg-black/30" />
-          <div className="absolute bottom-12 left-12 right-12">
-            <div className="rounded-2xl bg-black/40 p-8 backdrop-blur-sm">
-              <p className="font-heading text-2xl font-bold text-white">Your video. Ready for its next destination.</p>
-              <p className="mt-3 text-sm text-white/70">Upload, prepare, and verify. Sign in when you’re ready to download.</p>
-            </div>
-          </div>
-        </div>
+
       </div>
     </>
   )

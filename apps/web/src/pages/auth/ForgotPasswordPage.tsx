@@ -14,7 +14,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { PageSEO } from '@/components/shared/PageSEO'
-import { AuthBrandLink } from '@/components/auth/AuthBrandLink'
 
 const forgotSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -86,8 +85,8 @@ export default function ForgotPasswordPage() {
         canonicalPath="/forgot-password"
         noIndex
       />
-    <div data-public-dark="true" className="relative min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="absolute inset-0 bg-background" />
+    <div data-public-dark="true" className="relative w-full">
+
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -95,9 +94,9 @@ export default function ForgotPasswordPage() {
         transition={{ duration: 0.5 }}
         className="relative z-10 w-full max-w-md"
       >
-        <AuthBrandLink className="mb-8 justify-center" titleClassName="text-2xl" />
 
-        <Card className="border-border/50 bg-surface/80 backdrop-blur-xl">
+
+        <Card className="border-0 bg-transparent shadow-none">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">
               {sent ? 'Check your email' : 'Reset password'}
