@@ -1007,3 +1007,14 @@ with no evidence behind it.
 - Recentered and enlarged the existing conversion artwork so the background is visual-only while
   the floating upload panel remains the single text and action focus.
 - `pnpm typecheck` and `pnpm --filter @hasheemstudio/web build` passed.
+
+# Animated native converter visual — 2026-09-20
+
+- Removed the generated hero-background PNG and replaced it with a native responsive animation:
+  MOV/MP4 source cards cycle every 2.8 seconds, a rotating preparation control connects them, and
+  the output card states the actual MP4 H.264/AAC target.
+- Built the visual from HTML, CSS, and existing Lucide icons with original Hasheem Studio styling.
+  Reduced-motion preferences disable the continuous rotation.
+- Browser verification confirmed MOV changes to MP4 after 2.8 seconds at desktop (1440 px) and
+  mobile (390 px), with no horizontal overflow. `pnpm typecheck` and
+  `pnpm --filter @hasheemstudio/web build` passed.
