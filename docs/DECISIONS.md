@@ -86,3 +86,14 @@ never paste its contents into chat either.
 - DOWNLOAD-CHECKOUT remains unconfigured: the copied auth source has no video checkout/provider
   integration to import. VPS handoff directs the deploy agent to use approved owner configuration
   and verify webhooks; do not invent pricing or treat Pro Beta assignment as a completed payment.
+
+
+## Google OAuth exact-item provisioning blocker — 2026-09-21
+
+Owner authorized only organization item `hasheemstudio-google-oauth`, using the compatible
+Bitwarden CLI 2026.8.0 handoff. The retrieved response failed the combined exact-name / organization
+check before credentials were extracted or the environment written. The vault is locked and
+handoff deleted. Exact failed metadata condition was not retained; the helper now distinguishes
+those conditions on future authorized retries. Owner action: confirm exact item and organization
+assignment, or explicitly clarify personal-vault usage, then prepare a fresh protected handoff.
+No credential paste is needed. Google remains disabled; no service restart occurred.

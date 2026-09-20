@@ -1,5 +1,43 @@
 # Status
 
+## Google OAuth provisioning — 2026-09-21 (Europe/Berlin)
+
+- [BLOCKED] Used the installed Bitwarden CLI **2026.8.0**, not the default 2026.9.0 binary,
+  with the protected `~/.hasheemstudio_bw_session`. Requested only
+  `hasheemstudio-google-oauth`. The retrieved response failed the combined exact-name /
+  organization-item guard (`exact_organization_item_required`). No credential was provisioned,
+  no raw item was persisted, and no value was printed. The original bounded diagnostic does
+  not establish which of the two metadata conditions failed; do not invent that detail.
+- [VERIFIED-LIVE] Vault lock returned success, `BW_SESSION` was removed from the helper's
+  environment, and the temporary handoff was deleted. Protected server environment remains
+  `/etc/hasheemstudio/local.env`, mode 0600 inside a 0700 directory, unchanged by this attempt.
+  No Auth/API or other service was restarted. MailRaft and all unrelated services are untouched.
+- [IMPLEMENTED] Compose now maps server-only `GOOGLE_ENABLED`, `GOOGLE_CLIENT_ID` and
+  `GOOGLE_SECRET` to GoTrue with a disabled default for unconfigured stacks. The resolved
+  production provider callback is exactly
+  `https://supabase.hasheemstudio.com/auth/v1/callback`. Existing frontend callback remains
+  `https://hasheemstudio.com/auth/callback`; no Google Cloud settings or frontend auth logic changed.
+- [IMPLEMENTED] Added exact-item provisioning helper with pinned CLI version, protected-file
+  checks, atomic environment update, no secret-bearing arguments/output and vault/session
+  cleanup. Future retries distinguish exact-name mismatch from missing organization assignment
+  using bounded reason codes/booleans, never item contents. Owner must confirm the item's exact
+  name and organization membership (or explicitly clarify a personal-vault item) and prepare a
+  fresh protected handoff. Do not paste credentials into chat.
+- [TESTED-LOCAL] Four synthetic provisioning guard/update tests passed; Compose validation,
+  full workspace typecheck and build passed. Frontend build retains its existing non-failing
+  >500 kB bundle warning. Known-current-secret scan found zero matches across 1,371 checked
+  repository/diff, frontend, task-log, Auth/API-log-tail and process-argument surfaces. This is
+  not a universal/history scan, and discarded Google item values could not be value-matched.
+- [VERIFIED-LIVE] Fresh Chromium and HTTPS probe: `/auth/v1/settings` returned 200 with Google
+  **disabled**; the login button is correspondingly disabled. The exact frontend callback
+  returns its SPA and rejects an unauthenticated visit. This verifies the blocked dependency,
+  not Google consent, code exchange or a real session. [Browser](evidence/google-oauth-browser.json),
+  [provisioning](evidence/google-oauth-provisioning.json), [scan](evidence/google-oauth-secret-scan.json).
+- [BLOCKED] Google-enabled readback, real consent/login, refresh/logout and authenticated callback
+  acceptance remain pending valid provisioned credentials and an owner-approved browser login.
+  Do not claim Google Sign-In works from this change. Safe retry/runbook: [GOOGLE-AUTH](GOOGLE-AUTH.md).
+
+
 > Living document. Update this at the end of every phase or work session. This is the first file
 > any resuming agent should read after `CLAUDE.md`/`AGENTS.md`. See `docs/DECISIONS.md` for owner
 > input items and `docs/IMPLEMENTATION-PLAN.md` for the fixed phase plan this tracks against.
