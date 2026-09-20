@@ -88,3 +88,8 @@ export async function requestDownload(jobId: string): Promise<string> {
   if (data.guestClaimed) clearGuest();
   return data.downloadUrl;
 }
+
+export type PaymentPlan={available:boolean;name?:string;amount?:number;duration?:number;downloads?:number;methods?:string[]};
+export async function getPaymentPlan():Promise<PaymentPlan>{const r=await fetch(`${API_URL}/v1/payments/plan`);if(!r.ok)return {available:false};return r.json();}
+export async function createStudioPayment(body:{jobId:string;method:'mobile';phone:string;firstname:string;lastname:string}):Promise<{id:string;status:string}>{const r=await authedFetch('/v1/payments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok)throw new Error(r.status===503?'Checkout is not available yet.':'Could not initiate payment. Please try again later.');return r.json();}
+export async function getStudioPayment(id:string):Promise<{status:string}>{const r=await authedFetch(`/v1/payments/${encodeURIComponent(id)}`);if(!r.ok)throw new Error('Could not check payment status.');return r.json();}

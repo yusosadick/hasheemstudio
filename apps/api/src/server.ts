@@ -1,3 +1,4 @@
+import { paymentsRoutes } from "./routes/payments.js";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { uploadsRoutes } from "./routes/uploads.js";
@@ -6,7 +7,7 @@ import { guestsRoutes } from "./routes/guests.js";
 import { downloadsRoutes } from "./routes/downloads.js";
 
 export function buildServer() {
-  const app = Fastify({ logger: { redact: ["req.headers.authorization", "req.headers.x-guest-token"] }, trustProxy: process.env.API_TRUST_PROXY?.split(",").filter(Boolean) ?? false });
+  const app = Fastify({ logger: { redact: ["req.headers.authorization", "req.headers.x-guest-token", "req.headers.x-webhook-signature"] }, trustProxy: process.env.API_TRUST_PROXY?.split(",").filter(Boolean) ?? false });
 
   // Explicit allowlist, not a wildcard — per docs/SECURITY.md "explicit CORS origins."
   // apps/web's dev server origin only, for this vertical-slice proof; production origins are
@@ -31,6 +32,7 @@ export function buildServer() {
   });
 
   app.addHook("onSend", async (_request, reply, payload) => { reply.header("Cache-Control", "no-store"); return payload; });
+  app.register(paymentsRoutes);
   app.register(guestsRoutes);
   app.register(downloadsRoutes);
   app.register(uploadsRoutes);

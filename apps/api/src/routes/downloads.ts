@@ -1,3 +1,4 @@
+import { configuredPlan } from "../payments/snippe.js";
 import type { FastifyInstance } from "fastify";
 import { requireActor, canAccessJob } from "../actor.js";
 import { getPool } from "../db.js";
@@ -42,11 +43,13 @@ export async function downloadsRoutes(app: FastifyInstance): Promise<void> {
         if (!plan || Number(job.size_bytes) > Number(plan.max_upload_bytes)) {
           await client.query("rollback"); return reply.code(403).send({ error: "plan_size_limit", message: "This file exceeds your plan's file size limit." });
         }
+        const paid = (await client.query(`select max(e.downloads_per_day)::int allowance from paid_entitlements e join payment_intents p on p.id=e.payment_intent_id where e.user_id=$1 and e.revoked_at is null and e.starts_at<=now() and e.expires_at>now() and p.status='completed'`, [request.userId])).rows[0];
+        const downloadLimit = Math.max(plan.max_downloads_per_day, paid?.allowance ?? 0);
         const used = await client.query(`select count(*)::int n from download_grants where user_id=$1 and granted_at >= (date_trunc('day', now() at time zone 'UTC') at time zone 'UTC')`, [request.userId]);
-        if (used.rows[0].n >= plan.max_downloads_per_day) {
+        if (used.rows[0].n >= downloadLimit) {
           const resetAt = new Date(); resetAt.setUTCHours(24, 0, 0, 0);
           await client.query("rollback");
-          return reply.code(429).send({ error: "daily_download_limit", limit: plan.max_downloads_per_day, resetAt: resetAt.toISOString(), checkoutAvailable: false, message: "Your daily video allowance is used. Return after the reset to download this video. Paid upgrades are not available yet." });
+          return reply.code(429).send({ error: "daily_download_limit", limit: downloadLimit, resetAt: resetAt.toISOString(), checkoutAvailable: !!configuredPlan(), message: "Your daily video allowance is used. Return after the reset to download this video. Check upgrade availability below." });
         }
         await client.query(`insert into download_grants(job_id,user_id) values ($1,$2)`, [id, request.userId]);
       }

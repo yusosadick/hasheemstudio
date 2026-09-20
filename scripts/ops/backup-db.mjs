@@ -48,8 +48,8 @@ function dumpDatabase() {
     const chunks = [];
     const child = execFile(
       "docker",
-      ["exec", "-e", `PGPASSWORD=${postgresPassword}`, "hasheemstudio-db", "pg_dump", "-U", "postgres", "-d", postgresDb, "-Fc"],
-      { maxBuffer: 1024 * 1024 * 1024, encoding: "buffer" },
+      ["exec", "-e", "PGPASSWORD", "hasheemstudio-db", "pg_dump", "-U", "postgres", "-d", postgresDb, "-Fc"],
+      { maxBuffer: 1024 * 1024 * 1024, encoding: "buffer", env: { ...process.env, PGPASSWORD: postgresPassword } },
       (err, stdout, stderr) => {
         if (err) {
           reject(new Error(`pg_dump failed: ${err.message}\n${stderr}`));

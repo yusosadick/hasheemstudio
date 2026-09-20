@@ -1,3 +1,4 @@
+import { DownloadUpgrade } from "../components/DownloadUpgrade";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { IconCheckCircle, IconDownload, IconAlertTriangle } from "../components/Icons";
@@ -13,6 +14,7 @@ export default function JobResult() {
   const [error, setError] = useState<string | null>(null);
 
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [limitReached,setLimitReached] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
   const [needsLogin, setNeedsLogin] = useState(false);
   async function download() {
@@ -21,6 +23,7 @@ export default function JobResult() {
     try { window.location.assign(await requestDownload(id)); }
     catch (err) {
       if (err instanceof DownloadError && ["login_required", "session_required", "account_not_verified", "invalid_token"].includes(err.code)) setNeedsLogin(true);
+      if (err instanceof DownloadError && err.code === 'daily_download_limit') setLimitReached(true);
       setDownloadError(err instanceof Error ? err.message : "Download failed.");
     } finally { setUnlocking(false); }
   }
@@ -125,6 +128,7 @@ export default function JobResult() {
           )}
           <p className="mt-3 text-xs text-foreground-muted">Free: 1 video per day, up to 100 MB. Resets at midnight UTC. Downloading the same unlocked video again does not use another allowance.</p>
           {downloadError && <p role="alert" className="mt-4 text-sm text-danger">{downloadError}</p>}
+          {limitReached && <DownloadUpgrade jobId={id!} />}
           {job.outputRetainUntil && <p className="mt-3 text-xs text-foreground-muted">Available until {new Date(job.outputRetainUntil).toLocaleString()}.</p>}
         </section>
       )}

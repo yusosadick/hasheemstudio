@@ -107,3 +107,14 @@ organization-assignment checks. Protected provisioning and cleanup passed; only 
 Auth was recreated. Google is enabled and fresh Chromium reaches the provider login with PKCE
 and correct callbacks. Remaining owner acceptance is real consent, authenticated return,
 refresh and logout; no Google Cloud redirect change is required by the observed evidence.
+
+
+## 2026-09-21 Studio auth, email and payments
+
+Owner directs landing-style auth and always-visible Get Started, replacing the tourism auth layout.
+Licensed Gaming email design is authorized; only design and nonsecret Snippe source patterns reused.
+No Gaming environment/database/services accessed or modified. Studio price absent: checkout disabled.
+Pending owner inputs: exact shared Snippe vault item, plan name/TZS price/duration/downloads per day,
+mobile/card/both, provider-approved sandbox mode/credential and test account, approved signup/recovery
+inbox, support mailbox routing confirmation. Real Google consent/session still requires owner test.
+No guessed price, credentials or synthetic provider-success claim.

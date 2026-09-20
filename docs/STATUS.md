@@ -1,5 +1,12 @@
 # Status
 
+## Disabled Studio payment foundation — 2026-09-21
+
+- [IMPLEMENTED] Studio-owned payment intents/events/expiring entitlements, verified webhook settlement, authenticated checkout/status API and download-gate upgrade states. Checkout defaults disabled, with no price seed. Card initiation remains denied pending provider contract/sandbox verification. No provider call or charge made. [PAYMENTS](PAYMENTS.md).
+- [TESTED-LOCAL] Five Snippe unit tests cover raw signatures, stale/future timestamps, malformed signatures, event schema/version/correlation, missing configuration, request shape and idempotency/key guards. Full typecheck/build passed. Migration 0015 is committed before runner application; actual DB/API tests and deployment remain in the next evidence milestone.
+- [IMPLEMENTED] Studio backup helper now passes its password through child environment, not Docker command arguments, before the required migration backup.
+- [BLOCKED] Exact approved Snippe item, price/name/duration/download allowance/methods and verified sandbox credential/mode still needed. No protected handoff currently exists. No production payment activation.
+
 ## Studio email-code milestone — 2026-09-21
 
 - [IMPLEMENTED] Adapted six owner-authorized email layouts with Studio assets/branding, code-only content and public privacy/service-information links. Added signup OTP entry/resend; recovery copy now describes codes, not emailed links. Signup and recovery retain distinct Supabase OTP types.
