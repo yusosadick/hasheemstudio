@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
+import { signOut, type Session } from "../lib/auth";
 import { IconFilm } from "./Icons";
 
 const links = [
@@ -10,6 +12,14 @@ const links = [
 
 export function Nav() {
   const [open, setOpen] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  useEffect(() => {
+    let active = true;
+    void supabase.auth.getSession().then(({data}) => { if(active) setSession(data.session); });
+    const {data}=supabase.auth.onAuthStateChange((_event,next)=>setSession(next));
+    return () => { active=false; data.subscription.unsubscribe(); };
+  }, []);
+  async function logout() { await signOut(); setOpen(false); window.location.assign("/"); }
 
   return (
     <header className="border-b border-dashed border-border bg-background/95 backdrop-blur">
@@ -35,11 +45,11 @@ export function Nav() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <a href="/login" className="hidden min-h-touch items-center px-3 font-mono text-xs font-semibold uppercase tracking-wider text-foreground-muted transition-colors hover:text-foreground sm:inline-flex">
+          {session ? <button type="button" onClick={() => void logout()} className="hidden min-h-touch px-3 font-mono text-xs sm:inline-flex sm:items-center">Log out</button> : <a href="/login" className="hidden min-h-touch items-center px-3 font-mono text-xs font-semibold uppercase tracking-wider text-foreground-muted transition-colors hover:text-foreground sm:inline-flex">
             Log in
-          </a>
+          </a>}
           <a
-            href="/signup"
+            href="/app/upload"
             className="hidden min-h-touch items-center rounded-md bg-foreground px-6 font-mono text-xs font-semibold uppercase tracking-wider text-background transition-colors hover:bg-foreground/85 sm:inline-flex"
           >
             Start free
@@ -73,11 +83,11 @@ export function Nav() {
               {l.label}
             </a>
           ))}
-          <a href="/login" className="min-h-touch rounded-md px-2 py-2 text-sm text-foreground-muted hover:bg-surface1 hover:text-foreground" onClick={() => setOpen(false)}>
+          {session ? <button type="button" onClick={() => void logout()} className="min-h-touch px-2 py-2 text-left text-sm">Log out</button> : <a href="/login" className="min-h-touch rounded-md px-2 py-2 text-sm text-foreground-muted hover:bg-surface1 hover:text-foreground" onClick={() => setOpen(false)}>
             Log in
-          </a>
+          </a>}
           <a
-            href="/signup"
+            href="/app/upload"
             className="mt-2 inline-flex min-h-touch items-center justify-center rounded-md bg-foreground px-5 font-mono text-xs font-semibold uppercase tracking-wider text-background"
           >
             Start free

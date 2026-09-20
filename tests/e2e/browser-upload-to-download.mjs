@@ -85,8 +85,9 @@ try {
   record("admin-precreated test user for login (signup email blocked on Resend)", createRes.ok, userId);
 
   await page.goto(`${webBase}/login`);
-  await page.waitForSelector("h1:has-text('Log in')");
+  await page.waitForSelector("h1:has-text('Welcome to Hasheem Studio')");
   await page.fill("input[type=email]", email);
+  await page.getByRole("button", {name:"Continue", exact:true}).click();
   await page.fill("input[type=password]", password);
   await page.click("button[type=submit]");
 
@@ -108,15 +109,14 @@ try {
   const heading = await page.locator("h1").first().textContent();
   record("job reaches a terminal state in the real rendered UI", heading?.includes("Job complete"), heading ?? "");
 
-  const downloadLink = page.locator("a:has-text('Download output')");
-  const hasDownload = (await downloadLink.count()) > 0;
-  record("real download link is rendered", hasDownload);
-
+  const downloadButton = page.getByRole("button", {name:"Download video", exact:true});
+  const hasDownload = (await downloadButton.count()) > 0;
+  record("gated download action is rendered", hasDownload);
   if (hasDownload) {
-    const href = await downloadLink.getAttribute("href");
-    const res = await fetch(href);
-    const buf = Buffer.from(await res.arrayBuffer());
-    record("the link the browser rendered actually downloads real bytes", res.ok && buf.length > 10_000, `${buf.length} bytes`);
+    const [download] = await Promise.all([page.waitForEvent("download"), downloadButton.click()]);
+    const stream = await download.createReadStream();
+    let bytes=0; for await (const chunk of stream) bytes+=chunk.length;
+    record("the gated browser action downloads real bytes", bytes>10000, `${bytes} bytes`);
   }
 
   const verificationVisible = (await page.locator("text=Verification report").count()) > 0;

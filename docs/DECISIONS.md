@@ -75,3 +75,14 @@ never paste its contents into chat either.
   Repository identification is missing; no request for additional copying permission is needed.
 - DOWNLOAD-CHECKOUT (owner input): confirm whether that repository supplies the desired payment
   flow; otherwise provide processor and download price. No payment provider or pricing is assumed.
+
+### Resolution and implementation follow-up — 2026-09-20
+
+- AUTH-SOURCE resolved: owner supplied `https://github.com/yusosadick/zahorozanzibar.git` and
+  explicitly reaffirmed permission. Copied/adapted auth at 2fd32cf with Apache-2.0 attribution.
+- Daily free access is enforced as one distinct downloadable video per account per UTC day,
+  separate from processing-attempt abuse limits. The first granted guest download adopts its
+  workspace for that account; repeat downloads are idempotent while the output is retained.
+- DOWNLOAD-CHECKOUT remains unconfigured: the copied auth source has no video checkout/provider
+  integration to import. VPS handoff directs the deploy agent to use approved owner configuration
+  and verify webhooks; do not invent pricing or treat Pro Beta assignment as a completed payment.

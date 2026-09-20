@@ -26,6 +26,8 @@
     "test:integration:retention": "node tests/integration/retention-sweep.mjs --env local",
     "test:integration:hostile-inputs": "node tests/integration/hostile-media-inputs.mjs --env local",
     "test:security": "node tests/security/rls.cross-tenant.mjs --env local",
+    "test:guest-download": "node tests/integration/guest-download-gate.mjs",
+    "test:guest-browser": "node tests/e2e/guest-auth-browser.mjs",
     "test:e2e": "pnpm test:e2e:upload && pnpm test:e2e:compat-encode && pnpm test:e2e:resumable",
     "test:e2e:upload": "node tests/e2e/upload-to-download.mjs --env local --fixture tests/fixtures/media/synthetic-remux-test.mov",
     "test:e2e:compat-encode": "node tests/e2e/compat-encode.mjs --env local",

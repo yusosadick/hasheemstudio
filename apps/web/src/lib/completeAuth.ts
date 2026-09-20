@@ -13,7 +13,7 @@ export function completeAuth(): Promise<void> {
     else if(access&&refresh){const result=await supabase.auth.setSession({access_token:access,refresh_token:refresh});if(result.error)throw result.error;}
     const {data,error:verifyError}=await supabase.auth.getUser();
     if(verifyError||!data.user?.email_confirmed_at) throw new Error('This link is invalid or has expired. Please sign in or request a new link.');
-  })();
-  // Keep the fulfilled promise for StrictMode, clear on failure only after both effect calls attach.
+  })().finally(() => { completion = null; });
+  // Only deduplicate in-flight effects. Future visits must verify the current user again.
   return completion;
 }

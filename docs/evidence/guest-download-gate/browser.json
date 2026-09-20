@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "downloadBytes": 82239,
+  "checks": [
+    "guest upload/process in browser",
+    "existing-email password step",
+    "return to exact processed result after login",
+    "actual browser file download",
+    "signed-in direct TUS processing",
+    "daily limit shown at download",
+    "logout",
+    "new-email registration step",
+    "390px no overflow",
+    "invalid reset link handled",
+    "verification follows live session and clears after logout"
+  ],
+  "pageErrors": []
+}

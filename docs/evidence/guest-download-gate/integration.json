@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "checks": [
+    "100 MB upper bound enforced before upload",
+    "guest resumable upload, worker processing, idempotent retries; no result download URL",
+    "anonymous downloads and cross-guest/account access denied",
+    "second video processes before any download allowance decision",
+    "concurrent distinct downloads grant exactly one free video and return real bytes",
+    "repeat download is free; claimed result accessible after login without guest token; claim cannot be stolen",
+    "raw storage output read blocked",
+    "workspace owner cannot read or self-sign locked outputs",
+    "allowance resets on the next UTC day",
+    "expired output cannot receive a new signed URL",
+    "imported progressive-auth RPC distinguishes existing and new emails"
+  ]
+}

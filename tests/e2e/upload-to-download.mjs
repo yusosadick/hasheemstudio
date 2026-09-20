@@ -153,10 +153,13 @@ try {
   }
   record("worker processed the job to a terminal state", finalStatus === "succeeded", `status=${finalStatus}, error=${jobView?.errorMessage ?? "none"}`);
   record("verification report is present and shows no re-encoding for a remux", jobView.verificationReport && jobView.verificationReport.frames_re_encoded === false, JSON.stringify(jobView.verificationReport));
-  record("job response includes a real signed download URL", typeof jobView.downloadUrl === "string" && jobView.downloadUrl.length > 0);
+  record("job metadata keeps output locked", jobView.downloadUrl === null);
+  const grantRes = await fetch(`${apiBase}/v1/jobs/${job.jobId}/download`, {method:"POST", headers:authHeader});
+  const grant = await grantRes.json();
+  record("download gate returns a signed URL after checking allowance", grantRes.ok && typeof grant.downloadUrl === "string");
 
   // 6. Download the real output and decode it — proving it's a genuinely playable file, not a stub.
-  const downloadRes = await fetch(jobView.downloadUrl);
+  const downloadRes = await fetch(grant.downloadUrl);
   const outputBuffer = Buffer.from(await downloadRes.arrayBuffer());
   const outputPath = "/tmp/hasheemstudio-e2e-output.mp4";
   writeFileSync(outputPath, outputBuffer);

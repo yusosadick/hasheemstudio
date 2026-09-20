@@ -13,7 +13,7 @@ export async function resolveGuest(request: FastifyRequest): Promise<string | un
   const token = request.headers["x-guest-token"];
   if (typeof token !== "string" || !/^[a-f0-9]{64}$/.test(token)) return;
   const res = await getPool().query(
-    `select workspace_id from guest_sessions where token_hash = $1 and expires_at > now()`, [tokenHash(token)],
+    `select g.workspace_id from guest_sessions g join workspaces w on w.id=g.workspace_id where g.token_hash = $1 and g.expires_at > now() and w.created_by is null`, [tokenHash(token)],
   );
   return res.rows[0]?.workspace_id;
 }

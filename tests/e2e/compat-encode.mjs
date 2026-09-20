@@ -102,7 +102,10 @@ try {
   record("verification report honestly reports frames_re_encoded=true (distinct from remux)", jobView.verificationReport?.frames_re_encoded === true);
 
   const outputPath = "/tmp/hasheemstudio-compat-encode-output.mp4";
-  const buf = Buffer.from(await (await fetch(jobView.downloadUrl)).arrayBuffer());
+  const grantRes = await fetch(`${apiBase}/v1/jobs/${job.jobId}/download`, {method:"POST", headers:authHeader});
+  const grant = await grantRes.json();
+  if (!grantRes.ok) throw new Error(`Download gate rejected output: ${grantRes.status}`);
+  const buf = Buffer.from(await (await fetch(grant.downloadUrl)).arrayBuffer());
   writeFileSync(outputPath, buf);
   record("downloaded real encoded bytes", buf.length > 10_000, `${buf.length} bytes`);
 

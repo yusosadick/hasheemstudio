@@ -74,7 +74,7 @@
 - Post-publication analytics only via permitted APIs or authorised user connections.
 - Direct publishing only after platform API approval; do not scrape protected content or promise unavailable scopes.
 
-**Explicit exclusions from P0:** a full timeline editor, guaranteed platform compression avoidance, permanent cloud video library, unlimited file sizes, anonymous heavy processing, unapproved paid checkout, autonomous purchases, unlicensed AI models, copied competitor code or branding.
+**Explicit exclusions from P0:** a full timeline editor, guaranteed platform compression avoidance, permanent cloud video library, unlimited file sizes, unbounded anonymous processing, unconfigured paid checkout, autonomous purchases, unlicensed AI models, copied competitor code or branding.
 
 ## 3. User journey and acceptance criteria
 
@@ -85,7 +85,7 @@ Visitor sees a clear product explanation, factual demos, supported formats and v
 ### B. Upload and inspection
 
 1. Select a local file; disclose limits, retention and estimated operation type.
-2. API verifies identity, workspace, allowance and admission capacity; reserves usage/storage atomically.
+2. API verifies a signed-in account or a private guest capability, workspace, and processing admission capacity. Download allowances are checked separately at download time.
 3. Create a private scoped upload session; upload media directly to the media/storage path, not through the frontend server.
 4. Persist resumable upload identity. After reload, request file re-selection if the browser cannot recover the file handle. Never promise impossible automatic file access.
 5. Finalisation verifies server-side object existence, size, ownership and expected session state.
@@ -95,7 +95,7 @@ Acceptance: interrupted network resumes without duplicate billing; unauthorised 
 
 ### C. Processing and results
 
-User confirms a recipe → reserved job is dispatched → worker verifies recipe/version → output generated → report validated → object committed → job succeeds → download available.
+User confirms a recipe → reserved job is dispatched → worker verifies recipe/version → output generated → report validated → object committed → job succeeds → sign in if needed → server checks daily download allowance → private download available. Checkout must be configured before payment can unlock more downloads.
 
 Show real stages: uploading, inspecting, queued, processing, verifying, ready. Show indeterminate activity where progress cannot be measured. No fake percentages or fake ETA. Job stays non-successful until playable output and verification exist.
 
@@ -127,7 +127,7 @@ See `docs/DESIGN-SYSTEM.md` for exact tokens and visual direction (kept separate
 
 Start with a beta entitlement model, not unintegrated payment buttons. Suggested initial limits are configurable hypotheses, not final pricing:
 
-- Verified Free: 100 MB/file, 2-minute duration, 1080p/60, 3 jobs/day, one active processing job.
+- Verified Free (owner update 2026-09-20): 100 MB/file, 2-minute duration, 1080p/60, one distinct video download/day (UTC), one active processing job. The separate three-processing-attempts/day abuse cap does not replace the download allowance. Guests may upload/process before account creation; login claims their private workspace on the first successful download. Repeat downloads of an unlocked video do not consume another allowance.
 - Pro Beta: up to 500 MB/file and 10 minutes, selected 4K recipes only after benchmark, two active processing jobs, monthly compute budget.
 - Agency: negotiated storage/compute/bandwidth budget; bounded batch size and team membership.
 

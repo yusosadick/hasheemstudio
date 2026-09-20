@@ -595,6 +595,9 @@ services:
       api-gw:
         condition: service_healthy
     environment:
+      # Only set trusted proxy IPs/CIDRs after inspecting this project's ingress network.
+      API_TRUST_PROXY: ${API_TRUST_PROXY:-}
+      ENABLE_GUEST_PROCESSING: ${ENABLE_GUEST_PROCESSING:-true}
       API_HOST: "0.0.0.0"
       API_PORT: "8787"
       API_DB_HOST: supavisor

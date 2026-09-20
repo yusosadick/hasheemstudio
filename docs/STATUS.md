@@ -1127,3 +1127,35 @@ with no evidence behind it.
   credentials remain required. The daily-limit response explicitly reports checkout unavailable;
   no fake checkout or paid-success path is exposed. Google UI is disabled until Supabase reports
   that provider enabled. VPS handoff will cover provider setup and end-to-end verification.
+
+# Guest download gate verification and VPS handoff — 2026-09-20
+
+- Applied migrations 0013 and 0014 through `pnpm db:local:migrate` on the real dedicated Mac stack;
+  runner verified bootstrap marker `hasheemstudio`, all 14 ledger versions, zero pending/drifted
+  versions, and schema digest `56d2bd5253581c1d`. This is LOCAL evidence, not a VPS migration claim.
+- Real local integration passed 11 checks: guest TUS upload/worker processing, 100 MB admission,
+  retry idempotency, anonymous/cross-account denial, processing before download decisions, atomic
+  one-video concurrency, repeat download, UTC reset, expired outputs, progressive email lookup,
+  and raw storage read/self-sign denial including authenticated workspace owners.
+- Real Chrome flow passed: guest uploads/processes, existing-email/password login returns to the
+  exact result, button downloads 82,239 real bytes as `hasheem-video.mp4`, a second signed-in direct
+  TUS upload processes but download hits the free daily limit, logout works, and new-email signup
+  shows the copied form on mobile with no overflow. Invalid reset/verification URLs correctly fail.
+  Browser evidence and screenshots are in `docs/evidence/guest-download-gate/`.
+- First successful guest download now atomically adopts the complete guest workspace for that
+  account (membership plus created_by references) and invalidates the old guest capability. This
+  keeps the account-deletion ownership/cascade model intact and prevents claims by another account.
+- Existing upload/remux/encode browser test expectations were updated to the new explicit download
+  endpoint/action. Those older full suites have not been rerun this session; the new real-stack
+  integration and browser suites above, workspace typecheck, and production frontend build pass.
+  Production build emits a non-failing >500 kB bundle-size warning after importing auth dependencies.
+- Dedicated test servers used localhost ports 8788 and 5174; disposable users, jobs and stored test
+  files were cleaned up. A temporary project API log was moved into ignored `tmp/`. Git identity was
+  restored repository-locally to the previous MAC commit identity after hostname auto-detection failed.
+- AUTH-SOURCE blocker resolved with the supplied repository and attributed source import.
+  Payment checkout still requires an owner-selected processor/price/credentials. Real production
+  signup inbox receipt, Google consent/callback, password-reset delivery, and deployment remain VPS
+  tasks; do not label these verified from the local tests. No VPS resources were changed here.
+- Copy-ready deployment instructions: `docs/VPS-GUEST-DOWNLOAD-HANDOFF.md`. This includes coordinated
+  API/frontend rollout, exact migration target discovery, trusted-proxy configuration, public upload
+  safeguards, recovery redirect/OTP setup, remaining payments and retention checks, and evidence.

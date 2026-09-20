@@ -21,6 +21,10 @@ export async function downloadsRoutes(app: FastifyInstance): Promise<void> {
       await client.query("begin");
       // Account lock serializes different jobs; job lock serializes competing account claims.
       await client.query(`select id from profiles where id=$1 for update`, [request.userId]);
+      const owner = (await client.query(`select w.created_by, exists(select 1 from guest_sessions g where g.workspace_id=w.id) is_guest from workspaces w where w.id=$1 for update`, [job.workspace_id])).rows[0];
+      if (owner.is_guest && owner.created_by && owner.created_by !== request.userId) {
+        await client.query("rollback"); return reply.code(403).send({error:"already_claimed"});
+      }
       const current = await client.query(`select * from jobs where id=$1 for update`, [id]);
       const output = current.rows[0];
       if (output.status !== "succeeded" || !output.output_object_key) {
@@ -46,10 +50,21 @@ export async function downloadsRoutes(app: FastifyInstance): Promise<void> {
         }
         await client.query(`insert into download_grants(job_id,user_id) values ($1,$2)`, [id, request.userId]);
       }
+      if (owner.is_guest && !owner.created_by) {
+        // Claim the complete workspace once; the old guest capability no longer resolves.
+        // These owner references also preserve existing account-deletion cascades.
+        await client.query(`update workspaces set created_by=$2 where id=$1`, [job.workspace_id, request.userId]);
+        await client.query(`insert into workspace_members(workspace_id,user_id,role) values ($1,$2,'owner') on conflict do nothing`, [job.workspace_id, request.userId]);
+        for (const table of ["upload_sessions", "media_assets", "jobs"]) {
+          await client.query(`update ${table} set created_by=$2 where workspace_id=$1`, [job.workspace_id,request.userId]);
+        }
+      }
       // Signing before commit means a signing failure never consumes the daily allowance.
-      const downloadUrl = await createSignedDownloadUrl(output.output_object_key, 300);
+      const signed = new URL(await createSignedDownloadUrl(output.output_object_key, 300));
+      signed.searchParams.set("download", "hasheem-video.mp4");
+      const downloadUrl = signed.toString();
       await client.query("commit");
-      return { downloadUrl, expiresIn: 300 };
+      return { downloadUrl, expiresIn: 300, guestClaimed: request.guestWorkspaceId === job.workspace_id };
     } catch (error) {
       await client.query("rollback"); throw error;
     } finally { client.release(); }

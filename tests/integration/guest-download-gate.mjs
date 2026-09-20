@@ -68,11 +68,11 @@ try{
  assert.deepEqual(responses.map(r=>r.status).sort(),[200,429]);
  const winner=responses[0].status===200?first:second,loser=winner===first?second:first;
  const granted=await responses.find(r=>r.status===200).json();
- const file=await fetch(granted.downloadUrl);assert.equal(file.status,200);assert((await file.arrayBuffer()).byteLength>0);
+ const file=await fetch(granted.downloadUrl);assert.equal(file.status,200);assert.match(file.headers.get("content-disposition"),/attachment/);assert((await file.arrayBuffer()).byteLength>0);
  assert.equal((await db.query('select count(*)::int n from download_grants where user_id=$1',[a.user.id])).rows[0].n,1);record('concurrent distinct downloads grant exactly one free video and return real bytes');
  await call(`/v1/jobs/${winner}/download`,{method:'POST',headers:a.headers});
  await call(`/v1/jobs/${winner}`,{headers:a.headers});
- await call(`/v1/jobs/${winner}`,{headers:g.headers,status:403});
+ await call(`/v1/jobs/${winner}`,{headers:g.headers,status:401});
  await call(`/v1/jobs/${winner}/download`,{method:'POST',headers:{...g.headers,...b.headers},status:403});record('repeat download is free; claimed result accessible after login without guest token; claim cannot be stolen');
  const outputKey=`${g.ws}/outputs/${winner}.mp4`;
  const direct=await fetch(`${storage}/storage/v1/object/authenticated/media/${outputKey}`,{headers:{apikey:env.ANON_KEY,...a.headers}});assert(!direct.ok);record('raw storage output read blocked');

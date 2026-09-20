@@ -1,5 +1,5 @@
 import { getValidSession } from "./auth";
-import { ensureGuest, guestHeaders } from "./guest";
+import { ensureGuest, guestHeaders, clearGuest } from "./guest";
 
 const API_URL = import.meta.env.VITE_API_URL as string;
 
@@ -85,5 +85,6 @@ export async function requestDownload(jobId: string): Promise<string> {
   const res = await authedFetch(`/v1/jobs/${jobId}/download`, {method:"POST"});
   const data = await res.json();
   if (!res.ok) throw new DownloadError(data.message ?? "Could not unlock this download. Please try again.", data.error, data.resetAt);
+  if (data.guestClaimed) clearGuest();
   return data.downloadUrl;
 }
