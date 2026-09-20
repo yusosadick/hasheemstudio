@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IconUploadCloud } from "../components/Icons";
+import { getSession } from "../lib/auth";
 import { createUploadSession, finalizeUpload, createJob } from "../lib/api";
 import { uploadFileResumable, savePendingUpload, loadPendingUpload, clearPendingUpload } from "../lib/upload";
 
@@ -24,22 +25,30 @@ export default function Upload() {
     }
   }, []);
 
+  const busy = useRef(false);
   async function handleFile(file: File) {
+    if (busy.current) return;
+    if (!/\.(mp4|mov)$/i.test(file.name) || file.size <= 0) { setError("Choose a non-empty MP4 or MOV video."); return; }
+    if (file.size > 100 * 1024 * 1024 && !getSession()) { setError("Guest videos must be 100 MB or smaller."); return; }
+    busy.current = true;
+    setStage("uploading");
     setError(null);
     try {
       const pending = loadPendingUpload();
-      let session: { sessionId: string; tusUploadPath: string };
+      let session: { sessionId: string; tusUploadPath: string; mediaAssetId?: string; idempotencyKey?: string };
 
-      if (pending && pending.fileName === file.name && pending.fileSize === file.size) {
+      if (pending && pending.fileName === file.name && pending.fileSize === file.size && pending.fileModified === file.lastModified) {
         // Same file re-selected after an interruption/reload — resume against the existing TUS
         // resource instead of starting a brand new upload session (and a brand new quota hold).
-        session = { sessionId: pending.sessionId, tusUploadPath: pending.tusUploadPath };
+        session = pending;
       } else {
         session = await createUploadSession(file);
-        savePendingUpload({ sessionId: session.sessionId, tusUploadPath: session.tusUploadPath, fileName: file.name, fileSize: file.size });
+        session.idempotencyKey=crypto.randomUUID();
+        savePendingUpload({ ...session, fileName: file.name, fileSize: file.size, fileModified: file.lastModified });
       }
       setResumeNotice(null);
 
+      if (!session.mediaAssetId) {
       setStage("uploading");
       await uploadFileResumable(file, session.tusUploadPath, {
         onProgress: (sent, total) => setProgress({ sent, total }),
@@ -47,17 +56,19 @@ export default function Upload() {
 
       setStage("finalizing");
       const finalized = await finalizeUpload(session.sessionId);
-      clearPendingUpload();
-
+      session.mediaAssetId=finalized.mediaAssetId;
+      savePendingUpload({...session, fileName:file.name, fileSize:file.size, fileModified:file.lastModified});
+      }
       setStage("creating_job");
-      const job = await createJob(finalized.mediaAssetId, recipe);
+      const job = await createJob(session.mediaAssetId!, recipe, session.idempotencyKey);
+      clearPendingUpload();
 
       navigate(`/app/jobs/${job.jobId}`);
     } catch (err) {
       setStage("error");
       const message = err instanceof Error ? err.message : "Upload failed";
-      setError(`${message} — choose the same file again to resume from where it stopped.`);
-    }
+      setError(message);
+    } finally { busy.current = false; if (inputRef.current) inputRef.current.value = ""; }
   }
 
   const stageLabel: Record<Stage, string> = {
@@ -74,18 +85,18 @@ export default function Upload() {
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <h1 className="text-3xl font-semibold tracking-tight">Upload your video</h1>
       <p className="mt-2 text-sm text-foreground-muted">
-        MP4 or MOV. Up to 100&nbsp;MB and 2 minutes on the Verified Free plan. Uploads resume
-        automatically if your connection drops.
+        Upload and process first. Sign in to download one free video per day, up to 100&nbsp;MB,
+        2 minutes, and 1080p60. Interrupted uploads can resume when you choose the same file again.
       </p>
 
       {resumeNotice && (
-        <p className="mt-4 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">{resumeNotice}</p>
+        <p className="mt-4 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">{resumeNotice} <button className="underline" onClick={() => { clearPendingUpload(); setResumeNotice(null); }}>Discard and start again</button></p>
       )}
 
-      <div className="mt-6 flex gap-3">
+      <div className="mt-6 flex flex-wrap gap-3">
         {(["remux", "compat_encode", "inspect"] as const).map((r) => (
           <label key={r} className="flex items-center gap-2 text-sm">
-            <input type="radio" name="recipe" checked={recipe === r} onChange={() => setRecipe(r)} className="accent-accent" />
+            <input type="radio" disabled={stage !== "idle" && stage !== "error"} name="recipe" checked={recipe === r} onChange={() => setRecipe(r)} className="accent-accent" />
             {r === "remux" ? "Compatible MP4 remux" : r === "compat_encode" ? "H.264/AAC re-encode" : "Inspect only"}
           </label>
         ))}

@@ -48,9 +48,9 @@ export function ConversionHero() {
       <div className="hero-upload">
         <span className="hero-upload__badge"><UploadCloud className="hero-upload__icon" size={29} strokeWidth={1.8} aria-hidden="true" /></span>
         <h2>Select your video to prepare</h2>
-        <p>or drop an MP4 or MOV file here</p>
-        <a href="/signup" className="hero-upload__button"><UploadCloud size={17} aria-hidden="true" />Choose video</a>
-        <small>Free plan · 100 MB · 2 minutes · 1080p60</small>
+        <p>Upload an MP4 or MOV. Sign in when you download.</p>
+        <a href="/app/upload" className="hero-upload__button"><UploadCloud size={17} aria-hidden="true" />Choose video</a>
+        <small>1 free video/day · 100 MB · 2 minutes · 1080p60</small>
       </div>
     </div>
   );

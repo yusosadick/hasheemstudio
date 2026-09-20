@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { IconCheckCircle, IconDownload, IconAlertTriangle } from "../components/Icons";
-import { getJob, cancelJob, type JobView } from "../lib/api";
+import { getSession } from "../lib/auth";
+import { getJob, cancelJob, requestDownload, DownloadError, type JobView } from "../lib/api";
 
 const TERMINAL = new Set(["succeeded", "failed", "cancelled", "expired"]);
 const STAGES = ["queued", "processing", "verifying", "succeeded"];
@@ -11,6 +12,18 @@ export default function JobResult() {
   const [job, setJob] = useState<JobView | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [unlocking, setUnlocking] = useState(false);
+  const [needsLogin, setNeedsLogin] = useState(false);
+  async function download() {
+    if (!id || unlocking) return;
+    setUnlocking(true); setDownloadError(null);
+    try { window.location.assign(await requestDownload(id)); }
+    catch (err) {
+      if (err instanceof DownloadError && ["login_required", "session_required", "account_not_verified", "invalid_token"].includes(err.code)) setNeedsLogin(true);
+      setDownloadError(err instanceof Error ? err.message : "Download failed.");
+    } finally { setUnlocking(false); }
+  }
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
@@ -48,7 +61,7 @@ export default function JobResult() {
         </h1>
         {job.status === "succeeded" && (
           <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-3 py-1 text-sm font-medium text-success">
-            <IconCheckCircle width={16} height={16} /> {job.recipe === "remux" ? "Remux only — no re-encode" : "Inspected"}
+            <IconCheckCircle width={16} height={16} /> {job.recipe === "remux" ? "Remux only — no re-encode" : job.recipe === "compat_encode" ? "H.264/AAC re-encoded" : "Inspected"}
           </span>
         )}
         {job.status === "failed" && (
@@ -96,21 +109,24 @@ export default function JobResult() {
         </div>
       )}
 
-      {job.downloadUrl && (
-        <>
-          <a
-            href={job.downloadUrl}
-            className="mt-8 inline-flex min-h-touch items-center gap-2 rounded-md bg-gradient-primary px-6 text-sm font-medium text-foreground-on-accent hover:opacity-90"
-          >
-            <IconDownload width={18} height={18} />
-            Download output
-          </a>
-          {job.outputRetainUntil && (
-            <p className="mt-2 text-xs text-foreground-muted">
-              Available until {new Date(job.outputRetainUntil).toLocaleString()}, then permanently deleted.
-            </p>
+      {job.status === "succeeded" && job.hasOutput && !job.outputExpired && (
+        <section className="mt-8 rounded-lg border border-border bg-surface1 p-6">
+          <h2 className="text-xl font-semibold">Your video is ready</h2>
+          {(job.requiresLogin || needsLogin || !getSession()) ? (
+            <>
+              <p className="mt-2 text-sm text-foreground-muted">Sign in or create an account to download. Your processed video is saved here—no need to upload it again.</p>
+              <Link to={`/login?next=${encodeURIComponent(`/app/jobs/${id}`)}`} className="mt-5 inline-flex min-h-touch items-center rounded-md bg-gradient-primary px-6 text-sm font-semibold">Sign in to download</Link>
+              <Link to={`/signup?next=${encodeURIComponent(`/app/jobs/${id}`)}`} className="ml-4 inline-flex min-h-touch items-center text-sm underline">Create free account</Link>
+            </>
+          ) : (
+            <button type="button" disabled={unlocking} onClick={() => void download()} className="mt-5 inline-flex min-h-touch items-center gap-2 rounded-md bg-gradient-primary px-6 text-sm font-semibold disabled:opacity-60">
+              <IconDownload width={18} height={18} />{unlocking ? "Preparing download…" : "Download video"}
+            </button>
           )}
-        </>
+          <p className="mt-3 text-xs text-foreground-muted">Free: 1 video per day, up to 100 MB. Resets at midnight UTC. Downloading the same unlocked video again does not use another allowance.</p>
+          {downloadError && <p role="alert" className="mt-4 text-sm text-danger">{downloadError}</p>}
+          {job.outputRetainUntil && <p className="mt-3 text-xs text-foreground-muted">Available until {new Date(job.outputRetainUntil).toLocaleString()}.</p>}
+        </section>
       )}
       {job.outputExpired && (
         <p className="mt-8 flex items-center gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">

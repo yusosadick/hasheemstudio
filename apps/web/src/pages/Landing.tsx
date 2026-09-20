@@ -8,7 +8,7 @@ const steps = [
 ];
 
 const benefits = [
-  { icon: ShieldCheck, marker: "01", title: "Private & secure", body: "Your file stays tied to your account." },
+  { icon: ShieldCheck, marker: "01", title: "Private & secure", body: "Your upload stays private, even before you sign in." },
   { icon: Gauge, marker: "02", title: "Fast when possible", body: "Compatible files use a quick remux." },
   { icon: MonitorSmartphone, marker: "03", title: "Made for video", body: "MP4 and MOV, up to 1080p60 free." },
   { icon: BadgeCheck, marker: "04", title: "Honest results", body: "Every transformation is explained." },
@@ -69,7 +69,7 @@ export default function Landing() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-text">Public beta</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight">Start with the Verified Free plan</h2>
-            <p className="mt-2 text-sm text-foreground-muted">3 jobs per day · 100 MB per file · 2 minutes · 1080p60 · no card required</p>
+            <p className="mt-2 text-sm text-foreground-muted">1 video download per day · 100 MB per file · 2 minutes · 1080p60 · no card required</p>
           </div>
           <a href="/signup" className="inline-flex min-h-touch shrink-0 items-center justify-center rounded-md bg-gradient-primary px-6 text-sm font-semibold text-foreground-on-accent transition hover:opacity-90">Get started free</a>
         </div>

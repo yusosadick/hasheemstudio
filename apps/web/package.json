@@ -13,10 +13,19 @@
   "dependencies": {
     "@fontsource-variable/inter": "5.2.8",
     "@hasheemstudio/ui": "workspace:*",
+    "@hookform/resolvers": "5.2.2",
+    "@radix-ui/react-slot": "1.2.4",
+    "@supabase/supabase-js": "2.101.1",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "framer-motion": "12.38.0",
     "lucide-react": "^0.544.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.28.0"
+    "react-hook-form": "7.72.0",
+    "react-router-dom": "^6.28.0",
+    "tailwind-merge": "3.5.0",
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",

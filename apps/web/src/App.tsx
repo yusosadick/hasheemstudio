@@ -1,7 +1,9 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { Nav } from "./components/Nav";
 
 export default function App() {
+  const { pathname } = useLocation();
+  if (["/login", "/signup", "/register", "/forgot-password", "/reset-password", "/verify-email", "/auth/callback"].includes(pathname)) return <main><Outlet /></main>;
   return (
     <div className="min-h-screen bg-background text-foreground sm:px-5 sm:py-5">
       <div className="relative mx-auto min-h-[calc(100vh-2.5rem)] max-w-[1480px] overflow-hidden border-border sm:border">

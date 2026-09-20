@@ -6,6 +6,10 @@ export default {
   theme: {
     extend: {
       colors: {
+        primary: { DEFAULT: "#ff006e", dark: "#dc005f" },
+        text: { DEFAULT: "#f4f4f4", muted: "#a8a8a8" },
+        surface: { DEFAULT: "#1e1e1e", light: "#292929" },
+        error: "#ef4444",
         background: "var(--color-background)",
         surface1: "var(--color-surface-1)",
         surface2: "var(--color-surface-2)",
