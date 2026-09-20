@@ -989,3 +989,14 @@ with no evidence behind it.
   remain at their previously approved design.
 - Verified desktop (1440 px) and mobile (390 px) renders in headless Chrome with no horizontal
   overflow; `pnpm typecheck` and `pnpm --filter @hasheemstudio/web build` passed.
+
+# Layered hero and typography — 2026-09-20
+
+- Reworked only the hero upload composition: the existing conversion visual now sits behind the
+  content as a compact stage, while a high-contrast upload panel overlaps its lower edge like a
+  dialog. The workflow cards and all sections below the hero remain unchanged.
+- Added the locally bundled Inter Variable family and applied it through the shared design token,
+  including the navigation wordmark and all application pages.
+- Verified desktop (1440 px) and mobile (390 px) renders in headless Chrome. Inter Variable is the
+  computed body font at both sizes, the overlay remains inside the viewport, and there is no
+  horizontal overflow. `pnpm typecheck` and `pnpm --filter @hasheemstudio/web build` passed.

@@ -34,43 +34,34 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="mx-auto mt-8 max-w-4xl rounded-2xl border border-border bg-surface1/95 p-3 shadow-2xl shadow-black/30 sm:p-4">
-            <div className="rounded-xl border-2 border-dashed border-border bg-background/60 px-5 py-9 text-center sm:py-11">
-              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-accent-text">Simple, quality-aware processing</p>
-              <h2 className="mt-2 text-lg font-semibold sm:text-xl">One video in. One upload-ready video out.</h2>
-              <p className="mt-1 text-xs text-foreground-muted">We inspect first, then use the fastest compatible route for your file.</p>
+          <div className="relative mx-auto mt-8 max-w-5xl pb-24 sm:pb-20">
+            <div className="relative h-[300px] overflow-hidden rounded-2xl border border-border bg-[linear-gradient(135deg,rgba(30,30,30,0.96),rgba(18,18,18,0.98))] sm:h-[330px]">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_72%_45%,rgba(233,30,99,0.14),transparent_35%)]" />
+              <div className="absolute left-5 top-5 z-10 sm:left-8 sm:top-7">
+                <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.18em] text-accent-text">Original → Optimize → Ready</p>
+                <h2 className="mt-2 max-w-xs text-left text-xl font-semibold tracking-tight sm:text-2xl">Your video, prepared for a better upload.</h2>
+                <p className="mt-2 hidden max-w-sm text-left text-xs leading-5 text-foreground-muted sm:block">We inspect the source, change only what is needed, and explain the finished file.</p>
+              </div>
               <img
                 src="/assets/video-social-progress.png"
-                alt="A source video progressively optimized into landscape, square, and vertical social-media formats"
+                alt="A source video progressing through optimization toward social-ready playback"
                 width="1200"
                 height="468"
-                className="mx-auto w-full max-w-2xl select-none object-contain"
+                className="absolute -right-16 bottom-5 w-[760px] max-w-none select-none object-contain opacity-80 sm:-right-8 sm:bottom-1 sm:w-[820px]"
               />
-              <ol className="mx-auto -mt-1 grid max-w-2xl gap-2 text-left sm:grid-cols-3">
-                <li className="rounded-md border border-border bg-surface1 px-3 py-2.5">
-                  <span className="font-mono text-[9px] font-semibold uppercase tracking-wider text-accent-text">01 · Original</span>
-                  <p className="mt-1 text-xs font-medium">Your MP4 or MOV goes in</p>
-                </li>
-                <li className="rounded-md border border-accent/30 bg-accent/5 px-3 py-2.5">
-                  <span className="font-mono text-[9px] font-semibold uppercase tracking-wider text-accent-text">02 · Optimize</span>
-                  <p className="mt-1 text-xs font-medium">Quick remux, or H.264/AAC if needed</p>
-                </li>
-                <li className="rounded-md border border-border bg-surface1 px-3 py-2.5">
-                  <span className="font-mono text-[9px] font-semibold uppercase tracking-wider text-accent-text">03 · Ready</span>
-                  <p className="mt-1 text-xs font-medium">Compatible MP4 plus a change report</p>
-                </li>
-              </ol>
-              <div className="mx-auto mt-3 flex max-w-2xl items-center justify-center gap-2 text-[11px] text-foreground-muted">
-                <span className="h-px flex-1 bg-border" />
-                <span>Visual quality preserved as closely as the selected process allows</span>
-                <span className="h-px flex-1 bg-border" />
-              </div>
-              <h2 className="mt-5 text-base font-semibold sm:text-lg">Drop your video here</h2>
-              <p className="mt-1 text-sm text-foreground-muted">or choose a file to get started</p>
-              <a href="/signup" className="mt-5 inline-flex min-h-touch items-center justify-center gap-2 rounded-md bg-gradient-primary px-7 text-sm font-semibold text-foreground-on-accent shadow-lg shadow-accent/10 transition hover:opacity-90">
-                <IconUploadCloud width={18} height={18} /> Choose video
+              <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-background via-background/60 to-transparent" />
+            </div>
+
+            <div className="absolute inset-x-3 bottom-0 z-20 mx-auto max-w-2xl rounded-xl border border-white/60 bg-[#f7f5f2] px-5 py-6 text-center text-[#171717] shadow-[0_24px_70px_rgba(0,0,0,0.55)] sm:px-8 sm:py-7">
+              <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[#171717] text-white shadow-sm">
+                <IconUploadCloud width={20} height={20} />
+              </span>
+              <h2 className="mt-3 text-lg font-semibold tracking-tight sm:text-xl">Select your video to prepare</h2>
+              <p className="mt-1 text-sm text-[#696969]">or drop an MP4 or MOV file here</p>
+              <a href="/signup" className="mt-4 inline-flex min-h-touch items-center justify-center gap-2 rounded-md bg-[#171717] px-7 text-sm font-semibold text-white shadow-sm transition hover:bg-[#303030]">
+                <IconUploadCloud width={17} height={17} /> Choose video
               </a>
-              <p className="mt-3 text-xs text-foreground-muted">MP4 or MOV · Up to 100 MB and 2 minutes on the free plan</p>
+              <p className="mt-3 text-[11px] text-[#777]">Free plan · 100 MB · 2 minutes · 1080p60</p>
             </div>
           </div>
 
