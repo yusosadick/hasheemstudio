@@ -1018,3 +1018,13 @@ with no evidence behind it.
 - Browser verification confirmed MOV changes to MP4 after 2.8 seconds at desktop (1440 px) and
   mobile (390 px), with no horizontal overflow. `pnpm typecheck` and
   `pnpm --filter @hasheemstudio/web build` passed.
+
+# Split hero message — 2026-09-20
+
+- Moved the existing product label, headline, and explanation into the animated hero stage.
+- Desktop now uses a reference-aligned split composition with the message on the left and animated
+  converter on the right; mobile stacks the same message above the converter. Copy is unchanged.
+- Compact mobile-only converter cards prevent the stacked copy and animated visual from competing
+  for space; desktop retains the full cards and codec detail.
+- Verified desktop (1440 px) and mobile (390 px) renders with no horizontal overflow;
+  `pnpm typecheck` and `pnpm --filter @hasheemstudio/web build` passed.

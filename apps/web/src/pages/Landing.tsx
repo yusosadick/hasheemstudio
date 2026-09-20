@@ -38,26 +38,26 @@ export default function Landing() {
             <span className="text-foreground">Prepare video</span>
           </nav>
 
-          <div className="mx-auto mt-8 max-w-3xl text-center">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-accent-text">Hasheem Studio video tools</p>
-            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl">Prepare your video for upload</h1>
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-foreground-muted sm:text-base">
-              Inspect, fix compatibility issues, and create a platform-ready video—with a clear report of exactly what changed.
-            </p>
-          </div>
-
-          <div className="relative mx-auto mt-8 max-w-5xl pb-24 sm:pb-32">
-            <div className="relative h-[300px] overflow-hidden rounded-2xl border border-border bg-[linear-gradient(135deg,rgba(30,30,30,0.96),rgba(18,18,18,0.98))] sm:h-[330px]">
+          <div className="relative mx-auto mt-7 max-w-5xl pb-32">
+            <div className="relative h-[420px] overflow-hidden rounded-2xl border border-border bg-[linear-gradient(135deg,rgba(30,30,30,0.96),rgba(18,18,18,0.98))] sm:h-[350px]">
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_72%_45%,rgba(233,30,99,0.14),transparent_35%)]" />
               <div className="pointer-events-none absolute inset-0 opacity-40 [background-image:linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] [background-size:48px_48px]" />
-              <div className="pointer-events-none absolute left-1/2 top-[44%] h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border/50 sm:h-[430px] sm:w-[430px]" />
-              <div className="pointer-events-none absolute left-1/2 top-[44%] h-52 w-52 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border/60 sm:h-72 sm:w-72" />
+              <div className="pointer-events-none absolute left-1/2 top-[67%] h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border/50 sm:left-[76%] sm:top-[45%] sm:h-[430px] sm:w-[430px]" />
+              <div className="pointer-events-none absolute left-1/2 top-[67%] h-52 w-52 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border/60 sm:left-[76%] sm:top-[45%] sm:h-72 sm:w-72" />
 
-              <div className="absolute inset-x-3 top-8 flex items-center justify-center gap-3 sm:top-9 sm:gap-8">
-                <div className="relative flex h-36 w-28 flex-col items-center justify-center rounded-xl border border-border bg-[linear-gradient(145deg,#333135,#222124)] shadow-[0_18px_45px_rgba(0,0,0,0.35)] sm:h-40 sm:w-32">
-                  <FileVideo size={35} strokeWidth={1.5} className="text-foreground" aria-hidden="true" />
-                  <span className="mt-3 text-lg font-semibold tracking-wide" aria-live="polite">{sourceFormats[sourceFormatIndex]}</span>
-                  <ChevronDown size={15} className="absolute bottom-3 right-3 text-foreground-muted" aria-hidden="true" />
+              <div className="absolute inset-x-5 top-7 z-10 text-center sm:inset-x-auto sm:left-8 sm:top-10 sm:w-[43%] sm:text-left">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent-text">Hasheem Studio video tools</p>
+                <h1 className="mt-3 text-3xl font-semibold leading-[1.05] tracking-tight sm:text-4xl lg:text-[42px]">Prepare your video for upload</h1>
+                <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-foreground-muted sm:mx-0 sm:text-base sm:leading-7">
+                  Inspect, fix compatibility issues, and create a platform-ready video—with a clear report of exactly what changed.
+                </p>
+              </div>
+
+              <div className="absolute inset-x-3 top-[184px] flex items-center justify-center gap-3 sm:left-auto sm:right-9 sm:top-[72px] sm:w-[49%] sm:gap-6">
+                <div className="relative flex h-[92px] w-20 flex-col items-center justify-center rounded-xl border border-border bg-[linear-gradient(145deg,#333135,#222124)] shadow-[0_18px_45px_rgba(0,0,0,0.35)] sm:h-40 sm:w-32">
+                  <FileVideo strokeWidth={1.5} className="h-7 w-7 text-foreground sm:h-9 sm:w-9" aria-hidden="true" />
+                  <span className="mt-1 text-base font-semibold tracking-wide sm:mt-3 sm:text-lg" aria-live="polite">{sourceFormats[sourceFormatIndex]}</span>
+                  <ChevronDown size={15} className="absolute bottom-3 right-3 hidden text-foreground-muted sm:block" aria-hidden="true" />
                 </div>
 
                 <div className="flex min-w-16 flex-col items-center sm:min-w-24">
@@ -71,10 +71,10 @@ export default function Landing() {
                   <span className="mt-2 font-mono text-[9px] font-semibold uppercase tracking-[0.2em] text-foreground-muted">Prepare</span>
                 </div>
 
-                <div className="relative flex h-36 w-28 flex-col items-center justify-center rounded-xl border border-accent/40 bg-[linear-gradient(145deg,#352b2f,#242124)] shadow-[0_18px_50px_rgba(233,30,99,0.13)] sm:h-40 sm:w-32">
-                  <FileCheck size={35} strokeWidth={1.5} className="text-[#f2a3ad]" aria-hidden="true" />
-                  <span className="mt-3 text-lg font-semibold tracking-wide text-[#f4c4ca]">MP4</span>
-                  <span className="mt-1 font-mono text-[8px] uppercase tracking-wider text-foreground-muted">H.264 + AAC</span>
+                <div className="relative flex h-[92px] w-20 flex-col items-center justify-center rounded-xl border border-accent/40 bg-[linear-gradient(145deg,#352b2f,#242124)] shadow-[0_18px_50px_rgba(233,30,99,0.13)] sm:h-40 sm:w-32">
+                  <FileCheck strokeWidth={1.5} className="h-7 w-7 text-[#f2a3ad] sm:h-9 sm:w-9" aria-hidden="true" />
+                  <span className="mt-1 text-base font-semibold tracking-wide text-[#f4c4ca] sm:mt-3 sm:text-lg">MP4</span>
+                  <span className="mt-1 hidden font-mono text-[8px] uppercase tracking-wider text-foreground-muted sm:block">H.264 + AAC</span>
                 </div>
               </div>
               <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-background via-background/60 to-transparent" />
