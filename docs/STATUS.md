@@ -1000,3 +1000,10 @@ with no evidence behind it.
 - Verified desktop (1440 px) and mobile (390 px) renders in headless Chrome. Inter Variable is the
   computed body font at both sizes, the overlay remains inside the viewport, and there is no
   horizontal overflow. `pnpm typecheck` and `pnpm --filter @hasheemstudio/web build` passed.
+
+# Visual-only hero background — 2026-09-20
+
+- Removed all headline and explanatory copy from the background stage behind the upload dialog.
+- Recentered and enlarged the existing conversion artwork so the background is visual-only while
+  the floating upload panel remains the single text and action focus.
+- `pnpm typecheck` and `pnpm --filter @hasheemstudio/web build` passed.

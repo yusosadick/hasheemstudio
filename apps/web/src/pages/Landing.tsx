@@ -37,17 +37,12 @@ export default function Landing() {
           <div className="relative mx-auto mt-8 max-w-5xl pb-24 sm:pb-20">
             <div className="relative h-[300px] overflow-hidden rounded-2xl border border-border bg-[linear-gradient(135deg,rgba(30,30,30,0.96),rgba(18,18,18,0.98))] sm:h-[330px]">
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_72%_45%,rgba(233,30,99,0.14),transparent_35%)]" />
-              <div className="absolute left-5 top-5 z-10 sm:left-8 sm:top-7">
-                <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.18em] text-accent-text">Original → Optimize → Ready</p>
-                <h2 className="mt-2 max-w-xs text-left text-xl font-semibold tracking-tight sm:text-2xl">Your video, prepared for a better upload.</h2>
-                <p className="mt-2 hidden max-w-sm text-left text-xs leading-5 text-foreground-muted sm:block">We inspect the source, change only what is needed, and explain the finished file.</p>
-              </div>
               <img
                 src="/assets/video-social-progress.png"
                 alt="A source video progressing through optimization toward social-ready playback"
                 width="1200"
                 height="468"
-                className="absolute -right-16 bottom-5 w-[760px] max-w-none select-none object-contain opacity-80 sm:-right-8 sm:bottom-1 sm:w-[820px]"
+                className="absolute bottom-1 left-1/2 w-[740px] max-w-none -translate-x-1/2 select-none object-contain opacity-90 sm:w-[900px]"
               />
               <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-background via-background/60 to-transparent" />
             </div>
