@@ -939,3 +939,13 @@ with no evidence behind it.
   magenta/orange palette. No third-party reference artwork or branding is included.
 - Verified desktop (1440 px) and mobile (390 px) renders in headless Chrome with no horizontal
   overflow. `pnpm typecheck` and `pnpm --filter @hasheemstudio/web build` passed.
+
+# Framed navigation and page guides — 2026-09-20
+
+- Applied the supplied navigation reference's structural treatment using Hasheem Studio content:
+  a bordered desktop canvas, boxed brand mark, centered product navigation, monospace account
+  actions, a light primary button, and a dashed divider below the navigation.
+- Added faint dashed vertical content guides across the desktop page. They are decorative,
+  non-interactive, hidden on smaller screens, and sit behind application content.
+- Verified desktop (1440 px) and mobile (390 px) renders in headless Chrome with no horizontal
+  overflow. `pnpm typecheck` and `pnpm --filter @hasheemstudio/web build` passed.
