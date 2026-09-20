@@ -1048,3 +1048,15 @@ with no evidence behind it.
   within the viewport, and the upload card clears the format cards. Format cycling, pause/resume,
   and reduced-motion checks passed. Screenshots and measurement output are saved in
   `docs/evidence/hero-spacing/`.
+
+# Plain hero background and approved button palette — 2026-09-20
+
+- Removed the hero's gray gradient and grid overlays, exposing the site's charcoal background and
+  continuous left/right desktop margin guides. Increased dashed guide opacity from 7% to 18%.
+- Per the owner's button reference, replaced the hero's muted rose colors with the exact existing
+  primary gradient endpoints (#FF006E and #FF6B35). The upload button and eyebrow use
+  `--gradient-primary`; converter accents, connector sweeps, and glow use the same palette.
+- Production build (including web TypeScript) passed. Chrome at 1440 and 390 px confirmed the
+  upload and pricing button gradients match exactly, the backdrop overlay is absent, and no
+  horizontal overflow occurs. Desktop guides are visible and dashed. Screenshots and computed
+  style evidence are in `docs/evidence/hero-brand-colors/`.
