@@ -1,0 +1,199 @@
+{
+  "results": [
+    {
+      "width": 1440,
+      "overflow": false,
+      "upload": {
+        "x": 400,
+        "y": 451.125,
+        "width": 640,
+        "height": 327,
+        "right": 1040,
+        "bottom": 778.125
+      },
+      "copy": {
+        "x": 128,
+        "y": 166,
+        "width": 653.328125,
+        "height": 237.125,
+        "right": 781.328125,
+        "bottom": 403.125
+      },
+      "scene": {
+        "x": 898.65625,
+        "y": 166.5625,
+        "width": 360,
+        "height": 236,
+        "right": 1258.65625,
+        "bottom": 402.5625
+      },
+      "guides": {
+        "x": 100,
+        "y": 21,
+        "width": 1240,
+        "height": 1597.125,
+        "right": 1340,
+        "bottom": 1618.125
+      },
+      "buttonGradient": "linear-gradient(90deg, rgb(255, 0, 110) 0%, rgb(255, 107, 53) 100%)"
+    },
+    {
+      "width": 1024,
+      "overflow": false,
+      "upload": {
+        "x": 192,
+        "y": 450,
+        "width": 640,
+        "height": 327,
+        "right": 832,
+        "bottom": 777
+      },
+      "copy": {
+        "x": 93,
+        "y": 178.59375,
+        "width": 451.5,
+        "height": 210.8125,
+        "right": 544.5,
+        "bottom": 389.40625
+      },
+      "scene": {
+        "x": 608.5,
+        "y": 166,
+        "width": 322.5,
+        "height": 236,
+        "right": 931,
+        "bottom": 402
+      },
+      "guides": {
+        "x": 77,
+        "y": 21,
+        "width": 870,
+        "height": 1612,
+        "right": 947,
+        "bottom": 1633
+      },
+      "buttonGradient": "linear-gradient(90deg, rgb(255, 0, 110) 0%, rgb(255, 107, 53) 100%)"
+    },
+    {
+      "width": 768,
+      "overflow": false,
+      "upload": {
+        "x": 93,
+        "y": 453.046875,
+        "width": 582,
+        "height": 327,
+        "right": 675,
+        "bottom": 780.046875
+      },
+      "copy": {
+        "x": 93,
+        "y": 166,
+        "width": 302.171875,
+        "height": 239.046875,
+        "right": 395.171875,
+        "bottom": 405.046875
+      },
+      "scene": {
+        "x": 423.171875,
+        "y": 167.515625,
+        "width": 251.828125,
+        "height": 236,
+        "right": 675,
+        "bottom": 403.515625
+      },
+      "guides": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "right": 0,
+        "bottom": 0
+      },
+      "buttonGradient": "linear-gradient(90deg, rgb(255, 0, 110) 0%, rgb(255, 107, 53) 100%)"
+    },
+    {
+      "width": 390,
+      "overflow": false,
+      "upload": {
+        "x": 20,
+        "y": 621.65625,
+        "width": 350,
+        "height": 312,
+        "right": 370,
+        "bottom": 933.65625
+      },
+      "copy": {
+        "x": 20,
+        "y": 153,
+        "width": 350,
+        "height": 194.65625,
+        "right": 370,
+        "bottom": 347.65625
+      },
+      "scene": {
+        "x": 37,
+        "y": 363.65625,
+        "width": 316,
+        "height": 218,
+        "right": 353,
+        "bottom": 581.65625
+      },
+      "guides": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "right": 0,
+        "bottom": 0
+      },
+      "buttonGradient": "linear-gradient(90deg, rgb(255, 0, 110) 0%, rgb(255, 107, 53) 100%)"
+    },
+    {
+      "width": 320,
+      "overflow": false,
+      "upload": {
+        "x": 20,
+        "y": 612.6875,
+        "width": 280,
+        "height": 343.5,
+        "right": 300,
+        "bottom": 956.1875
+      },
+      "copy": {
+        "x": 20,
+        "y": 153,
+        "width": 280,
+        "height": 185.6875,
+        "right": 300,
+        "bottom": 338.6875
+      },
+      "scene": {
+        "x": 20,
+        "y": 354.6875,
+        "width": 280,
+        "height": 218,
+        "right": 300,
+        "bottom": 572.6875
+      },
+      "guides": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "right": 0,
+        "bottom": 0
+      },
+      "buttonGradient": "linear-gradient(90deg, rgb(255, 0, 110) 0%, rgb(255, 107, 53) 100%)"
+    }
+  ],
+  "motion": {
+    "animated": true,
+    "pause": true,
+    "resume": true,
+    "reducedMotion": true
+  },
+  "browserErrors": [],
+  "chooseVideoRoute": "/signup",
+  "build": "pnpm --filter @hasheemstudio/web build — passed",
+  "typecheck": "pnpm typecheck — passed"
+}

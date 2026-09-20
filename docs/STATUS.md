@@ -1060,3 +1060,21 @@ with no evidence behind it.
   upload and pricing button gradients match exactly, the backdrop overlay is absent, and no
   horizontal overflow occurs. Desktop guides are visible and dashed. Screenshots and computed
   style evidence are in `docs/evidence/hero-brand-colors/`.
+
+# Character-wave hero and dark upload card — 2026-09-20
+
+- Increased desktop outer spacing around the dashed page guides: guide max-width is now 1240 px,
+  with content capped at 1184 px and 28 px clearance inside each guide at full desktop width.
+- Added an original, faint animated character-wave canvas behind the hero, inspired by the owner's
+  AgentMail screenshot. The public AgentMail page was readable, but its browser verification
+  blocked live animation inspection; this is a reference-inspired implementation, not an exact copy.
+- Canvas rendering is capped near 16 fps and pauses when offscreen or the tab is hidden. The hero
+  pause control now controls both animations; reduced-motion preferences render a static backdrop.
+- Restyled the upload card as a 640 px charcoal surface with a subtle gradient edge, a bordered
+  icon badge, larger spacing, and the approved #FF006E → #FF6B35 primary action gradient.
+  Existing copy and the /signup destination remain unchanged. This session verifies presentation,
+  not upload processing. Existing workflow images, benefits, pricing, and footer markup are intact.
+- Evidence: production web build and workspace typecheck passed. Chrome screenshots at 320, 390,
+  768, 1024, and 1440 px show no horizontal overflow and clearance between the converter and card.
+  Real canvas pixel comparisons verify animation, pause, resume, and reduced-motion behavior;
+  browser checks reported no page errors. See `docs/evidence/hero-character-background/`.

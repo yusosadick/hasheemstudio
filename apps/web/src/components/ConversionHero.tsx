@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { FileVideo, FileCheck, RefreshCw, Pause, Play, UploadCloud } from "lucide-react";
 import "./ConversionHero.css";
+import { HeroBackdrop } from "./HeroBackdrop";
 
 export function ConversionHero() {
   const [paused, setPaused] = useState(false);
 
   return (
     <div className="conversion-hero">
+      <HeroBackdrop paused={paused} />
       <div className="conversion-hero__stage">
         <div className="conversion-hero__copy">
           <p className="conversion-hero__eyebrow">Hasheem Studio video tools</p>
@@ -36,15 +38,15 @@ export function ConversionHero() {
               </div>
             </div>
           </div>
-          <button type="button" className="conversion-scene__pause" aria-label={paused ? "Play conversion animation" : "Pause conversion animation"} onClick={() => setPaused(!paused)}>
+          <button type="button" className="conversion-scene__pause" aria-label={paused ? "Play hero animations" : "Pause hero animations"} onClick={() => setPaused(!paused)}>
             {paused ? <Play size={12} /> : <Pause size={12} />}
-            <span>{paused ? "Play" : "Pause"} animation</span>
+            <span>{paused ? "Play" : "Pause"} animations</span>
           </button>
         </div>
       </div>
 
       <div className="hero-upload">
-        <UploadCloud className="hero-upload__icon" size={29} strokeWidth={1.8} aria-hidden="true" />
+        <span className="hero-upload__badge"><UploadCloud className="hero-upload__icon" size={29} strokeWidth={1.8} aria-hidden="true" /></span>
         <h2>Select your video to prepare</h2>
         <p>or drop an MP4 or MOV file here</p>
         <a href="/signup" className="hero-upload__button"><UploadCloud size={17} aria-hidden="true" />Choose video</a>
