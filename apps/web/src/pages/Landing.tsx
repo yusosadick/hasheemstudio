@@ -1,11 +1,5 @@
 import { IconUploadCloud } from "../components/Icons";
-import { BadgeCheck, Gauge, MonitorSmartphone, ShieldCheck } from "lucide-react";
-
-const steps = [
-  { image: "/assets/steps/upload.png", title: "Upload your video", body: "Add an MP4 or MOV file. Interrupted uploads can resume safely." },
-  { image: "/assets/steps/process.png", title: "Choose what it needs", body: "Inspect it, create a compatible MP4, or re-encode to H.264 and AAC." },
-  { image: "/assets/steps/download.png", title: "Verify & download", body: "Review what changed, then download the finished file with confidence." },
-];
+import { ArrowRight, BadgeCheck, FileCheck, FileVideo, Gauge, MonitorSmartphone, ScanSearch, ShieldCheck } from "lucide-react";
 
 const benefits = [
   { icon: ShieldCheck, marker: "01", title: "Private & secure", body: "Your file stays tied to your account." },
@@ -35,45 +29,60 @@ export default function Landing() {
           </div>
 
           <div className="mx-auto mt-8 max-w-4xl rounded-2xl border border-border bg-surface1/95 p-3 shadow-2xl shadow-black/30 sm:p-4">
-            <div className="rounded-xl border-2 border-dashed border-border bg-background/60 px-5 py-9 text-center sm:py-11">
-              <img
-                src="/assets/video-social-progress.png"
-                alt="A source video progressively optimized into landscape, square, and vertical social-media formats"
-                width="1200"
-                height="468"
-                className="mx-auto w-full max-w-2xl select-none object-contain"
-              />
-              <div className="mx-auto -mt-1 grid max-w-lg grid-cols-3 font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-foreground-muted" aria-hidden="true">
-                <span>Original</span><span>Optimize</span><span>Social-ready</span>
-              </div>
-              <h2 className="mt-5 text-base font-semibold sm:text-lg">Drop your video here</h2>
-              <p className="mt-1 text-sm text-foreground-muted">or choose a file to get started</p>
+            <div className="rounded-xl border-2 border-dashed border-border bg-background/60 px-5 py-8 text-center sm:px-8 sm:py-9">
+              <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg border border-accent/30 bg-accent/10 text-accent-text">
+                <IconUploadCloud width={25} height={25} />
+              </span>
+              <h2 className="mt-4 text-lg font-semibold">Drop your video here</h2>
+              <p className="mt-1 text-sm text-foreground-muted">or select it from your device</p>
               <a href="/signup" className="mt-5 inline-flex min-h-touch items-center justify-center gap-2 rounded-md bg-gradient-primary px-7 text-sm font-semibold text-foreground-on-accent shadow-lg shadow-accent/10 transition hover:opacity-90">
                 <IconUploadCloud width={18} height={18} /> Choose video
               </a>
               <p className="mt-3 text-xs text-foreground-muted">MP4 or MOV · Up to 100 MB and 2 minutes on the free plan</p>
+
+              <div id="how-it-works" className="mx-auto mt-8 max-w-3xl border-t border-border pt-7 text-left">
+                <div className="text-center">
+                  <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-accent-text">What happens next</p>
+                  <h3 className="mt-2 text-lg font-semibold">From original file to upload-ready video</h3>
+                  <p className="mt-1 text-xs text-foreground-muted">One clear process. One finished video. A report of every change.</p>
+                </div>
+
+                <ol className="mt-6 grid gap-3 md:grid-cols-3">
+                  <li className="relative rounded-lg border border-border bg-surface1 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-md bg-background text-accent-text"><FileVideo size={20} strokeWidth={1.75} /></span>
+                      <span className="font-mono text-[10px] text-foreground-muted">01 / ORIGINAL</span>
+                    </div>
+                    <h4 className="mt-4 text-sm font-semibold">We inspect your source</h4>
+                    <p className="mt-1 text-xs leading-5 text-foreground-muted">We read the codec, frame rate, rotation, colour data, duration, and resolution.</p>
+                    <span className="mt-3 inline-flex rounded border border-border px-2 py-1 font-mono text-[9px] text-foreground-muted">YOUR MP4 OR MOV</span>
+                    <ArrowRight className="absolute -right-5 top-1/2 z-10 hidden -translate-y-1/2 text-accent-text md:block" size={24} aria-hidden="true" />
+                  </li>
+                  <li className="relative rounded-lg border border-accent/30 bg-[linear-gradient(180deg,rgba(233,30,99,0.08),rgba(30,30,30,1))] p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-md bg-accent/10 text-accent-text"><ScanSearch size={20} strokeWidth={1.75} /></span>
+                      <span className="font-mono text-[10px] text-accent-text">02 / OPTIMIZE</span>
+                    </div>
+                    <h4 className="mt-4 text-sm font-semibold">We change only what is needed</h4>
+                    <p className="mt-1 text-xs leading-5 text-foreground-muted">Already compatible? We remux quickly. Otherwise, we create an H.264 video with AAC audio.</p>
+                    <span className="mt-3 inline-flex rounded border border-accent/30 bg-accent/10 px-2 py-1 font-mono text-[9px] text-accent-text">PRESERVE VISUAL QUALITY</span>
+                    <ArrowRight className="absolute -right-5 top-1/2 z-10 hidden -translate-y-1/2 text-accent-text md:block" size={24} aria-hidden="true" />
+                  </li>
+                  <li className="rounded-lg border border-border bg-surface1 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-md bg-background text-accent-text"><FileCheck size={20} strokeWidth={1.75} /></span>
+                      <span className="font-mono text-[10px] text-foreground-muted">03 / READY</span>
+                    </div>
+                    <h4 className="mt-4 text-sm font-semibold">You download with confidence</h4>
+                    <p className="mt-1 text-xs leading-5 text-foreground-muted">Get one compatible MP4 plus a report showing its final size and exactly what changed.</p>
+                    <span className="mt-3 inline-flex rounded border border-border px-2 py-1 font-mono text-[9px] text-foreground-muted">READY TO UPLOAD</span>
+                  </li>
+                </ol>
+              </div>
             </div>
           </div>
 
-          <div id="how-it-works" className="mx-auto mt-10 max-w-5xl">
-            <div className="flex items-center gap-4">
-              <div className="h-px flex-1 bg-border" /><h2 className="text-center text-sm font-semibold sm:text-base">How it works — 3 simple steps</h2><div className="h-px flex-1 bg-border" />
-            </div>
-            <ol className="mt-4 grid gap-3 md:grid-cols-3">
-              {steps.map((step, index) => (
-                <li key={step.title} className="relative rounded-xl border border-border bg-surface1 p-5 text-center">
-                  <span className="absolute left-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-accent/15 text-xs font-bold text-accent-text">{index + 1}</span>
-                  <div className="mx-auto flex h-28 items-center justify-center">
-                    <img src={step.image} alt="" width="320" height="320" className="h-28 w-28 select-none object-contain drop-shadow-[0_12px_22px_rgba(233,30,99,0.16)]" />
-                  </div>
-                  <h3 className="mt-2 text-sm font-semibold">{step.title}</h3>
-                  <p className="mx-auto mt-1 max-w-[16rem] text-xs leading-5 text-foreground-muted">{step.body}</p>
-                </li>
-              ))}
-            </ol>
-          </div>
-
-          <ul id="features" className="mx-auto mt-5 grid max-w-5xl gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
+          <ul id="features" className="mx-auto mt-6 grid max-w-4xl gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
             {benefits.map((benefit) => (
               <li key={benefit.title} className="flex gap-3 bg-background p-4">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-surface1 text-accent-text">

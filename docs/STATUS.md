@@ -980,3 +980,18 @@ with no evidence behind it.
   faster to recognize visually.
 - Verified all four SVG icons render in headless Chrome at 1440 px with no horizontal overflow;
   `pnpm typecheck` and `pnpm --filter @hasheemstudio/web build` passed.
+
+# Simplified conversion flow — 2026-09-20
+
+- Removed the generated social-output diagram and the separate illustrated step cards. They
+  duplicated the same explanation and incorrectly suggested that the current product creates
+  several aspect-ratio variants.
+- Consolidated the experience into one action-first upload panel followed by three explicit
+  stages: inspect the original metadata, remux or encode only as needed, then provide one compatible
+  MP4 and a change report. The language reflects the implemented recipes and avoids a lossless or
+  guaranteed file-size claim.
+- Added clear Lucide symbols, stage names, technical details, output labels, and desktop flow arrows
+  while keeping the sequence stacked and readable on mobile.
+- Deleted the four now-unused generated PNG assets. Verified desktop (1440 px) and mobile (390 px)
+  renders in headless Chrome with all three stages present and no horizontal overflow;
+  `pnpm typecheck` and `pnpm --filter @hasheemstudio/web build` passed.
