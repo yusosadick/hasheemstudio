@@ -949,3 +949,14 @@ with no evidence behind it.
   non-interactive, hidden on smaller screens, and sit behind application content.
 - Verified desktop (1440 px) and mobile (390 px) renders in headless Chrome with no horizontal
   overflow. `pnpm typecheck` and `pnpm --filter @hasheemstudio/web build` passed.
+
+# Generated workflow artwork — 2026-09-20
+
+- Replaced the generic line icons and arrow badges in the three workflow cards with an original,
+  coordinated set of transparent 3D illustrations for upload, processing, and verified download.
+  The optimized 320 px PNG assets are stored under `apps/web/public/assets/steps/` and total less
+  than 300 KB.
+- Removed the benefit-row icons and replaced them with compact numbered proof points, keeping the
+  generated workflow artwork as the section's visual focus.
+- Verified the completed desktop layout in headless Chrome with no horizontal overflow.
+  `pnpm typecheck` and `pnpm --filter @hasheemstudio/web build` passed.

@@ -1,23 +1,16 @@
-import {
-  IconCheckCircle,
-  IconDownload,
-  IconFilm,
-  IconGauge,
-  IconShield,
-  IconUploadCloud,
-} from "../components/Icons";
+import { IconUploadCloud } from "../components/Icons";
 
 const steps = [
-  { icon: IconUploadCloud, title: "Upload your video", body: "Add an MP4 or MOV file. Interrupted uploads can resume safely." },
-  { icon: IconGauge, title: "Choose what it needs", body: "Inspect it, create a compatible MP4, or re-encode to H.264 and AAC." },
-  { icon: IconDownload, title: "Verify & download", body: "Review what changed, then download the finished file with confidence." },
+  { image: "/assets/steps/upload.png", title: "Upload your video", body: "Add an MP4 or MOV file. Interrupted uploads can resume safely." },
+  { image: "/assets/steps/process.png", title: "Choose what it needs", body: "Inspect it, create a compatible MP4, or re-encode to H.264 and AAC." },
+  { image: "/assets/steps/download.png", title: "Verify & download", body: "Review what changed, then download the finished file with confidence." },
 ];
 
 const benefits = [
-  { icon: IconShield, title: "Private & secure", body: "Your file stays tied to your account." },
-  { icon: IconGauge, title: "Fast when possible", body: "Compatible files use a quick remux." },
-  { icon: IconFilm, title: "Made for video", body: "MP4 and MOV, up to 1080p60 free." },
-  { icon: IconCheckCircle, title: "Honest results", body: "Every transformation is explained." },
+  { marker: "01", title: "Private & secure", body: "Your file stays tied to your account." },
+  { marker: "02", title: "Fast when possible", body: "Compatible files use a quick remux." },
+  { marker: "03", title: "Made for video", body: "MP4 and MOV, up to 1080p60 free." },
+  { marker: "04", title: "Honest results", body: "Every transformation is explained." },
 ];
 
 export default function Landing() {
@@ -66,10 +59,11 @@ export default function Landing() {
               {steps.map((step, index) => (
                 <li key={step.title} className="relative rounded-xl border border-border bg-surface1 p-5 text-center">
                   <span className="absolute left-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-accent/15 text-xs font-bold text-accent-text">{index + 1}</span>
-                  <step.icon className="mx-auto text-accent-text" width={34} height={34} />
-                  <h3 className="mt-4 text-sm font-semibold">{step.title}</h3>
+                  <div className="mx-auto flex h-28 items-center justify-center">
+                    <img src={step.image} alt="" width="320" height="320" className="h-28 w-28 select-none object-contain drop-shadow-[0_12px_22px_rgba(233,30,99,0.16)]" />
+                  </div>
+                  <h3 className="mt-2 text-sm font-semibold">{step.title}</h3>
                   <p className="mx-auto mt-1 max-w-[16rem] text-xs leading-5 text-foreground-muted">{step.body}</p>
-                  {index < steps.length - 1 && <span className="absolute -right-3 top-1/2 z-10 hidden -translate-y-1/2 rounded-full border border-border bg-background px-1.5 text-accent-text md:block" aria-hidden="true">→</span>}
                 </li>
               ))}
             </ol>
@@ -78,7 +72,7 @@ export default function Landing() {
           <ul id="features" className="mx-auto mt-5 grid max-w-5xl gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
             {benefits.map((benefit) => (
               <li key={benefit.title} className="flex gap-3 bg-background p-4">
-                <benefit.icon className="shrink-0 text-foreground-muted" width={22} height={22} />
+                <span className="font-mono text-[10px] font-semibold tracking-widest text-accent-text">{benefit.marker}</span>
                 <div><h3 className="text-xs font-semibold">{benefit.title}</h3><p className="mt-1 text-xs leading-4 text-foreground-muted">{benefit.body}</p></div>
               </li>
             ))}
