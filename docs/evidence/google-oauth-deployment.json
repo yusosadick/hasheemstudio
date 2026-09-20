@@ -1,0 +1,18 @@
+{
+  "checkedAt": "2026-09-20T23:10:13.364750+00:00",
+  "changedContainers": [
+    "hasheemstudio-auth"
+  ],
+  "otherContainersUnchanged": true,
+  "authHealthy": true,
+  "googleEnabled": true,
+  "credentialKeysPresent": [
+    "GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID",
+    "GOTRUE_EXTERNAL_GOOGLE_SECRET"
+  ],
+  "providerCallback": "https://supabase.hasheemstudio.com/auth/v1/callback",
+  "siteUrl": "https://hasheemstudio.com",
+  "environmentMode": "0o600",
+  "handoffRemoved": true,
+  "sessionEnvironmentAbsent": true
+}

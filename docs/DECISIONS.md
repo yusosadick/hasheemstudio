@@ -97,3 +97,13 @@ handoff deleted. Exact failed metadata condition was not retained; the helper no
 those conditions on future authorized retries. Owner action: confirm exact item and organization
 assignment, or explicitly clarify personal-vault usage, then prepare a fresh protected handoff.
 No credential paste is needed. Google remains disabled; no service restart occurred.
+
+
+### Google provisioning blocker resolved — 2026-09-21
+
+Owner confirmed organization Bisso VPS Automation / collection Hasheem Studio and corrected
+exact item `hasheemstudio-google-oauth`. The new CLI 2026.8.0 retrieval passed exact-name and
+organization-assignment checks. Protected provisioning and cleanup passed; only Hasheem Studio
+Auth was recreated. Google is enabled and fresh Chromium reaches the provider login with PKCE
+and correct callbacks. Remaining owner acceptance is real consent, authenticated return,
+refresh and logout; no Google Cloud redirect change is required by the observed evidence.

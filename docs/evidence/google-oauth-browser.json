@@ -1,12 +1,16 @@
 {
-  "checkedAt": "2026-09-20T22:46:56.860Z",
+  "checkedAt": "2026-09-20T23:10:04.613Z",
   "frontendCallback": "https://hasheemstudio.com/auth/callback",
   "providerCallback": "https://supabase.hasheemstudio.com/auth/v1/callback",
   "realConsentCompleted": false,
   "credentialsPrinted": false,
   "settingsHttpStatus": 200,
-  "googleEnabled": false,
-  "buttonEnabled": false,
-  "status": "BLOCKED_GOOGLE_NOT_ENABLED",
+  "googleEnabled": true,
+  "buttonEnabled": true,
+  "approvedFrontendRedirect": true,
+  "pkcePresent": true,
+  "approvedProviderRedirect": true,
+  "providerOutcome": "google_login_requires_approved_account",
+  "status": "BLOCKED_OWNER_CONSENT",
   "callbackWithoutSessionDenied": true
 }

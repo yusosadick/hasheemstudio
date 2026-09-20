@@ -1,5 +1,40 @@
 # Status
 
+## Google OAuth enabled in production — 2026-09-21 (Europe/Berlin)
+
+- [VERIFIED-LIVE] Owner confirmed organization **Bisso VPS Automation**, collection **Hasheem
+  Studio**, exact item `hasheemstudio-google-oauth`. Retried only that item with Bitwarden CLI
+  **2026.8.0** and the new protected handoff. The response now matches the exact item name and
+  has an organization assignment; the previous metadata blocker is resolved.
+- [VERIFIED-LIVE] Provisioned only `GOOGLE_ENABLED`, `GOOGLE_CLIENT_ID` and `GOOGLE_SECRET` into
+  `/etc/hasheemstudio/local.env` (0600, inside 0700 directory). No credential value was printed
+  or stored in repository evidence. Vault lock completed, session environment was cleared and
+  the handoff deleted **before deployment**. [Provisioning](evidence/google-oauth-provisioning.json).
+- [VERIFIED-LIVE] Recreated **only `hasheemstudio-auth`** with `--no-deps`; it is healthy.
+  All other preexisting container IDs are unchanged, including Hasheem API/web and MailRaft.
+  Readback confirms Google enabled and both credential variables present, with exact provider
+  callback `https://supabase.hasheemstudio.com/auth/v1/callback`. Frontend callback remains
+  `https://hasheemstudio.com/auth/callback`. No Google Cloud settings changed.
+  [Deployment](evidence/google-oauth-deployment.json).
+- [VERIFIED-LIVE] `/auth/v1/settings` returns HTTP 200 with `external.google=true`. A fresh
+  Chromium context sees the enabled Continue with Google button and reaches Google's login
+  page. Observed authorization requests use PKCE and both exact approved callback URLs.
+  No `redirect_uri_mismatch` or `invalid_client` page was observed. A callback visit without a
+  session is rejected. No query values, tokens, screenshots or traces were retained.
+  [Browser](evidence/google-oauth-browser.json).
+- [TESTED-LOCAL] Four provisioning guard/update tests passed and resolved Compose configuration
+  validated without printing it. Workspace typecheck/build passed in the preceding same-day
+  code milestone; this retry changes protected configuration/evidence only. The known-secret
+  scan now includes the actual Google Client ID and Secret plus URL/base64 forms: zero matches
+  across 1,382 checked repository/diff, bundle, task-log, Auth/API-log-tail and process surfaces.
+  It is not a universal/history scan. [Scan](evidence/google-oauth-secret-scan.json).
+- [BLOCKED] Real owner Google consent, code exchange, authenticated return, refresh and logout
+  are **not yet independently verified**. Requested a fresh owner login at
+  https://hasheemstudio.com/login; do not share callback URLs/codes/tokens. Provider enablement
+  and reaching Google's login page are not end-to-end session proof. No synthetic account or
+  fabricated login was used. The earlier failed-item/disabled snapshots below are historical.
+
+
 ## Google OAuth provisioning — 2026-09-21 (Europe/Berlin)
 
 - [BLOCKED] Used the installed Bitwarden CLI **2026.8.0**, not the default 2026.9.0 binary,
@@ -31,8 +66,8 @@
 - [VERIFIED-LIVE] Fresh Chromium and HTTPS probe: `/auth/v1/settings` returned 200 with Google
   **disabled**; the login button is correspondingly disabled. The exact frontend callback
   returns its SPA and rejects an unauthenticated visit. This verifies the blocked dependency,
-  not Google consent, code exchange or a real session. [Browser](evidence/google-oauth-browser.json),
-  [provisioning](evidence/google-oauth-provisioning.json), [scan](evidence/google-oauth-secret-scan.json).
+  not Google consent, code exchange or a real session. [Browser](evidence/google-oauth-browser-disabled.json),
+  [provisioning](evidence/google-oauth-provisioning-blocked.json), [scan](evidence/google-oauth-secret-scan.json).
 - [BLOCKED] Google-enabled readback, real consent/login, refresh/logout and authenticated callback
   acceptance remain pending valid provisioned credentials and an owner-approved browser login.
   Do not claim Google Sign-In works from this change. Safe retry/runbook: [GOOGLE-AUTH](GOOGLE-AUTH.md).

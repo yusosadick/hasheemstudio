@@ -1,0 +1,21 @@
+{
+  "recordedAt": "2026-09-20T22:45:57.318589+00:00",
+  "cliVersion": "2026.8.0",
+  "requestedItem": "hasheemstudio-google-oauth",
+  "result": "BLOCKED",
+  "rejectionCode": "exact_organization_item_required",
+  "specificFailedMetadataCondition": "not_retained",
+  "credentialsProvisioned": false,
+  "protectedEnvUnchanged": true,
+  "vaultLocked": true,
+  "sessionEnvironmentCleared": true,
+  "handoffRemoved": true,
+  "servicesRestarted": [],
+  "credentialValuesPrinted": false,
+  "rawItemRetained": false,
+  "provisioningUnitTests": 4,
+  "composeValidation": "PASS",
+  "workspaceTypecheck": "PASS",
+  "workspaceBuild": "PASS",
+  "realGoogleConsentCompleted": false
+}

@@ -12,20 +12,24 @@ only when the real Supabase `/auth/v1/settings` reports `external.google=true`.
 | Site URL | https://hasheemstudio.com |
 
 [VERIFIED-LIVE] These routes/configuration were inspected on the dedicated Hasheem Studio
-stack. DNS resolves and public HTTPS settings return 200. [BLOCKED] Google is still disabled;
-credentials were not provisioned because the retrieved item failed the exact-name/organization
-guard. No real Google consent, exchange or session is claimed. See [STATUS](STATUS.md).
+stack. DNS resolves and public HTTPS settings return 200 with `external.google=true`. The
+corrected organization item was provisioned using CLI 2026.8.0; only Auth was recreated.
+Fresh Chromium reaches Google login with the exact callbacks and PKCE, without observed
+redirect/client errors. [BLOCKED] Owner consent, exchange, authenticated return, refresh and
+logout remain unverified. See [STATUS](STATUS.md) and [browser evidence](evidence/google-oauth-browser.json).
 
 ## Secure provisioning
 
-Only owner-authorized organization item `hasheemstudio-google-oauth` may be retrieved. Expected
+Only owner-authorized organization item `hasheemstudio-google-oauth` in **Bisso VPS Automation** /
+**Hasheem Studio** may be retrieved. The corrected item now passes the exact-name/organization
+assignment guard; the earlier failed attempt is historical. Expected
 fields: Google Client ID and Client Secret. Do not inspect unrelated items, print vault output,
 source the handoff as shell code, or put values into command arguments, logs, Git or Vite.
 
 The helper uses the installed Bitwarden **2026.8.0** at
 `~/.local/share/bitwarden-cli-2026.8/node_modules/.bin/bw`. The system binary is a different
 version and must not be substituted for this handoff. Provide a new protected 0600
-`~/.hasheemstudio_bw_session` only after resolving the recorded metadata blocker, then run:
+`~/.hasheemstudio_bw_session` only when a new retrieval/rotation is authorized, then run:
 
 ```sh
 python3 scripts/ops/provision-google-oauth.py
@@ -52,7 +56,7 @@ docker compose --env-file /etc/hasheemstudio/local.env \
 ```
 
 The API/frontend dynamically use Supabase; this change does not require restarting them.
-Do not execute that deployment command while provisioning is blocked. Preserve all unrelated
+Run that deployment command only after successful provisioning. Preserve all unrelated
 containers and shared routing. No Google Cloud redirect edits are part of this task.
 
 ## Tests and real acceptance
