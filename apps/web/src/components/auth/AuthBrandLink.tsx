@@ -3,7 +3,6 @@
 // See third_party/zahorozanzibar/README.md and LICENSE.
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
-import { Film } from 'lucide-react'
 
 type AuthBrandLinkProps = {
   className?: string
@@ -17,16 +16,14 @@ export function AuthBrandLink({ className, titleClassName }: AuthBrandLinkProps)
       aria-label="Hasheem Studio"
       className={cn('flex items-center gap-2 whitespace-nowrap', className)}
     >
-      <span className="grid h-12 w-12 place-items-center rounded-xl border border-border bg-surface1"><Film className="h-6 w-6 text-primary" /></span>
-      <span
+      <img
+        src="/images/brand/hasheem-gaming-wordmark-dark.png"
+        alt="Hasheem Gaming"
         className={cn(
-          "min-w-0 font-sans font-bold leading-none tracking-tight text-text",
-          titleClassName ?? 'text-xl'
+          'h-auto max-w-full object-contain object-left',
+          titleClassName === 'text-2xl' ? 'w-56' : 'w-48'
         )}
-      >
-        Hasheem
-        <span className="font-normal text-primary"> Studio</span>
-      </span>
+      />
     </Link>
   )
 }
