@@ -103,3 +103,13 @@ export async function uploadObject(objectKey: string, data: Buffer, contentType:
   });
   if (!res.ok) throw new Error(`uploadObject failed: ${res.status} ${await res.text()}`);
 }
+
+// Guest uploads use a narrowly scoped API capability; service credentials never reach the browser.
+export async function proxyTus(path: string, method: "HEAD" | "PATCH", offset?: string, body?: Buffer): Promise<Response> {
+  if (!path.startsWith("/storage/v1/upload/resumable/") || path.includes("..") || path.includes("?") || path.includes("#")) throw new Error("Invalid stored TUS path");
+  return fetch(`${base()}${path}`, {
+    method, redirect: "error", signal: AbortSignal.timeout(30_000),
+    headers: headers({ "Tus-Resumable": "1.0.0", ...(method === "PATCH" ? { "Content-Type": "application/offset+octet-stream", "Upload-Offset": offset! } : {}) }),
+    body: method === "PATCH" ? body : undefined,
+  });
+}

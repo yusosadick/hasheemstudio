@@ -63,3 +63,15 @@ never paste its contents into chat either.
 - SSH access to `github.com:yusosadick/hasheemstudio.git` is confirmed working (read access
   verified via `git ls-remote`; write access to be confirmed by the actual first push — recorded in
   `docs/STATUS.md` once done).
+
+## Owner update: guest processing and gated downloads — 2026-09-20
+
+- Authorized journey: guests may upload and process; downloading requires login/free allowance
+  or payment. Free access is one video per day with a maximum 100 MB input. Apply the download
+  allowance at the download boundary rather than treating it as the existing processing-attempt
+  counter. Preserve the completed job through registration/login and repeat downloads.
+- AUTH-SOURCE (owner input): provide the licensed repository URL and any non-default branch.
+  The owner authorizes copying its authentication source and wants the same complete flow.
+  Repository identification is missing; no request for additional copying permission is needed.
+- DOWNLOAD-CHECKOUT (owner input): confirm whether that repository supplies the desired payment
+  flow; otherwise provide processor and download price. No payment provider or pricing is assumed.

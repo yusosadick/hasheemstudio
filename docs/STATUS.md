@@ -1078,3 +1078,52 @@ with no evidence behind it.
   768, 1024, and 1440 px show no horizontal overflow and clearance between the converter and card.
   Real canvas pixel comparisons verify animation, pause, resume, and reduced-motion behavior;
   browser checks reported no page errors. See `docs/evidence/hero-character-background/`.
+
+# Guest processing and download access — discovery, 2026-09-20
+
+- Owner requested upload and processing before registration, with authentication/payment at
+  download; free access is one video per day, maximum 100 MB. Owner also requested importing the
+  entire authentication flow from their licensed repository. These instructions supersede the
+  earlier product assumptions of mandatory registration before upload and three free jobs/day.
+- Inspected API upload/job routes, browser auth/upload/result code, entitlement migration 0007,
+  and storage policies 0008. Current upload, job creation, and result routes require a user JWT;
+  the frontend protects upload/results behind RequireAuth. Result reads immediately issue signed
+  download URLs. Storage member SELECT policies independently allow direct output reads, so a
+  button-only gate would be bypassable.
+- The current daily quota counts processing attempts, not distinct downloadable videos. Reducing
+  that counter alone would block processing before the requested download-time decision. The
+  implementation needs atomic per-account download grants, idempotent repeat downloads, and
+  corresponding private-output storage enforcement. Guest ownership must survive login without
+  allowing another visitor to claim the same job. Existing 100 MB upload checks occur at session
+  creation and against actual storage size during finalization.
+- Local discovery: all 13 project-scoped containers are running; no infrastructure was changed.
+- BLOCKER AUTH-SOURCE: the licensed repository URL/branch was not supplied. Asked the owner for
+  it; cannot copy or verify an identical source flow until the repository is identified.
+- BLOCKER DOWNLOAD-CHECKOUT: no checkout implementation is present. Asked whether the licensed
+  repository includes the intended checkout, otherwise provider and price are required. No
+  checkout, paid entitlement, or payment-success behavior has been invented.
+- No runtime code, quota, database, or deployment change has been made in this discovery session.
+  Next: inspect the supplied source and license, map its auth/session/payment dependencies, import
+  the authorized flow, then implement and test guest processing, ownership handoff, download
+  grants, storage access denial, one-video daily concurrency, 100 MB enforcement, and return to
+  the completed result after login. Verify payment webhooks with the selected provider before
+  enabling paid downloads.
+
+# Guest download gate and Zahoro auth import — implementation, 2026-09-20
+
+- Owner supplied `yusosadick/zahorozanzibar`; imported its progressive auth screens, UI components,
+  imagery, recovery flow, and email lookup at revision 2fd32cf. Retained Apache-2.0 attribution
+  under `third_party/zahorozanzibar/`. Adapted Hasheem branding/session configuration and exact
+  video return destinations. Verification now requires a real verified user rather than URL shape.
+- Added private hashed guest capabilities, bounded guest session/upload/processing admission,
+  ownership-checked resumable upload proxy, idempotent finalize/job retries, and public upload/result
+  routes. Metadata no longer includes signed download URLs.
+- Added atomic account-scoped download grants: free accounts unlock one distinct video per UTC
+  day; repeat downloads of that job do not spend another allowance. Raw output reads and client
+  signing are blocked by storage RLS. 100 MB file checks remain on creation and finalization.
+- Migrations 0013 and 0014 are pending verification. API/web TypeScript checks pass. A real-stack
+  integration test is ready at `tests/integration/guest-download-gate.mjs`; results will follow.
+- Paid checkout is not implemented in either inspected source flow. Provider, price, and real
+  credentials remain required. The daily-limit response explicitly reports checkout unavailable;
+  no fake checkout or paid-success path is exposed. Google UI is disabled until Supabase reports
+  that provider enabled. VPS handoff will cover provider setup and end-to-end verification.

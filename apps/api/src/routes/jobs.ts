@@ -1,8 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { randomUUID } from "node:crypto";
 import { getPool } from "../db.js";
-import { requireAuth } from "../auth.js";
-import { createSignedDownloadUrl } from "../storage.js";
+import { requireActor, canAccessWorkspace, canAccessJob } from "../actor.js";
 
 interface Plan {
   id: string;
@@ -22,13 +21,14 @@ async function getWorkspacePlan(pool: ReturnType<typeof getPool>, workspaceId: s
 }
 
 export async function jobsRoutes(app: FastifyInstance): Promise<void> {
-  app.post("/v1/jobs", { preHandler: requireAuth }, async (request, reply) => {
-    const userId = (request as any).userId as string;
-    const body = request.body as { mediaAssetId?: string; recipe?: string };
-    if (!body.mediaAssetId || !body.recipe) {
+  app.post("/v1/jobs", { preHandler: requireActor }, async (request, reply) => {
+    const userId = request.userId ?? null;
+    const body = request.body as { mediaAssetId?: string; recipe?: string; idempotencyKey?: string };
+    if (!body?.mediaAssetId || !/^[0-9a-f-]{36}$/i.test(body.mediaAssetId) || !body.recipe) {
       return reply.code(400).send({ error: "invalid_request" });
     }
 
+    if (body.idempotencyKey && !/^[0-9a-f-]{36}$/i.test(body.idempotencyKey)) return reply.code(400).send({error:"invalid_idempotency_key"});
     const pool = getPool();
     const assetRes = await pool.query(
       `select id, workspace_id, duration_seconds from media_assets where id = $1`,
@@ -38,11 +38,7 @@ export async function jobsRoutes(app: FastifyInstance): Promise<void> {
     const asset = assetRes.rows[0];
     const workspaceId = asset.workspace_id;
 
-    const memberRes = await pool.query(
-      `select 1 from workspace_members where workspace_id = $1 and user_id = $2`,
-      [workspaceId, userId],
-    );
-    if (memberRes.rows.length === 0) return reply.code(403).send({ error: "forbidden" });
+    if (!await canAccessWorkspace(request, workspaceId)) return reply.code(403).send({ error: "forbidden" });
 
     const plan = await getWorkspacePlan(pool, workspaceId);
     if (!plan) return reply.code(500).send({ error: "no_entitlement", message: "Workspace has no assigned plan" });
@@ -70,10 +66,24 @@ export async function jobsRoutes(app: FastifyInstance): Promise<void> {
     try {
       await client.query("begin");
       await client.query(`select id from workspaces where id = $1 for update`, [workspaceId]);
+      if (body.idempotencyKey) {
+        const previous=await client.query(`select id, status, media_asset_id, recipe from jobs where workspace_id=$1 and idempotency_key=$2`,[workspaceId,body.idempotencyKey]);
+        if(previous.rows.length){
+          await client.query("rollback"); const prior=previous.rows[0];
+          if(prior.media_asset_id!==body.mediaAssetId || prior.recipe!==body.recipe) return reply.code(409).send({error:"idempotency_conflict"});
+          return reply.code(201).send({jobId:prior.id,status:prior.status});
+        }
+      }
+      // Bound aggregate anonymous work, not just work per newly created guest token.
+      if (request.guestWorkspaceId === workspaceId) {
+        await client.query(`select pg_advisory_xact_lock(7262747271)`);
+        const load = await client.query(`select count(*)::int n from jobs j join guest_sessions g on g.workspace_id=j.workspace_id where j.status in ('queued','processing','verifying')`);
+        if (load.rows[0].n >= 8) { await client.query("rollback"); return reply.code(429).send({error:"guest_capacity", message:"Guest processing is busy. Please try again shortly."}); }
+      }
 
       const dailyRes = await client.query(
         `select count(*)::int as n from usage_reservations
-         where workspace_id = $1 and status != 'released' and created_at >= date_trunc('day', now())`,
+         where workspace_id = $1 and status != 'released' and created_at >= (date_trunc('day', now() at time zone 'UTC') at time zone 'UTC')`,
         [workspaceId],
       );
       if (dailyRes.rows[0].n >= plan.max_jobs_per_day) {
@@ -92,9 +102,9 @@ export async function jobsRoutes(app: FastifyInstance): Promise<void> {
 
       const jobId = randomUUID();
       await client.query(
-        `insert into jobs (id, workspace_id, media_asset_id, created_by, recipe, status)
-         values ($1, $2, $3, $4, $5, 'queued')`,
-        [jobId, workspaceId, body.mediaAssetId, userId, body.recipe],
+        `insert into jobs (id, workspace_id, media_asset_id, created_by, recipe, status, idempotency_key)
+         values ($1, $2, $3, $4, $5, 'queued', $6)`,
+        [jobId, workspaceId, body.mediaAssetId, userId, body.recipe, body.idempotencyKey ?? randomUUID()],
       );
       await client.query(
         `insert into usage_reservations (workspace_id, job_id, kind, status) values ($1, $2, 'job_slot', 'reserved')`,
@@ -115,9 +125,10 @@ export async function jobsRoutes(app: FastifyInstance): Promise<void> {
     }
   });
 
-  app.get("/v1/jobs/:id", { preHandler: requireAuth }, async (request, reply) => {
-    const userId = (request as any).userId as string;
+  app.get("/v1/jobs/:id", { preHandler: requireActor }, async (request, reply) => {
+    const userId = request.userId ?? null;
     const { id } = request.params as { id: string };
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return reply.code(400).send({ error: "invalid_job_id" });
     const pool = getPool();
 
     const jobRes = await pool.query(
@@ -129,29 +140,15 @@ export async function jobsRoutes(app: FastifyInstance): Promise<void> {
     if (jobRes.rows.length === 0) return reply.code(404).send({ error: "not_found" });
     const job = jobRes.rows[0];
 
-    const memberRes = await pool.query(
-      `select 1 from workspace_members where workspace_id = $1 and user_id = $2`,
-      [job.workspace_id, userId],
-    );
-    if (memberRes.rows.length === 0) return reply.code(403).send({ error: "forbidden" });
+    if (!await canAccessJob(request, job)) return reply.code(403).send({ error: "forbidden" });
 
     const reportRes = await pool.query(
       `select * from verification_reports where job_id = $1 order by created_at desc limit 1`,
       [id],
     );
 
-    // Never offer a download link for an output the retention sweeper has already deleted
-    // (scripts/ops/retention-sweep.mjs sets output_deleted_at) — the object genuinely no longer
-    // exists in storage, so a signed URL for it would be a broken link, not an honest state.
-    let downloadUrl: string | null = null;
-    let outputExpired = false;
-    if (job.status === "succeeded" && job.output_object_key) {
-      if (job.output_deleted_at) {
-        outputExpired = true;
-      } else {
-        downloadUrl = await createSignedDownloadUrl(job.output_object_key, 900);
-      }
-    }
+    // Metadata never includes a signed URL. Every download must pass the atomic grant endpoint.
+    const outputExpired = Boolean(job.output_deleted_at || (job.output_retain_until && new Date(job.output_retain_until).getTime() <= Date.now()));
 
     return {
       id: job.id,
@@ -162,24 +159,23 @@ export async function jobsRoutes(app: FastifyInstance): Promise<void> {
       createdAt: job.created_at,
       updatedAt: job.updated_at,
       verificationReport: reportRes.rows[0] ?? null,
-      downloadUrl,
+      downloadUrl: null,
+      hasOutput: Boolean(job.output_object_key),
+      requiresLogin: !request.userId,
       outputExpired,
       outputRetainUntil: job.output_retain_until,
     };
   });
 
-  app.delete("/v1/jobs/:id", { preHandler: requireAuth }, async (request, reply) => {
-    const userId = (request as any).userId as string;
+  app.delete("/v1/jobs/:id", { preHandler: requireActor }, async (request, reply) => {
+    const userId = request.userId ?? null;
     const { id } = request.params as { id: string };
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return reply.code(400).send({ error: "invalid_job_id" });
     const pool = getPool();
 
     const preCheckRes = await pool.query(`select workspace_id from jobs where id = $1`, [id]);
     if (preCheckRes.rows.length === 0) return reply.code(404).send({ error: "not_found" });
-    const memberRes = await pool.query(
-      `select 1 from workspace_members where workspace_id = $1 and user_id = $2`,
-      [preCheckRes.rows[0].workspace_id, userId],
-    );
-    if (memberRes.rows.length === 0) return reply.code(403).send({ error: "forbidden" });
+    if (!await canAccessJob(request, {id, workspace_id: preCheckRes.rows[0].workspace_id})) return reply.code(403).send({ error: "forbidden" });
 
     // Lock the job row for the whole cancel so a concurrent cancel and worker claim (or two
     // concurrent cancel calls) can't race: whichever gets the lock first decides the outcome, and
