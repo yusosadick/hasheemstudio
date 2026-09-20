@@ -1200,3 +1200,7 @@ with no evidence behind it.
 - [NOT DONE] Independent inbox receipt, Google consent/callback, paid checkout and final owner
   visual approval remain open. This rollout proves the VPS guest-download release, not those
   external-account gates.
+- [VERIFIED-LIVE] After the first live run, inspected the shared Coolify proxy as `10.0.1.6` on
+  the project ingress network and set the project environment's nonsecret `API_TRUST_PROXY=10.0.1.6`.
+  Recreated only the API, confirmed the container received that exact setting and became healthy.
+  Re-ran the live API guest suite (11/11) and live Chromium guest suite successfully afterward.
