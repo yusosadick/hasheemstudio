@@ -1159,3 +1159,44 @@ with no evidence behind it.
 - Copy-ready deployment instructions: `docs/VPS-GUEST-DOWNLOAD-HANDOFF.md`. This includes coordinated
   API/frontend rollout, exact migration target discovery, trusted-proxy configuration, public upload
   safeguards, recovery redirect/OTP setup, remaining payments and retention checks, and evidence.
+
+# VPS guest-download rollout — 2026-09-20
+
+- [VERIFIED-LIVE] Fast-forwarded the VPS checkout to the exact pushed `origin/main` SHA
+  `11d726037767d47ba7dfa5fa6d86bff9438c74ba`; local `HEAD` and `origin/main` matched before
+  deployment. The working tree was clean at the start.
+- [VERIFIED-LIVE] Confirmed the target database marker is `hasheemstudio`, reached through the
+  dedicated project's Supavisor session port (`127.0.0.1:55432`), not another Supabase project.
+  Applied `0013_guest_processing_download_grants.sql` and `0014_progressive_auth_email_lookup.sql`
+  with the repository runner against the project-scoped VPS database. Live verification returned
+  all 14 migrations, zero pending versions, zero checksum drift, schema digest `56d2bd5253581c1d`,
+  all expected tables and RLS enabled.
+- [VERIFIED-LIVE] Built and replaced only `hasheemstudio-api` and `hasheemstudio-web` together
+  from SHA `11d7260`; the worker, Supabase services, Coolify and unrelated containers were not
+  restarted. API and web containers became healthy. Production web build and full workspace
+  typecheck passed. The web build retains a non-failing bundle-size warning (main JS about 680 KB).
+- [VERIFIED-LIVE] Public boundary checks passed after rollout: `https://hasheemstudio.com/`
+  returned HTTP 200; `https://api.hasheemstudio.com/health/live` and `/health/ready` returned
+  `{"status":"ok"}`; Supabase Auth health returned a real GoTrue response over HTTPS.
+- [VERIFIED-LIVE] `TEST_API_URL=https://api.hasheemstudio.com pnpm test:guest-download` passed all
+  11 live checks: 100 MB admission, guest resumable upload, worker processing, idempotent retries,
+  anonymous/cross-account denial, processing before download gating, atomic one-video concurrency,
+  repeat-download behaviour, locked-output storage protection, UTC reset, expired-output denial and
+  progressive email lookup. Disposable fixtures/users/files were cleaned by the test.
+- [VERIFIED-LIVE] `TEST_WEB_URL=https://hasheemstudio.com pnpm test:guest-browser` passed the real
+  Chromium journey: guest upload/process, progressive login, return to the same result, download,
+  logout, signup layout and invalid-auth-link handling. This includes the mobile viewport path; the
+  regenerated screenshots are retained under `docs/evidence/guest-download-gate/`.
+- [BLOCKED — OWNER INPUT] Live Supabase Auth settings report `external.google=false` and
+  `external.email=true`, with email confirmation required. Email configuration is present, but
+  physical inbox receipt still needs an owner-approved inbox check. Google OAuth cannot be enabled
+  without an approved Hasheem Google OAuth client ID/secret and exact production redirect setup;
+  no credentials were invented or borrowed from another project.
+- [BLOCKED — OWNER INPUT] Paid checkout remains intentionally disabled. No approved processor,
+  prices, credentials, webhook secret or legal billing terms exist in the repo or protected project
+  environment. The API correctly reports `checkoutAvailable:false` at the free daily limit. No
+  payment-success path was fabricated. Once the owner supplies the processor/pricing, implement
+  verified idempotent webhooks and entitlement reconciliation before enabling paid downloads.
+- [NOT DONE] Independent inbox receipt, Google consent/callback, paid checkout and final owner
+  visual approval remain open. This rollout proves the VPS guest-download release, not those
+  external-account gates.
