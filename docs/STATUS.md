@@ -1,5 +1,12 @@
 # Status
 
+## Studio email-code milestone — 2026-09-21
+
+- [IMPLEMENTED] Adapted six owner-authorized email layouts with Studio assets/branding, code-only content and public privacy/service-information links. Added signup OTP entry/resend; recovery copy now describes codes, not emailed links. Signup and recovery retain distinct Supabase OTP types.
+- [TESTED-LOCAL] All six email templates previewed at 320px in light/dark with synthetic codes and no overflow. Real deployed GoTrue loopback tests passed wrong/expired/used signup and recovery cases, session creation and recovery password update; disposable test account removed. No email was sent by this test. Full typecheck/build and pnpm test result recorded separately in rollout.
+- [IMPLEMENTED] Compose template mappings and six-digit/600-second settings prepared; protected production configuration and Auth restart are pending the deployment milestone. Existing Google callbacks unchanged.
+- [BLOCKED] Actual confirmation/recovery inbox delivery, support mailbox routing and owner Google consent remain unverified. No approved test inbox supplied yet. [Email runbook](EMAIL-TEMPLATES.md), [OTP evidence](evidence/email-templates/otp.json).
+
 ## Landing-design auth milestone — 2026-09-21
 
 - [IMPLEMENTED] Shared LandingAuthShell reuses the public navigation, Studio brand, charcoal surfaces, gradient accent and pausable/reduced-motion landing background across all auth routes. Removed the tourism panel; Landing.tsx remains unchanged. Get Started remains visible at 320px and for both auth states. Existing safe return-path and PKCE exchange logic are preserved.

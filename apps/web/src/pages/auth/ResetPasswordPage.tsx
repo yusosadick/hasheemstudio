@@ -175,7 +175,7 @@ export default function ResetPasswordPage() {
                   one you requested it from.
                 </div>
                 <Link to="/forgot-password">
-                  <Button className="w-full" size="lg">Request a new link</Button>
+                  <Button className="w-full" size="lg">Request a new code</Button>
                 </Link>
                 <Link
                   to="/login"
@@ -199,6 +199,7 @@ export default function ResetPasswordPage() {
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
                       <input
                         {...register('password')}
+                        aria-label="New password" autoComplete="new-password"
                         type={showPassword ? 'text' : 'password'}
                         placeholder="Min 8 chars, 1 uppercase, 1 number"
                         className={cn(
@@ -209,6 +210,7 @@ export default function ResetPasswordPage() {
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text"
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "checks": [
+    "wrong signup code denied",
+    "expired signup code denied",
+    "signup code creates verified session",
+    "used signup code denied",
+    "recovery code cannot confirm signup",
+    "expired recovery denied",
+    "recovery code creates session",
+    "used recovery code denied",
+    "recovery session updates password"
+  ],
+  "transport": "real deployed GoTrue via loopback",
+  "emailDelivered": false,
+  "codeSource": "admin generation; no SMTP send"
+}

@@ -1,0 +1,8 @@
+import { PageSEO } from '@/components/shared/PageSEO';
+export default function ServiceInformation({kind}:{kind:'privacy'|'terms'}) {
+ return <article className="mx-auto max-w-3xl space-y-6 px-5 py-14"><PageSEO title={kind==='privacy'?'Privacy and data handling':'Service terms'} canonicalPath={`/${kind}`} />
+ <h1 className="text-4xl font-semibold">{kind==='privacy'?'Privacy and data handling':'Service terms'}</h1>
+ {kind==='privacy'?<><p>Hasheem Studio processes uploaded videos to inspect or prepare them for download. Account email and verification are used to protect downloads and apply account allowances.</p><p>Processed outputs are private. The download endpoint checks your account and allowance before issuing a short-lived download link. Your result page shows when an output expires.</p><p>Authentication emails are delivered through Resend. Google Sign-In is optional. Do not share verification codes, account passwords or download links.</p></>:<><p>Upload only videos you are authorized to process. Keep your account credentials and verification codes private.</p><p>The current free allowance is one distinct video download per UTC day, up to 100 MB. Repeat downloads of the same unlocked result do not consume another allowance. Processing and retention limits appear in the upload and result screens.</p><p>Paid checkout is not currently available. No payment price or subscription is offered by this page.</p></>}
+ <p className="text-sm text-foreground-muted">Operated by Bisso Technologies Ltd. This page describes the current product behaviour; additional account support and policy details are awaiting operator publication.</p>
+ </article>;
+}

@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./index.css";
+import ServiceInformation from "./pages/ServiceInformation";
 import App from "./App";
 import Landing from "./pages/Landing";
 import UploadWizardPrototype from "./pages/UploadWizardPrototype";
@@ -23,6 +24,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <Routes>
         <Route element={<App />}>
           <Route path="/" element={<Landing />} />
+          <Route path="/privacy" element={<ServiceInformation kind="privacy" />} />
+          <Route path="/terms" element={<ServiceInformation kind="terms" />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/register" element={<Signup />} />

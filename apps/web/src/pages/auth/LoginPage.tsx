@@ -41,7 +41,6 @@ export default function LoginPage() {
   const nextPath = searchParams.get('next')
 
   const { signIn, signUp, signInWithGoogle, checkEmailExists } = useAuth()
-  const [confirmation, setConfirmation] = useState(false)
   const [googleAvailable, setGoogleAvailable] = useState(false)
   useEffect(() => { let active=true; void fetch(`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/settings`, {headers:{apikey:import.meta.env.VITE_SUPABASE_ANON_KEY}}).then(r=>r.json()).then(settings=>{if(active)setGoogleAvailable(settings.external?.google===true)}).catch(()=>{}); return ()=>{active=false}; },[])
   useEffect(() => { if (nextPath) { try { localStorage.setItem(AUTH_RETURN_KEY, safeReturnPath(nextPath)) } catch { /* optional */ } } }, [nextPath])
@@ -127,8 +126,8 @@ export default function LoginPage() {
         return
       }
       // Email confirmation required — surface a friendly success.
-      setStep('email')
-      setConfirmation(true)
+      sessionStorage.setItem('hasheemstudio-verification-email', email.trim())
+      navigate('/verify-email')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not create your account. Please try again.')
     } finally {
@@ -226,7 +225,6 @@ export default function LoginPage() {
               )}
             </AnimatePresence>
 
-            {confirmation && <p role="status" className="mt-6 rounded-xl border border-border bg-surface1 p-4 text-sm">Check your email to verify your account, then sign in here. Your processed video is saved.</p>}
             {error && (
               <motion.div
                 initial={{ opacity: 0, y: -4 }}

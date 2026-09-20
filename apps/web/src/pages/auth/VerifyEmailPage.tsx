@@ -1,112 +1,42 @@
-// Adapted from yusosadick/zahorozanzibar @ 2fd32cf (Apache-2.0).
-// Modified for Hasheem Studio branding, sessions, redirect safety, and verification.
-// See third_party/zahorozanzibar/README.md and LICENSE.
-import { useEffect, useState } from 'react'
-import { completeAuth } from '@/lib/completeAuth'
-import { authReturnPath } from '@/lib/authReturn'
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { PageSEO } from '@/components/shared/PageSEO'
+import { useEffect, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
+import { completeAuth } from '@/lib/completeAuth';
+import { authReturnPath } from '@/lib/authReturn';
+import { Button } from '@/components/ui/button';
+import { PageSEO } from '@/components/shared/PageSEO';
 
 export default function VerifyEmailPage() {
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
-
-  useEffect(() => {
-    let cancelled=false
-    void completeAuth().then(()=>{if(!cancelled)setStatus('success')}).catch(()=>{if(!cancelled)setStatus('error')})
-    return ()=>{cancelled=true}
-  }, [])
-
-  return (
-    <>
-      <PageSEO
-        title="Verify email"
-        description="Confirm your email address for your Hasheem Studio account."
-        canonicalPath="/verify-email"
-        noIndex
-      />
-    <div data-public-dark="true" className="relative w-full">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
-      >
-
-
-        <Card className="border-0 bg-transparent shadow-none">
-          <CardContent className="pt-8 pb-8 text-center space-y-6">
-            {status === 'loading' && (
-              <>
-                <div className="mx-auto w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
-                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                </div>
-                <div>
-                  <h2 className="font-heading text-2xl font-bold text-text mb-2">
-                    Verifying Your Email
-                  </h2>
-                  <p className="text-text-muted">Please wait while we confirm your email address...</p>
-                </div>
-              </>
-            )}
-
-            {status === 'success' && (
-              <>
-                <div className="mx-auto w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center">
-                  <CheckCircle className="h-8 w-8 text-green-400" />
-                </div>
-                <div>
-                  <h2 className="font-heading text-2xl font-bold text-text mb-2">
-                    Email Verified!
-                  </h2>
-                  <p className="text-text-muted">
-                    Your email has been successfully verified. You can now sign in to your account and download your video.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-3">
-                  <Link to="/login">
-                    <Button className="w-full" size="lg">
-                      Sign In to Your Account
-                    </Button>
-                  </Link>
-                  <Link to={authReturnPath()}>
-                    <Button variant="outline" className="w-full">
-                      Return to your video
-                    </Button>
-                  </Link>
-                </div>
-              </>
-            )}
-
-            {status === 'error' && (
-              <>
-                <div className="mx-auto w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center">
-                  <XCircle className="h-8 w-8 text-red-400" />
-                </div>
-                <div>
-                  <h2 className="font-heading text-2xl font-bold text-text mb-2">
-                    Verification Failed
-                  </h2>
-                  <p className="text-text-muted">
-                    The verification link may have expired or is invalid. Please request a new verification email.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-3">
-                  <Link to="/login">
-                    <Button className="w-full" size="lg">
-                      Go to Login
-                    </Button>
-                  </Link>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </motion.div>
-    </div>
-    </>
-  )
+  const [email,setEmail]=useState(()=>sessionStorage.getItem('hasheemstudio-verification-email')??'');
+  const [code,setCode]=useState('');
+  const [status,setStatus]=useState<'loading'|'entry'|'success'>('loading');
+  const [pending,setPending]=useState(false);
+  const [error,setError]=useState('');
+  useEffect(()=>{let active=true;void completeAuth().then(()=>{if(active)setStatus('success')}).catch(()=>{if(active)setStatus('entry')});return()=>{active=false}},[]);
+  async function verify(e:FormEvent) {
+    e.preventDefault();if(pending)return;setError('');
+    if(!/^\d{6}$/.test(code)){setError('Enter the six-digit code from your email.');return;}
+    setPending(true);
+    try {
+      const {data,error}=await supabase.auth.verifyOtp({email:email.trim(),token:code,type:'signup'});
+      if(error||!data.session)throw new Error();
+      await completeAuth(); sessionStorage.removeItem('hasheemstudio-verification-email');setCode('');setStatus('success');
+    } catch {setCode('');setError('That code is invalid, expired or already used. Request a new code.');}
+    finally{setPending(false)}
+  }
+  async function resend() {
+    if(pending||!email.trim())return;setPending(true);setError('');
+    try {const {error}=await supabase.auth.resend({type:'signup',email:email.trim(),options:{emailRedirectTo:`${window.location.origin}/auth/callback`}});if(error)throw error;setError('If this address needs verification, a new code has been requested.');}
+    catch{setError('Could not request a code. Wait a moment and try again.');}finally{setPending(false)}
+  }
+  return <><PageSEO title="Verify email" canonicalPath="/verify-email" noIndex />
+    <h1 className="text-3xl font-bold">{status==='success'?'Email Verified!':'Verify your email'}</h1>
+    {status==='loading'?<p role="status" className="mt-4">Checking your session…</p>:status==='success'?<div className="mt-6 space-y-4"><p>Your email is confirmed. Your prepared video is waiting.</p><Button asChild className="w-full"><Link to={authReturnPath()}>Return to your video</Link></Button></div>:<form onSubmit={verify} className="mt-6 space-y-4">
+      <p className="text-foreground-muted">Enter the six-digit code sent to your email. Never share it.</p>
+      <label className="block">Email address<input aria-label="Email address" required type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} className="mt-2 w-full rounded-lg border border-border bg-background p-3" /></label>
+      <label className="block">Confirmation code<input aria-label="Confirmation code" required inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={code} onChange={e=>setCode(e.target.value.replace(/[^0-9]/g,''))} className="mt-2 w-full rounded-lg border border-border bg-background p-3 text-center text-xl tracking-widest" /></label>
+      {error&&<p role="alert" className="text-sm text-foreground-muted">{error}</p>}
+      <Button disabled={pending} type="submit" className="w-full">{pending?'Verifying…':'Verify email'}</Button>
+      <button disabled={pending} type="button" onClick={()=>void resend()} className="min-h-touch text-sm underline">Request a new code</button>
+    </form>}</>;
 }

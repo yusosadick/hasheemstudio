@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
       setSentEmail(data.email)
       setSent(true)
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to send reset email'
+      const message = err instanceof Error ? err.message : 'Failed to send reset code email'
       setError(message)
     }
   }
@@ -71,7 +71,7 @@ export default function ForgotPasswordPage() {
       navigate('/reset-password', { replace: true })
     } catch {
       // Supabase returns a generic error for wrong/expired/used codes — keep it generic.
-      setCodeError('That code is invalid or has expired. Request a new link below.')
+      setCodeError('That code is invalid or has expired. Request a new code below.')
     } finally {
       setVerifying(false)
     }
@@ -81,7 +81,7 @@ export default function ForgotPasswordPage() {
     <>
       <PageSEO
         title="Reset password"
-        description="Request a password reset link for your Hasheem Studio account."
+        description="Request a password reset code for your Hasheem Studio account."
         canonicalPath="/forgot-password"
         noIndex
       />
@@ -103,20 +103,20 @@ export default function ForgotPasswordPage() {
             </CardTitle>
             <CardDescription>
               {sent
-                ? 'Use the link or code we just emailed you'
-                : 'Enter your email and we\'ll send you a reset link'}
+                ? 'Enter the six-digit code we just emailed you'
+                : 'Enter your email and we\'ll send you a reset code'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {sent ? (
               <div className="space-y-4">
                 <p className="text-sm text-text-muted">
-                  Tap the <span className="font-medium text-text">Reset password</span> button in the email,
-                  or enter the code from it below.
+                  Enter the six-digit password recovery code from your email below.
                 </p>
 
                 <div className="space-y-2">
                   <input
+                    aria-label="Recovery code"
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/[^\d]/g, '').slice(0, 6))}
                     onKeyDown={(e) => { if (e.key === 'Enter') void onVerifyCode() }}
@@ -164,6 +164,7 @@ export default function ForgotPasswordPage() {
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
                       <input
                         {...register('email')}
+                        aria-label="Email address"
                         type="email"
                         placeholder="you@example.com"
                         className={cn(
@@ -176,7 +177,7 @@ export default function ForgotPasswordPage() {
                   </div>
 
                   <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
-                    {isSubmitting ? 'Sending...' : 'Send Reset Link'}
+                    {isSubmitting ? 'Sending...' : 'Send reset code'}
                   </Button>
                 </form>
 

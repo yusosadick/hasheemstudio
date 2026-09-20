@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "templates": 6,
+  "schemes": [
+    "light",
+    "dark"
+  ],
+  "width": 320,
+  "code": "synthetic placeholder only",
+  "inboxDelivery": false
+}
