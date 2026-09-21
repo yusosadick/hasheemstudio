@@ -16,6 +16,7 @@ import AuthCallback from "./pages/auth/AuthCallbackPage";
 import { MotionConfig } from "framer-motion";
 import Upload from "./pages/Upload";
 import JobResult from "./pages/JobResult";
+import AccountPage from "./pages/AccountPage";
 
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -37,6 +38,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="/prototypes/job-result" element={<JobResultPrototype />} />
             <Route path="/app/upload" element={<Upload />} />
             <Route path="/app/jobs/:id" element={<JobResult />} />
+            <Route path="/app/:section" element={<AccountPage />} />
         </Route>
       </Routes>
     </BrowserRouter></MotionConfig>
