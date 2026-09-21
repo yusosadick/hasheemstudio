@@ -16,7 +16,7 @@ const context=await browser.newContext({viewport:{width:1440,height:1000},accept
 page.setDefaultTimeout(15000);const errors=[];page.on('pageerror',e=>errors.push(e.message));let guestWorkspace;
 mkdirSync('docs/evidence/guest-download-gate',{recursive:true});
 try{
- await page.goto(base+'/');await page.getByRole('link',{name:'Choose video',exact:true}).click();
+ await page.goto(base+'/');assert(await page.locator('header > div').getByRole('link',{name:'Get Started',exact:true}).isVisible());await page.getByRole('link',{name:'Choose video',exact:true}).click();
  await page.locator('input[type=file]').setInputFiles('tests/fixtures/media/synthetic-remux-test.mov');
  await page.waitForURL('**/app/jobs/*',{timeout:30000});const jobPath=new URL(page.url()).pathname;
  const jobId=jobPath.split('/').pop();guestWorkspace=(await db.query('select workspace_id from jobs where id=$1',[jobId])).rows[0].workspace_id;
@@ -37,7 +37,7 @@ try{
  await page.getByRole('button',{name:'Download video',exact:true}).click();
  await page.getByRole('alert').filter({hasText:'Your daily video allowance is used'}).waitFor();
  await page.getByRole('button',{name:'Upgrade unavailable'}).waitFor();
- assert(await page.locator('header > div').getByRole('link',{name:'Get Started',exact:true}).isVisible());
+ assert(await page.locator('header > div').getByRole('link',{name:'Open workspace',exact:true}).isVisible());
  await page.screenshot({path:'docs/evidence/guest-download-gate/download-gate.png',fullPage:true});
  await page.goto(base+'/verify-email');await page.getByText('Email Verified!',{exact:true}).waitFor();
  await page.goto(base+'/app/upload');
