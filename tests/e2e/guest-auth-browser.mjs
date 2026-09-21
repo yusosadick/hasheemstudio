@@ -37,11 +37,15 @@ try{
  await page.getByRole('button',{name:'Download video',exact:true}).click();
  await page.getByRole('alert').filter({hasText:'Your daily video allowance is used'}).waitFor();
  await page.getByRole('button',{name:'Upgrade unavailable'}).waitFor();
- assert(await page.locator('header > div').getByRole('link',{name:'Open workspace',exact:true}).isVisible());
+ await page.getByRole('button',{name:/Open profile menu for/}).click();
+ assert(await page.getByRole('menuitem',{name:'My Profile',exact:true}).isVisible());
+ assert(await page.getByRole('menuitem',{name:'Settings',exact:true}).isVisible());
+ assert(await page.getByRole('menuitem',{name:'Sign out',exact:true}).isVisible());
  await page.screenshot({path:'docs/evidence/guest-download-gate/download-gate.png',fullPage:true});
  await page.goto(base+'/verify-email');await page.getByText('Email Verified!',{exact:true}).waitFor();
  await page.goto(base+'/app/upload');
- await page.getByRole('button',{name:'Log out',exact:true}).click();await page.waitForURL(base+'/');
+ await page.getByRole('button',{name:/Open profile menu for/}).click();
+ await page.getByRole('menuitem',{name:'Sign out',exact:true}).click();await page.waitForURL(base+'/');
  await page.goto(base+'/login');await page.getByRole('heading',{name:'Welcome to Hasheem Studio'}).waitFor();
  await page.waitForTimeout(700);await page.screenshot({path:'docs/evidence/guest-download-gate/auth-desktop.png',fullPage:true});
  await page.getByRole('textbox',{name:'Email address'}).fill(`new-${randomUUID()}@example.invalid`);await page.getByRole('button',{name:'Continue',exact:true}).click();
