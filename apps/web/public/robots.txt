@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /app/
+Disallow: /login
+Disallow: /signup
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-email
+Disallow: /auth/
+
+Sitemap: https://hasheemstudio.com/sitemap.xml
+Host: https://hasheemstudio.com

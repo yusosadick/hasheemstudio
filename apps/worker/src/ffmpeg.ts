@@ -101,7 +101,8 @@ export async function remux(inputPath: string, outputPath: string): Promise<void
       "-y",
       "-protocol_whitelist", "file",
       "-i", inputPath,
-      "-map", "0",
+      "-map", "0:v:0",
+      "-map", "0:a:0?", // ignore data/attachment streams that cannot be muxed into MP4
       "-c", "copy",
       "-movflags", "+faststart",
       "-fs", String(MAX_OUTPUT_BYTES),

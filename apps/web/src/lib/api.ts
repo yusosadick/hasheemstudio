@@ -33,7 +33,16 @@ export async function createUploadSession(file: File): Promise<UploadSession> {
       declaredMimeType: file.type || "application/octet-stream",
     }),
   });
-  if (!res.ok) throw new Error(`Failed to create upload session: ${res.status} ${await res.text()}`);
+  if (!res.ok) {
+    let detail: any = null;
+    try { detail = await res.json(); } catch { /* non-JSON response */ }
+    if (res.status === 413 || detail?.error === "file_too_large") {
+      const limit = Number(detail?.limitBytes ?? 100 * 1024 * 1024);
+      const limitMb = Math.round(limit / (1024 * 1024));
+      throw new Error(`This video is too large. The current limit is ${limitMb} MB.`);
+    }
+    throw new Error(`Failed to create upload session: ${res.status} ${detail?.message ?? "Please check the file and try again."}`);
+  }
   return res.json();
 }
 

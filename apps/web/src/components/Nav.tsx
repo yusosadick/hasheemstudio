@@ -43,10 +43,10 @@ export function Nav() {
             Sign in
           </a>}
           <a
-            href="/app/upload"
+            href={session ? "/app/upload" : "/app/upload"}
             className="inline-flex min-h-touch items-center rounded-md bg-foreground px-3 sm:px-6 font-mono text-xs font-semibold uppercase tracking-wider text-background transition-colors hover:bg-foreground/85"
           >
-            Get Started
+            {session ? "Open workspace" : "Get Started"}
           </a>
           <button
             type="button"
@@ -84,7 +84,7 @@ export function Nav() {
             href="/app/upload"
             className="mt-2 inline-flex min-h-touch items-center justify-center rounded-md bg-foreground px-5 font-mono text-xs font-semibold uppercase tracking-wider text-background"
           >
-            Get Started
+            {session ? "Open workspace" : "Get Started"}
           </a>
         </nav>
       )}
