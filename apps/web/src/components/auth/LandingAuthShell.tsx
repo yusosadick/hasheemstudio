@@ -15,7 +15,12 @@ export function LandingAuthShell({ children }: { children: ReactNode }) {
         <div className="relative mx-auto max-w-md">
           <p className="mb-6 text-center font-mono text-xs uppercase tracking-widest text-foreground-muted">Your video. Ready for what’s next.</p>
           <div className="h-1 rounded-t-xl bg-gradient-primary" />
-          <div className="rounded-b-xl border border-t-0 border-border bg-surface1 p-6 sm:p-8">{children}</div>
+          <div className="rounded-b-xl border border-t-0 border-border bg-surface1 p-6 sm:p-8">
+            <div className="mb-6 flex justify-center" aria-label="Hasheem Studio brand">
+              <img src="/images/brand/hasheem-gaming-emblem.jpg" alt="Hasheem Studio emblem" className="h-14 w-14 rounded-xl object-cover" />
+            </div>
+            {children}
+          </div>
           <button type="button" className="mx-auto mt-6 block min-h-touch text-xs text-foreground-muted" onClick={() => setPaused(!paused)}>{paused ? "Play" : "Pause"} background animation</button>
         </div>
       </main>
