@@ -23,7 +23,7 @@ export function Nav() {
   return (
     <header className="border-b border-dashed border-border bg-background/95 backdrop-blur">
       <div className="mx-auto flex min-h-[76px] max-w-6xl items-center justify-between px-4 sm:px-6">
-        <AuthBrandLink />
+        <AuthBrandLink gamingWordmark />
 
         <nav className="hidden items-center gap-10 lg:flex" aria-label="Primary">
           {links.map((l) => (
