@@ -1310,3 +1310,15 @@ with no evidence behind it.
   the project ingress network and set the project environment's nonsecret `API_TRUST_PROXY=10.0.1.6`.
   Recreated only the API, confirmed the container received that exact setting and became healthy.
   Re-ran the live API guest suite (11/11) and live Chromium guest suite successfully afterward.
+- [VERIFIED-LIVE] Fixed the signed-in header CTA regression: anonymous users see `Get Started`,
+  authenticated users see `Open workspace`. The browser evidence now asserts both states.
+- [VERIFIED-LIVE] Restored the Hasheem Gaming wordmark asset in the current auth shell after a later
+  auth/layout change had overwritten it with the old grid icon. The live Chromium auth screenshot
+  now shows the wordmark and the landing-style auth background/form.
+- [VERIFIED-LIVE] Fixed the remux recipe to map only the first video and optional first audio stream,
+  excluding data/attachment streams that caused a real FFmpeg `Error initializing output stream`
+  failure on a MOV with an additional stream. The live guest API and browser suites passed after
+  the worker deployment. Exact previously failed user media was not retained, so that original
+  file was not reprocessed.
+- [VERIFIED-LIVE] Added public `robots.txt`, `sitemap.xml`, canonical/meta/Open Graph/Twitter SEO
+  metadata and no-index rules for authenticated routes. Verified live at `https://hasheemstudio.com/`.
