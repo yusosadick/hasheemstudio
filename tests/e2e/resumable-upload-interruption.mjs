@@ -143,10 +143,10 @@ try {
     `downloaded=${downloadedBuffer.length} bytes, original=${fixtureBuffer.length} bytes`,
   );
 
-  // 8. A duplicate finalize call on the same (now completed) session must be rejected, not
-  //    silently re-processed — protects against double-charging/duplicate media assets.
+  // 8. Finalize retries return the same asset, without creating or charging again.
   const secondFinalizeRes = await fetch(`${apiBase}/v1/uploads/sessions/${session.sessionId}/finalize`, { method: "POST", headers: authA });
-  record("re-finalizing an already-completed session is rejected, not silently re-run", secondFinalizeRes.status === 409, `status=${secondFinalizeRes.status}`);
+  const repeated = await secondFinalizeRes.json();
+  record("re-finalizing returns the same asset idempotently", secondFinalizeRes.status === 200 && repeated.mediaAssetId === finalized.mediaAssetId, `status=${secondFinalizeRes.status}`);
 
   // 9. Enforced size limit: declaring a size over the plan's cap is rejected up front.
   const oversizeRes = await fetch(`${apiBase}/v1/uploads/sessions`, {

@@ -1,0 +1,74 @@
+{
+  "services": [
+    {
+      "name": "/hasheemstudio-web",
+      "recreated": true,
+      "running": true,
+      "health": "healthy"
+    },
+    {
+      "name": "/hasheemstudio-api",
+      "recreated": true,
+      "running": true,
+      "health": "healthy"
+    },
+    {
+      "name": "/hasheemstudio-auth",
+      "recreated": true,
+      "running": true,
+      "health": "healthy"
+    },
+    {
+      "name": "/hasheemstudio-worker",
+      "recreated": false,
+      "running": true,
+      "health": null
+    },
+    {
+      "name": "/hasheemstudio-db",
+      "recreated": false,
+      "running": true,
+      "health": "healthy"
+    },
+    {
+      "name": "/hasheemstudio-redis",
+      "recreated": false,
+      "running": true,
+      "health": "healthy"
+    },
+    {
+      "name": "/hasheemstudio-envoy",
+      "recreated": false,
+      "running": true,
+      "health": "healthy"
+    }
+  ],
+  "auth": {
+    "GOTRUE_MAILER_AUTOCONFIRM": "false",
+    "GOTRUE_MAILER_OTP_LENGTH": "6",
+    "GOTRUE_MAILER_OTP_EXP": "600",
+    "GOTRUE_SITE_URL": "https://hasheemstudio.com",
+    "GOTRUE_URI_ALLOW_LIST": "https://hasheemstudio.com/auth/callback,https://hasheemstudio.com/reset-password",
+    "GOTRUE_EXTERNAL_GOOGLE_ENABLED": "true",
+    "GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI": "https://supabase.hasheemstudio.com/auth/v1/callback",
+    "GOTRUE_SMTP_ADMIN_EMAIL": "no-reply@hasheemstudio.com",
+    "GOTRUE_SMTP_HOST": "smtp.resend.com",
+    "GOTRUE_SMTP_SENDER_NAME": "Hasheem Studio",
+    "templateSlotsConfigured": [
+      "GOTRUE_MAILER_TEMPLATES_EMAIL_CHANGE",
+      "GOTRUE_MAILER_TEMPLATES_CONFIRMATION",
+      "GOTRUE_MAILER_TEMPLATES_REAUTHENTICATION",
+      "GOTRUE_MAILER_TEMPLATES_INVITE",
+      "GOTRUE_MAILER_TEMPLATES_MAGIC_LINK",
+      "GOTRUE_MAILER_TEMPLATES_RECOVERY"
+    ]
+  },
+  "https": {
+    "https://hasheemstudio.com/login": 200,
+    "https://hasheemstudio.com/privacy": 200,
+    "https://hasheemstudio.com/terms": 200,
+    "https://api.hasheemstudio.com/health/ready": 200,
+    "https://api.hasheemstudio.com/v1/payments/plan": 200
+  },
+  "checkoutAvailable": false
+}

@@ -15,7 +15,7 @@ Actual GoTrue tests cover wrong, expired and reused codes, signup sessions, reco
 and password update. They generate codes through the admin API in memory; **not inbox proof**.
 
 Live configuration inspected: Resend SMTP, sender `no-reply@hasheemstudio.com`, sender name
-Hasheem Studio, confirmation required. Template deployment and readback are recorded in STATUS.
+Hasheem Studio, confirmation required. All six templates are now deployed; exact GoTrue template/OTP readback is recorded in STATUS.
 Protected environment keys `MAILER_TEMPLATES_*` map into GoTrue; six digits, ten-minute expiry.
 Approved production redirect allowlist: `https://hasheemstudio.com/auth/callback` and
 `https://hasheemstudio.com/reset-password`. Google provider callback remains unchanged.

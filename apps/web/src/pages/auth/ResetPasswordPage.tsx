@@ -46,6 +46,7 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [linkState, setLinkState] = useState<LinkState>('verifying')
+  useEffect(() => { if (!success) return; const timer=setTimeout(()=>navigate('/login'),3000); return ()=>clearTimeout(timer); },[success,navigate])
 
   useEffect(() => {
     let cancelled = false
@@ -120,7 +121,6 @@ export default function ResetPasswordPage() {
       }
       await updatePassword(data.password)
       setSuccess(true)
-      setTimeout(() => navigate('/login'), 3000)
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to reset password'
       setError(message)
@@ -203,7 +203,7 @@ export default function ResetPasswordPage() {
                         type={showPassword ? 'text' : 'password'}
                         placeholder="Min 8 chars, 1 uppercase, 1 number"
                         className={cn(
-                          'w-full rounded-lg border bg-background/50 py-2.5 pl-10 pr-10 text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all',
+                          'w-full rounded-lg border bg-background py-2.5 pl-10 pr-10 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all',
                           errors.password ? 'border-red-500' : 'border-border'
                         )}
                       />

@@ -1,3 +1,73 @@
+# Current Studio product handoff — 2026-09-21
+
+The new auth shell, code-only templates and disabled payment foundation are deployed. Pull **main**;
+compare its exact SHA with the final session report and `git ls-remote`. The migration source SHA
+was `23bedcfa1f0a1ec0a6bc802b7c7d37c709d3e2a8`; later main commits contain rollout fixes/evidence.
+Do not mistake that migration SHA for the latest main. No feature branch or force push was used.
+
+```bash
+cd ~/hasheemstudio
+git status --short
+git switch main
+git fetch origin
+git pull --ff-only origin main
+git rev-parse HEAD
+git ls-remote origin refs/heads/main
+pnpm install --frozen-lockfile
+pnpm typecheck
+pnpm test:unit
+pnpm build
+```
+
+If not cloned: `git clone git@github.com:yusosadick/hasheemstudio.git ~/hasheemstudio`.
+Use Node 22 and pnpm 9.15.0, Python 3 for provisioning tests, and Docker Desktop/Colima for the
+independent local stack. VPS used Docker 29.6.2 / Compose 5.3.1. Local defaults must not use
+production credentials:
+
+```bash
+pnpm dev:up
+pnpm db:local:migrate
+pnpm dev
+```
+
+Mac-only gates still untested: Docker/worker on Apple Silicon, Safari/iOS OTP autofill and
+mobile keyboard, email rendering in Apple Mail, a fresh clone/local complete guest journey,
+and optional local Google registration. Production OAuth callback remains
+`https://supabase.hasheemstudio.com/auth/v1/callback`; browser returns to
+`https://hasheemstudio.com/auth/callback`. Recovery returns to
+`https://hasheemstudio.com/reset-password`. Do not alter Google production settings. For local
+OAuth first read the generated local gateway port and origin; use a separate approved development
+OAuth client with its exact GoTrue callback and narrow allowlist. Local Google is not enabled by
+this production change. Safe return paths remain upload or a job UUID only.
+
+Preview tunnel (after starting a Studio preview explicitly on the VPS):
+`ssh -N -L 5174:127.0.0.1:5174 yuso@169.58.72.101`.
+Task preview/API processes were stopped after testing; the tunnel alone does not start them.
+
+VPS evidence: full typecheck/build/unit, RLS, all six integration suites, guest/transport/browser
+journeys, auth responsive screenshots, OTP wrong/expired/used codes, recovery session, signed
+payment-fixture denial/settlement/expiry/revocation, secret scan. See
+[evidence/studio-product-tests.json](evidence/studio-product-tests.json). Payment screen snapshots
+are labelled synthetic; no Snippe request or charge occurred. Google reaches its login page but
+owner consent/session remains unverified. Code emails are configured, **not yet inbox verified**.
+
+Owner actions: approve exact Snippe Vaultwarden item and sandbox method/credentials; approve plan
+name, TZS price, duration, downloads/day and mobile/card/both; provide test inbox and confirm support
+mailbox routing; complete Google login/refresh/logout. Checkout stays disabled. Card checkout has
+no production claim. Use only compatible Bitwarden **2026.8.0**, exact approved items, protected
+0600 storage; never put values in command arguments. Lock, unset BW_SESSION and remove the handoff
+after retrieval. Do not copy Gaming credentials or databases. [Payment runbook](PAYMENTS.md),
+[email runbook](EMAIL-TEMPLATES.md).
+
+Visual review: landing unchanged, Studio logo and charcoal/gradient auth, desktop/mobile CTA always
+visible, no tourism image, 320px no overflow, keyboard focus, readable errors, reduced motion,
+login/signup/forgot/reset/verify states, real download denial and labelled payment fixtures.
+
+---
+
+The following earlier handoff is retained as historical setup detail. Current evidence and blockers
+above and STATUS take precedence, particularly any older claim about email delivery.
+
 # Mac handoff — first real external verification
 
 > This is the document the owner should have open before switching from the VPS session to a real

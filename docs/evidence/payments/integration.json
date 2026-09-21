@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "checks": [
+    "checkout disabled; no outbound charge",
+    "free allowance enforced before payment",
+    "invalid signature, stale, wrong amount and correlation denied",
+    "concurrent duplicate events stored once, one entitlement",
+    "API/RLS foreign account denied",
+    "verified synthetic webhook enables backend-signed second download",
+    "expired/revoked entitlement immediately denied",
+    "failed/cancelled/expired never unlock or resurrect",
+    "bounded webhook body"
+  ],
+  "providerContacted": false,
+  "providerSandbox": false,
+  "fixtureAmountNotApprovedPrice": true
+}

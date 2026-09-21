@@ -36,6 +36,9 @@ try{
  await page.waitForURL('**/app/jobs/*',{timeout:30000});await page.getByRole('heading',{name:'Your video is ready'}).waitFor({timeout:120000});
  await page.getByRole('button',{name:'Download video',exact:true}).click();
  await page.getByRole('alert').filter({hasText:'Your daily video allowance is used'}).waitFor();
+ await page.getByRole('button',{name:'Upgrade unavailable'}).waitFor();
+ assert(await page.locator('header > div').getByRole('link',{name:'Get Started',exact:true}).isVisible());
+ await page.screenshot({path:'docs/evidence/guest-download-gate/download-gate.png',fullPage:true});
  await page.goto(base+'/verify-email');await page.getByText('Email Verified!',{exact:true}).waitFor();
  await page.goto(base+'/app/upload');
  await page.getByRole('button',{name:'Log out',exact:true}).click();await page.waitForURL(base+'/');
@@ -47,7 +50,7 @@ try{
  await page.setViewportSize({width:390,height:844});await page.waitForTimeout(700);await page.screenshot({path:'docs/evidence/guest-download-gate/signup-mobile.png',fullPage:true});
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  await page.goto(base+'/reset-password');await page.getByText('This password reset link is no longer valid.',{exact:false}).waitFor();
- await page.goto(base+'/verify-email');await page.getByText('Verification Failed',{exact:false}).waitFor();
+ await page.goto(base+'/verify-email');await page.getByRole('heading',{name:'Verify your email',exact:true}).waitFor();
  assert.deepEqual(errors,[]);
  writeFileSync('docs/evidence/guest-download-gate/browser.json',JSON.stringify({passed:true,downloadBytes:response.bytes,checks:['guest upload/process in browser','existing-email password step','return to exact processed result after login','actual browser file download', 'signed-in direct TUS processing', 'daily limit shown at download','logout','new-email registration step','390px no overflow','invalid reset link handled','verification follows live session and clears after logout'],pageErrors:errors},null,2));
  console.log('PASS browser guest processing, progressive login, return to result, download, logout, signup layout, invalid auth links');

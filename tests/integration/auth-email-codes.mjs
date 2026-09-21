@@ -1,10 +1,11 @@
 // Real GoTrue OTP verification, disposable account; admin-generated codes stay in memory.
 // Does not send mail or claim inbox delivery.
 import {readFileSync,writeFileSync} from 'node:fs';
+import {homedir} from 'node:os';
 import {randomBytes,randomUUID} from 'node:crypto';
 import assert from 'node:assert/strict';
 import pg from 'pg';
-const env=Object.fromEntries(readFileSync(process.env.HASHEEMSTUDIO_ENV_FILE??'/etc/hasheemstudio/local.env','utf8').split('\n').filter(l=>l&&!l.startsWith('#')&&l.includes('=')).map(l=>[l.slice(0,l.indexOf('=')),l.slice(l.indexOf('=')+1)]));
+const env=Object.fromEntries(readFileSync(process.env.HASHEEMSTUDIO_ENV_FILE??(process.platform==='darwin'?`${homedir()}/.config/hasheemstudio/local.env`:'/etc/hasheemstudio/local.env'),'utf8').split('\n').filter(l=>l&&!l.startsWith('#')&&l.includes('=')).map(l=>[l.slice(0,l.indexOf('=')),l.slice(l.indexOf('=')+1)]));
 const url=`http://127.0.0.1:${env.API_GW_HTTP_PORT}/auth/v1`;
 const admin={apikey:env.SERVICE_ROLE_KEY,Authorization:`Bearer ${env.SERVICE_ROLE_KEY}`,'Content-Type':'application/json'};
 const publicHeaders={apikey:env.ANON_KEY,'Content-Type':'application/json'};

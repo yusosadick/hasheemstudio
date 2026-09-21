@@ -173,7 +173,7 @@ try {
   //     assertions below check the specific rows this test cares about regardless.
   let sweepStdout;
   try {
-    const res = await execFileAsync("node", [join(repoRoot, "scripts", "ops", "retention-sweep.mjs"), "--env", envName], { cwd: repoRoot });
+    const res = await execFileAsync("node", [join(repoRoot, "scripts", "ops", "retention-sweep.mjs"), "--env", envName, "--workspaces", [tenantWithActiveJob,tenantExpiredNoJob,tenantAbandoned].map(t=>t.workspaceId).join(",")], { cwd: repoRoot });
     sweepStdout = res.stdout;
   } catch (err) {
     sweepStdout = err.stdout ?? "";

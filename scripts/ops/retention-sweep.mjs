@@ -41,6 +41,8 @@ function parseEnvFile(text) {
 }
 
 const envName = arg("--env", "local");
+const workspaceFilter = arg('--workspaces')?.split(',') ?? null;
+if (workspaceFilter?.some(id=>! /^[0-9a-f-]{36}$/i.test(id))) throw new Error('Invalid workspace filter');
 const dryRun = process.argv.includes("--dry-run");
 const limit = Number(arg("--limit", "50"));
 
@@ -108,10 +110,10 @@ async function sweepAbandonedUploadSessions() {
   const { rows } = await pool.query(
     `select id, workspace_id, object_key, tus_upload_path
      from upload_sessions
-     where state = 'pending' and expires_at < now()
+     where state = 'pending' and expires_at < now() and ($2::uuid[] is null or workspace_id=any($2))
      order by expires_at
      limit $1`,
-    [limit],
+    [limit, workspaceFilter],
   );
   for (const row of rows) {
     await deleteTusResource(row.tus_upload_path);
@@ -131,7 +133,7 @@ async function sweepExpiredMediaAssets() {
       await client.query("begin");
       const { rows } = await client.query(
         `select id, workspace_id, object_key from media_assets
-         where lifecycle_state = 'active' and retain_until < now()
+         where lifecycle_state = 'active' and retain_until < now() and ($2::uuid[] is null or workspace_id=any($2))
            and not exists (
              select 1 from jobs j
              where j.media_asset_id = media_assets.id
@@ -140,7 +142,7 @@ async function sweepExpiredMediaAssets() {
          order by retain_until
          limit $1
          for update skip locked`,
-        [Math.min(limit, 10)],
+        [Math.min(limit, 10), workspaceFilter],
       );
       if (rows.length === 0) {
         await client.query("commit");
@@ -174,14 +176,14 @@ async function sweepExpiredJobOutputs() {
       await client.query("begin");
       const { rows } = await client.query(
         `select id, workspace_id, output_object_key from jobs
-         where output_object_key is not null
+         where output_object_key is not null and ($2::uuid[] is null or workspace_id=any($2))
            and output_deleted_at is null
            and output_retain_until < now()
            and status in ('succeeded', 'failed', 'cancelled', 'expired')
          order by output_retain_until
          limit $1
          for update skip locked`,
-        [Math.min(limit, 10)],
+        [Math.min(limit, 10), workspaceFilter],
       );
       if (rows.length === 0) {
         await client.query("commit");

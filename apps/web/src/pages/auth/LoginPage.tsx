@@ -264,7 +264,7 @@ export default function LoginPage() {
                     {pending ? 'Checking…' : (<span className="inline-flex items-center gap-1.5">Continue <ArrowRight className="h-4 w-4" /></span>)}
                   </Button>
 
-                  <div className="my-2 flex items-center gap-3 text-[11px] uppercase tracking-wider text-text-muted/70">
+                  <div className="my-2 flex items-center gap-3 text-[11px] uppercase tracking-wider text-text-muted">
                     <span className="h-px flex-1 bg-border" />
                     or
                     <span className="h-px flex-1 bg-border" />

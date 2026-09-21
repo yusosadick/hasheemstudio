@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "checks": [
+    "browser wrong signup OTP rejected",
+    "browser signup OTP session and refresh",
+    "browser used code denied after logout",
+    "browser recovery code/session/password update",
+    "synthetic payment pending/completed/failed UI only; no provider request"
+  ],
+  "emailDelivered": false,
+  "providerSandbox": false,
+  "fixtureAmountNotPrice": true
+}

@@ -13,7 +13,7 @@
 
 import { execFileSync, execSync } from "node:child_process";
 import { createDecipheriv, createHash, randomBytes } from "node:crypto";
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, mkdtempSync, rmSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -47,8 +47,9 @@ function record(name, pass, detail) {
   console.log(`${pass ? "PASS" : "FAIL"}  ${name}${detail ? " — " + detail : ""}`);
 }
 
-const RESTORE_CONTAINER = "hasheemstudio-restore-rehearsal";
-const RESTORE_VOLUME = "hasheemstudio-restore-rehearsal-data";
+const RESTORE_CONTAINER = `hasheemstudio-restore-${randomBytes(5).toString("hex")}`;
+const RESTORE_VOLUME = `${RESTORE_CONTAINER}-data`;
+let tmpDumpDirectory;
 const RESTORE_PASSWORD = randomBytes(24).toString("base64");
 
 function findLatestBackup(destDir) {
@@ -84,8 +85,9 @@ async function main() {
   const actualChecksum = createHash("sha256").update(plaintext).digest("hex");
   record("decrypted dump's checksum matches the manifest recorded at backup time", actualChecksum === manifest.plaintextSha256, `${actualChecksum} vs ${manifest.plaintextSha256}`);
 
-  const tmpDumpPath = "/tmp/hasheemstudio-restore-rehearsal.dump";
-  writeFileSync(tmpDumpPath, plaintext);
+  tmpDumpDirectory = mkdtempSync("/tmp/hasheemstudio-restore-");
+  const tmpDumpPath = `${tmpDumpDirectory}/restore.dump`;
+  writeFileSync(tmpDumpPath, plaintext, {mode:0o600});
 
   console.log(`Starting an isolated, throwaway restore target (${RESTORE_CONTAINER})...`);
   try { execFileSync("docker", ["rm", "-f", RESTORE_CONTAINER]); } catch {}
@@ -95,10 +97,10 @@ async function main() {
     "run", "-d",
     "--name", RESTORE_CONTAINER,
     "-v", `${RESTORE_VOLUME}:/var/lib/postgresql/data`,
-    "-e", `POSTGRES_PASSWORD=${RESTORE_PASSWORD}`,
+    "-e", "POSTGRES_PASSWORD",
     "-e", `POSTGRES_DB=${postgresDb}`,
     "postgres:17-alpine",
-  ]);
+  ], {env:{...process.env,POSTGRES_PASSWORD:RESTORE_PASSWORD}});
   // Deliberately NOT attached to the hasheemstudio Docker network and NOT publishing any port —
   // fully isolated, reachable only via `docker exec`.
 
@@ -120,31 +122,31 @@ async function main() {
   console.log("Running pg_restore...");
   try {
     execFileSync("docker", [
-      "exec", "-e", `PGPASSWORD=${RESTORE_PASSWORD}`, RESTORE_CONTAINER,
+      "exec", "-e", "PGPASSWORD", RESTORE_CONTAINER,
       "pg_restore", "-U", "postgres", "-d", postgresDb, "--no-owner", "--no-privileges", "-j", "2", "/tmp/restore.dump",
-    ], { stdio: "pipe" });
+    ], { stdio: "pipe",env:{...process.env,PGPASSWORD:RESTORE_PASSWORD} });
     record("pg_restore completed", true);
   } catch (err) {
     // pg_restore commonly exits non-zero on benign warnings (e.g. extension ownership) even on an
     // otherwise-successful restore — the real proof is the verification queries below, not the
     // exit code alone.
-    record("pg_restore completed (exit code non-zero — verifying via real queries below, not trusting exit code alone)", true, String(err.message).slice(0, 200));
+    record("pg_restore completed (exit code non-zero — verifying via real queries below, not trusting exit code alone)", true, "nonzero_exit_requires_readback");
   }
 
   const restoreDurationMs = Date.now() - restoreStart;
 
   function restoredQuery(sql) {
     return execFileSync("docker", [
-      "exec", "-e", `PGPASSWORD=${RESTORE_PASSWORD}`, RESTORE_CONTAINER,
+      "exec", "-e", "PGPASSWORD", RESTORE_CONTAINER,
       "psql", "-U", "postgres", "-d", postgresDb, "-t", "-A", "-c", sql,
-    ]).toString().trim();
+    ], {env:{...process.env,PGPASSWORD:RESTORE_PASSWORD}}).toString().trim();
   }
   function liveQuery(sql) {
     const livePassword = secrets.get("POSTGRES_PASSWORD");
     return execFileSync("docker", [
-      "exec", "-e", `PGPASSWORD=${livePassword}`, "hasheemstudio-db",
+      "exec", "-e", "PGPASSWORD", "hasheemstudio-db",
       "psql", "-U", "postgres", "-d", postgresDb, "-t", "-A", "-c", sql,
-    ]).toString().trim();
+    ], {env:{...process.env,PGPASSWORD:livePassword}}).toString().trim();
   }
 
   // --- Verify restored AUTHENTICATION records. ---
@@ -198,7 +200,7 @@ async function main() {
   console.log("\nTearing down the isolated restore target...");
   execFileSync("docker", ["rm", "-f", RESTORE_CONTAINER]);
   execFileSync("docker", ["volume", "rm", "-f", RESTORE_VOLUME]);
-  execSync(`rm -f ${tmpDumpPath}`);
+  rmSync(dirname(tmpDumpPath), {recursive:true,force:true});
   console.log("Torn down. Live hasheemstudio-db was never touched.");
 }
 
@@ -209,7 +211,8 @@ main()
     process.exit(allPass ? 0 : 1);
   })
   .catch((err) => {
-    console.error(err);
+    console.error("Restore rehearsal failed; raw database diagnostics suppressed");
+    if (tmpDumpDirectory) rmSync(tmpDumpDirectory,{recursive:true,force:true});
     try {
       execFileSync("docker", ["rm", "-f", RESTORE_CONTAINER]);
       execFileSync("docker", ["volume", "rm", "-f", RESTORE_VOLUME]);

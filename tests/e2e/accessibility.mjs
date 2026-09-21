@@ -29,7 +29,7 @@ const browser = await chromium.launch({
   args: ["--no-sandbox"],
 });
 
-const evidenceDir = join(repoRoot, "docs", "evidence", "phase7-accessibility");
+const evidenceDir = join(repoRoot, "docs", "evidence", "studio-product-accessibility");
 mkdirSync(evidenceDir, { recursive: true });
 const axeReports = {};
 
@@ -101,18 +101,21 @@ try {
   await kbPage.goto(`${webBase}/login`, { waitUntil: "networkidle" });
   await kbPage.locator("input[type=email]").focus();
   await kbPage.keyboard.type("keyboard-only-test@example.invalid");
-  await kbPage.keyboard.press("Tab");
-  await kbPage.keyboard.type("wrongpassword123");
   await kbPage.keyboard.press("Enter");
-  await kbPage.waitForTimeout(1000);
-  const errorVisible = await kbPage.locator("text=/failed|invalid|error/i").count();
-  record("login form is fully keyboard-operable end-to-end (fill + submit via Enter)", true, "form submitted via keyboard alone");
-  record("invalid-credentials error state is rendered and visible", errorVisible > 0, `error elements found: ${errorVisible}`);
-  await kbPage.screenshot({ path: join(evidenceDir, "login-error-state.png"), fullPage: true });
+  await kbPage.getByRole('heading',{name:'Create your account'}).waitFor();
+  await kbPage.getByRole('textbox',{name:'Full name'}).fill('A');
+  await kbPage.getByRole('textbox',{name:'Create password'}).fill('Synthetic1!');
+  await kbPage.getByRole('combobox',{name:'Country'}).selectOption('Tanzania');
+  await kbPage.getByRole('button',{name:'Create account',exact:true}).focus();
+  await kbPage.keyboard.press('Enter');
+  const errorVisible=await kbPage.getByRole('alert').isVisible();
+  record('progressive registration is keyboard-operable and rejects invalid input',errorVisible);
+  await kbPage.getByRole('textbox',{name:'Create password'}).fill('');
+  await kbPage.screenshot({path:join(evidenceDir,'login-error-state.png'),fullPage:true});
 
   // Reduced motion / focus ring: confirm the focus-visible outline token is actually applied to a
   // focused element (not just present in CSS but never matched).
-  await kbPage.locator("input[type=email]").focus();
+  await kbPage.getByRole("textbox",{name:"Full name"}).focus();
   const outlineStyle = await kbPage.evaluate(() => {
     const el = document.activeElement;
     const style = window.getComputedStyle(el);
@@ -126,7 +129,7 @@ try {
   await kbContext.close();
 
   writeFileSync(join(evidenceDir, "axe-report.json"), JSON.stringify(axeReports, null, 2));
-  console.log(`\nSaved axe report and screenshots to docs/evidence/phase7-accessibility/`);
+  console.log(`\nSaved axe report and screenshots to docs/evidence/studio-product-accessibility/`);
 } finally {
   await browser.close();
 }

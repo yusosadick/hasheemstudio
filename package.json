@@ -2,7 +2,7 @@
   "name": "hasheemstudio",
   "private": true,
   "version": "0.0.0",
-  "description": "Hasheem Studio monorepo — React/TypeScript frontend, Fastify API, BullMQ media worker, self-hosted Supabase.",
+  "description": "Hasheem Studio monorepo \u2014 React/TypeScript frontend, Fastify API, BullMQ media worker, self-hosted Supabase.",
   "license": "UNLICENSED",
   "packageManager": "pnpm@9.15.0",
   "engines": {
@@ -17,7 +17,7 @@
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
-    "test:unit": "node scripts/ops/not-implemented.mjs test:unit",
+    "test:unit": "pnpm test && python3 tests/security/google_oauth_provisioning_test.py",
     "test:integration": "pnpm test:integration:crash-recovery && pnpm test:integration:quota-race && pnpm test:integration:retention && pnpm test:integration:hostile-inputs && pnpm test:integration:account-deletion && pnpm test:integration:backup-restore",
     "test:integration:account-deletion": "node tests/integration/account-deletion.mjs --env local",
     "test:integration:backup-restore": "node tests/integration/backup-restore-rehearsal.mjs --env local",
@@ -42,7 +42,9 @@
     "db:remote": "node scripts/db/remote.mjs",
     "deploy:plan": "node scripts/ops/not-implemented.mjs deploy:plan",
     "deploy": "node scripts/ops/not-implemented.mjs deploy",
-    "verify:live": "node scripts/ops/not-implemented.mjs verify:live"
+    "verify:live": "node scripts/ops/not-implemented.mjs verify:live",
+    "test:payments": "pnpm --filter @hasheemstudio/api exec node --import tsx ../../tests/integration/studio-payments.mjs",
+    "test:auth-codes": "node tests/integration/auth-email-codes.mjs"
   },
   "dependencies": {
     "pg": "^8.13.1"

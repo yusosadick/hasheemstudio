@@ -1,0 +1,43 @@
+{
+  "apply": {
+    "env": "local",
+    "sha": "23bedcfa1f0a1ec0a6bc802b7c7d37c709d3e2a8",
+    "ok": true,
+    "problems": [],
+    "applied": [
+      "0015_studio_payments.sql"
+    ]
+  },
+  "verify": {
+    "env": "local",
+    "sha": "23bedcfa1f0a1ec0a6bc802b7c7d37c709d3e2a8",
+    "ok": true,
+    "appliedVersions": [
+      "0001_bootstrap.sql",
+      "0002_profiles_workspaces.sql",
+      "0003_platform_admins.sql",
+      "0004_media_assets_and_uploads.sql",
+      "0005_jobs.sql",
+      "0006_outbox.sql",
+      "0007_entitlements_and_usage.sql",
+      "0008_storage_rls.sql",
+      "0009_upload_sessions_tus.sql",
+      "0010_retention.sql",
+      "0011_fix_deletion_cascades.sql",
+      "0012_fix_remaining_deletion_cascades.sql",
+      "0013_guest_processing_download_grants.sql",
+      "0014_progressive_auth_email_lookup.sql",
+      "0015_studio_payments.sql"
+    ],
+    "pendingVersions": [],
+    "driftedVersions": [],
+    "schemaDigest": "9dc4db1acb07b610",
+    "checks": {
+      "allTablesPresent": true,
+      "allRlsEnabled": true,
+      "noPendingOrDrift": true
+    }
+  },
+  "target": "dedicated deployed Studio database; inventory label local; not a separate staging environment",
+  "backup": "AES-256-GCM protected backup completed before apply; same VPS failure domain"
+}
