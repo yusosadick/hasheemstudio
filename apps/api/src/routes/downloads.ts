@@ -63,11 +63,24 @@ export async function downloadsRoutes(app: FastifyInstance): Promise<void> {
         }
       }
       // Signing before commit means a signing failure never consumes the daily allowance.
-      const signed = new URL(await createSignedDownloadUrl(output.output_object_key, 300));
+      //
+      // Expiry must comfortably outlast the actual download, not just the time-to-click. Storage
+      // supports HTTP Range requests (`accept-ranges: bytes`), and browsers/OS download managers
+      // commonly split a large file into multiple range-request chunks — especially over a slow or
+      // unstable connection. A short expiry here does not fail loudly: once the token expires
+      // mid-download, later range requests are silently rejected and the browser finalizes
+      // whatever partial bytes it already has as if the download were complete, with no error
+      // shown to the user. Real case: a 3840x2160 HEVC output (58.6 MB) truncated to 9.6 MB when a
+      // user's connection took longer than the previous 300s window — the resulting file was
+      // rejected by VLC and WhatsApp, but nothing on the download UI indicated a failure. 7200s (2
+      // hours) gives even a very slow connection enough headroom to complete a 100 MB guest-tier
+      // file; this is still a single-use, per-job, auth-gated grant, not a public/indefinite link.
+      const DOWNLOAD_URL_EXPIRY_SECONDS = 7200;
+      const signed = new URL(await createSignedDownloadUrl(output.output_object_key, DOWNLOAD_URL_EXPIRY_SECONDS));
       signed.searchParams.set("download", "hasheem-video.mp4");
       const downloadUrl = signed.toString();
       await client.query("commit");
-      return { downloadUrl, expiresIn: 300, guestClaimed: request.guestWorkspaceId === job.workspace_id };
+      return { downloadUrl, expiresIn: DOWNLOAD_URL_EXPIRY_SECONDS, guestClaimed: request.guestWorkspaceId === job.workspace_id };
     } catch (error) {
       await client.query("rollback"); throw error;
     } finally { client.release(); }

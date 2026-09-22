@@ -213,15 +213,38 @@ export async function compatEncode(inputPath: string, outputPath: string, opts: 
   return { stderr: stderr ?? "" };
 }
 
+// FFmpeg does not reliably map a mid-stream decode error to a non-zero process exit code: for a
+// single-frame or single-packet corruption inside an otherwise-parseable container, `-f null -`
+// has been observed to print real decoder errors ("Invalid NAL unit size", "Error splitting the
+// input into NAL units", "Decoding error: Invalid data found when processing input") to stderr and
+// still exit 0. Catching only a thrown exception (non-zero exit) therefore misses this whole class
+// of corruption and reports `decodeCheck.ok: true` on a file that real players (VLC, WhatsApp's
+// ingest validator) correctly reject. Any stderr output at `-v error` severity from a clean decode
+// should be empty — so treat non-empty stderr as a decode failure regardless of exit code, and
+// additionally use the same corruption-marker patterns already defined above for a specific,
+// user-facing reason when they match.
 export async function decodeCheck(path: string): Promise<{ ok: boolean; detail: string }> {
+  let stdout = "";
+  let stderr = "";
+  let thrown: any = null;
   try {
-    await execFileAsync(
+    const result = await execFileAsync(
       "ffmpeg",
       ["-nostdin", "-v", "error", "-protocol_whitelist", "file", "-i", path, "-f", "null", "-"],
       { timeout: MAX_PROCESS_MS, maxBuffer: 16 * 1024 * 1024 },
     );
-    return { ok: true, detail: "decoded cleanly, no stderr output" };
+    stdout = result.stdout ?? "";
+    stderr = result.stderr ?? "";
   } catch (err: any) {
-    return { ok: false, detail: String(err.stderr ?? err.message).slice(0, 2000) };
+    thrown = err;
+    stdout = err.stdout ?? "";
+    stderr = err.stderr ?? "";
   }
+
+  const combined = `${stdout}${stderr}`.trim();
+  if (thrown || combined.length > 0) {
+    const detail = combined.length > 0 ? combined : String(thrown?.message ?? "ffmpeg exited non-zero with no stderr output");
+    return { ok: false, detail: detail.slice(0, 2000) };
+  }
+  return { ok: true, detail: "decoded cleanly, no stderr output" };
 }

@@ -40,6 +40,15 @@ function verificationFailureMessage(opts: {
     return `Your video file appears to be corrupted or incomplete — only about ${got} of the original ${expected} could be read. This isn't something we can fix on our side; please try re-exporting or re-recording the video and upload the file again.`;
   }
 
+  // A remux/copy can also fail mid-stream without truncating the reported duration at all (e.g. a
+  // single bad NAL unit deep inside an otherwise structurally-intact container) — decodeCheck
+  // catches this, durationOk alone would not. Give the same honest "your source file" explanation
+  // rather than the generic playability message below when the decode failure itself looks like
+  // source corruption.
+  if (!decodeOk && looksLikeSourceCorruption(decodeDetail)) {
+    return `Your video file appears to contain corrupted or invalid data partway through (${decodeDetail.slice(0, 200)}). This isn't something we can fix on our side; please try re-exporting or re-recording the video and upload the file again.`;
+  }
+
   if (!decodeOk) {
     return `The processed video could not be verified as playable (${decodeDetail.slice(0, 240)}). Please try re-uploading your original file${recipe === "remux" ? ", or try the \"H.264/AAC re-encode\" option instead of the default compatible remux" : ""}.`;
   }
