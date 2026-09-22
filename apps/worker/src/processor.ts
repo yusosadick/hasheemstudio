@@ -7,7 +7,7 @@ import { mkdir, readFile, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { getPool } from "./db.js";
 import { downloadObject, uploadObject } from "./storage.js";
-import { probe, remux, compatEncode, decodeCheck } from "./ffmpeg.js";
+import { probe, remux, compatEncode, decodeCheck, looksLikeSourceCorruption } from "./ffmpeg.js";
 
 const SCRATCH_ROOT = process.env.WORKER_SCRATCH_DIR ?? "/tmp/hasheemstudio-scratch";
 const LEASE_MS = 10 * 60_000;
@@ -15,6 +15,43 @@ const WORKER_ID = `worker-${process.pid}-${randomUUID().slice(0, 8)}`;
 
 function sha256(buf: Buffer): string {
   return createHash("sha256").update(buf).digest("hex");
+}
+
+// Builds the message stored on jobs.error_message — shown directly to the user on the job result
+// page (apps/web/src/pages/JobResult.tsx), not just logged internally. Previously this was the
+// raw internal check string (e.g. "Output verification failed: decodeOk=true durationOk=false"),
+// which is meaningless to a user and gives them no idea whether it's their file or worth retrying.
+function verificationFailureMessage(opts: {
+  recipe: "remux" | "compat_encode";
+  decodeOk: boolean;
+  decodeDetail: string;
+  durationOk: boolean;
+  durationDelta: number | null;
+  inputDurationSeconds: number | null;
+  outputDurationSeconds: number | null;
+  ffmpegStderr: string;
+  extraFailures?: string[]; // e.g. "not H.264" — only ever from our own encode step misbehaving
+}): string {
+  const { recipe, decodeOk, decodeDetail, durationOk, durationDelta, inputDurationSeconds, outputDurationSeconds, ffmpegStderr, extraFailures = [] } = opts;
+
+  if (!durationOk && looksLikeSourceCorruption(ffmpegStderr)) {
+    const got = outputDurationSeconds !== null ? `${outputDurationSeconds.toFixed(1)}s` : "part";
+    const expected = inputDurationSeconds !== null ? `${inputDurationSeconds.toFixed(1)}s` : "the full length";
+    return `Your video file appears to be corrupted or incomplete — only about ${got} of the original ${expected} could be read. This isn't something we can fix on our side; please try re-exporting or re-recording the video and upload the file again.`;
+  }
+
+  if (!decodeOk) {
+    return `The processed video could not be verified as playable (${decodeDetail.slice(0, 240)}). Please try re-uploading your original file${recipe === "remux" ? ", or try the \"H.264/AAC re-encode\" option instead of the default compatible remux" : ""}.`;
+  }
+
+  if (!durationOk) {
+    const delta = durationDelta !== null ? `${durationDelta.toFixed(1)}s` : "an unverifiable amount";
+    return `The processed video's duration didn't match your original closely enough to verify safely (off by ${delta}). Please try re-uploading${recipe === "remux" ? ", or try the \"H.264/AAC re-encode\" option instead of the default compatible remux" : " your original file"}.`;
+  }
+
+  // extraFailures (wrong codec, resolution grew, etc.) only fire from our own compat_encode step
+  // misbehaving, not from anything about the user's file — never blame the file for these.
+  return `Something went wrong while preparing your video (${extraFailures.join(", ") || "verification failed"}). Please try again — if this keeps happening, it's a bug on our end, not your file.`;
 }
 
 async function claim(jobId: string): Promise<{ id: string; workspaceId: string; recipe: string; inputObjectKey: string; attemptCount: number; maxAttempts: number } | null> {
@@ -151,7 +188,7 @@ export async function processJob(jobId: string): Promise<void> {
       checks = { probed: metadata };
     } else if (claimed.recipe === "remux") {
       const outputPath = join(scratchDir, "output.mp4");
-      await remux(inputPath, outputPath);
+      const remuxResult = await remux(inputPath, outputPath);
       const decode = await decodeCheck(outputPath);
       const outputBuffer = await readFile(outputPath);
       const outputMetadata = await probe(outputPath);
@@ -173,7 +210,16 @@ export async function processJob(jobId: string): Promise<void> {
       };
 
       if (!decode.ok || !durationOk) {
-        throw new Error(`Output verification failed: decodeOk=${decode.ok} durationOk=${durationOk}`);
+        throw new Error(verificationFailureMessage({
+          recipe: "remux",
+          decodeOk: decode.ok,
+          decodeDetail: decode.detail,
+          durationOk,
+          durationDelta,
+          inputDurationSeconds: metadata.durationSeconds,
+          outputDurationSeconds: outputMetadata.durationSeconds,
+          ffmpegStderr: remuxResult.stderr,
+        }));
       }
 
       outputChecksum = sha256(outputBuffer);
@@ -188,7 +234,7 @@ export async function processJob(jobId: string): Promise<void> {
       await uploadObject(outputObjectKey, outputBuffer, "video/mp4");
     } else if (claimed.recipe === "compat_encode") {
       const outputPath = join(scratchDir, "output.mp4");
-      await compatEncode(inputPath, outputPath);
+      const encodeResult = await compatEncode(inputPath, outputPath, { sourceFrameRate: metadata.frameRate });
       const decode = await decodeCheck(outputPath);
       const outputBuffer = await readFile(outputPath);
       const outputMetadata = await probe(outputPath);
@@ -222,9 +268,21 @@ export async function processJob(jobId: string): Promise<void> {
       };
 
       if (!decode.ok || !durationOk || !isH264 || !isAac || !dimensionsPreserved) {
-        throw new Error(
-          `Output verification failed: decodeOk=${decode.ok} durationOk=${durationOk} isH264=${isH264} isAac=${isAac} dimensionsPreserved=${dimensionsPreserved}`,
-        );
+        const extraFailures: string[] = [];
+        if (!isH264) extraFailures.push(`expected H.264 output, got ${outputMetadata.videoCodec ?? "unknown"}`);
+        if (!isAac) extraFailures.push(`expected AAC audio output, got ${outputMetadata.audioCodec ?? "unknown"}`);
+        if (!dimensionsPreserved) extraFailures.push("output dimensions grew beyond the source");
+        throw new Error(verificationFailureMessage({
+          recipe: "compat_encode",
+          decodeOk: decode.ok,
+          decodeDetail: decode.detail,
+          durationOk,
+          durationDelta,
+          inputDurationSeconds: metadata.durationSeconds,
+          outputDurationSeconds: outputMetadata.durationSeconds,
+          ffmpegStderr: encodeResult.stderr,
+          extraFailures,
+        }));
       }
 
       outputChecksum = sha256(outputBuffer);

@@ -91,19 +91,44 @@ export async function probe(inputPath: string): Promise<ProbeResult> {
   };
 }
 
-export async function remux(inputPath: string, outputPath: string): Promise<void> {
+// Markers FFmpeg's own demuxer/decoder emit on stderr when the SOURCE file itself is truncated or
+// has an internal index/sample-table inconsistency — as opposed to a merely-unusual-but-intact
+// file. `-c copy` in particular has no error resilience: it stops at the first bad packet instead
+// of skipping it, silently producing a truncated (but individually decodable, hence
+// `decodeCheck.ok === true`) output. Real case seen in production: a 3840x2160 HEVC file that
+// stream-copied to only 1.03s of a real 5.14s recording, ffmpeg logging "Packet corrupt (stream =
+// 0, dts = 31031)" then "EOF while reading input" — not an edit-list/negative-timestamp issue at
+// all, the container's own sample table was inconsistent past that point. A full decode+re-encode
+// (compat_encode) hits the exact same wall for this class of failure (the corruption is at the
+// demux/index level, upstream of decoding), so this is used only to give an honest, specific
+// reason — not to decide whether to retry.
+const CORRUPTION_MARKERS = [/corrupt/i, /eof while reading input/i, /invalid data found when processing input/i];
+
+export function looksLikeSourceCorruption(ffmpegStderr: string): boolean {
+  return CORRUPTION_MARKERS.some((re) => re.test(ffmpegStderr));
+}
+
+export async function remux(inputPath: string, outputPath: string): Promise<{ stderr: string }> {
   assertWithinScratch(inputPath, dirname(inputPath));
   assertWithinScratch(outputPath, dirname(outputPath));
-  await execFileAsync(
+  const { stderr } = await execFileAsync(
     "ffmpeg",
     [
       "-nostdin",
       "-y",
+      "-v", "warning",
       "-protocol_whitelist", "file",
       "-i", inputPath,
       "-map", "0:v:0",
       "-map", "0:a:0?", // ignore data/attachment streams that cannot be muxed into MP4
       "-c", "copy",
+      // Very common on phone-recorded MOV/MP4: video and audio don't both start at PTS 0 (an
+      // edit-list-trimmed lead-in, or a few ms of audio before the first video frame). A plain
+      // stream copy without this reproduces that raw offset in a container that no longer carries
+      // the edit list explaining it, which can both mis-report the output container's duration
+      // metadata and make strict players show corrupted/frozen frames at the start even though a
+      // permissive decoder (like the ffmpeg decode check below) plays through it fine.
+      "-avoid_negative_ts", "make_zero",
       "-movflags", "+faststart",
       "-fs", String(MAX_OUTPUT_BYTES),
       "-threads", FFMPEG_THREADS,
@@ -111,6 +136,7 @@ export async function remux(inputPath: string, outputPath: string): Promise<void
     ],
     { timeout: MAX_PROCESS_MS, maxBuffer: 16 * 1024 * 1024 },
   );
+  return { stderr: stderr ?? "" };
 }
 
 export interface CompatEncodeOptions {
@@ -118,31 +144,53 @@ export interface CompatEncodeOptions {
   // docs/ARCHITECTURE.md "Do not upscale ... by default."
   maxWidth?: number;
   maxHeight?: number;
+  // Source frame rate (from probe()), used only to size the GOP below. Falls back to a
+  // conservative 30fps assumption if unknown so the GOP math still produces a sane interval.
+  sourceFrameRate?: number | null;
 }
 
-export async function compatEncode(inputPath: string, outputPath: string, opts: CompatEncodeOptions = {}): Promise<void> {
+export async function compatEncode(inputPath: string, outputPath: string, opts: CompatEncodeOptions = {}): Promise<{ stderr: string }> {
   assertWithinScratch(inputPath, dirname(inputPath));
   assertWithinScratch(outputPath, dirname(outputPath));
 
   const args = [
     "-nostdin",
     "-y",
+    "-v", "warning",
     "-protocol_whitelist", "file",
     "-i", inputPath,
     "-map", "0:v:0",
     "-map", "0:a:0?", // optional audio track — absent audio is handled, not an error
   ];
 
-  // Explicit H.264/AAC compatibility policy per docs/ARCHITECTURE.md "Recipe semantics":
+  // A ~2 second closed GOP with scene-cut detection disabled: predictable, seekable segment
+  // boundaries every platform's ingest/transcode pipeline (YouTube, TikTok, Instagram, etc.)
+  // expects, instead of libx264's default ~250-frame GOP (8+ seconds at typical frame rates).
+  const fps = opts.sourceFrameRate && opts.sourceFrameRate > 0 ? opts.sourceFrameRate : 30;
+  const gopSize = Math.max(24, Math.round(fps * 2));
+
+  // Explicit H.264/AAC compatibility policy per docs/ARCHITECTURE.md "Recipe semantics". Level
+  // 4.2 (not 4.1): the product advertises 1080p60 support, but Level 4.1's MaxMBPS constraint
+  // (245,760 macroblocks/sec) only covers 1080p up to ~30fps — a 1080p60 source would produce a
+  // stream that claims a level it doesn't actually conform to, which is exactly the kind of thing
+  // strict hardware decoders and platform ingest validators reject or mis-decode (visible as
+  // corrupted/"scratchy" playback). Level 4.2 (MaxMBPS 522,240) comfortably covers 1080p60 and has
+  // the same essentially-universal device support as 4.1.
   args.push(
     "-c:v", "libx264",
     "-profile:v", "high",
-    "-level", "4.1",
+    "-level", "4.2",
     "-pix_fmt", "yuv420p", // sensible pixel format for broad player/platform compatibility
     "-preset", "medium",
     "-crf", "20",
+    "-g", String(gopSize),
+    "-keyint_min", String(gopSize),
+    "-sc_threshold", "0",
+    "-avoid_negative_ts", "make_zero",
     "-c:a", "aac",
     "-b:a", "160k",
+    "-ar", "48000", // standardize to a universally-supported rate rather than passing through an
+                     // odd source sample rate some platforms' ingest validators reject
     "-ac", "2",
   );
 
@@ -161,7 +209,8 @@ export async function compatEncode(inputPath: string, outputPath: string, opts: 
     outputPath,
   );
 
-  await execFileAsync("ffmpeg", args, { timeout: MAX_PROCESS_MS, maxBuffer: 16 * 1024 * 1024 });
+  const { stderr } = await execFileAsync("ffmpeg", args, { timeout: MAX_PROCESS_MS, maxBuffer: 16 * 1024 * 1024 });
+  return { stderr: stderr ?? "" };
 }
 
 export async function decodeCheck(path: string): Promise<{ ok: boolean; detail: string }> {
