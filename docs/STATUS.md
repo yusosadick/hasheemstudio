@@ -1322,3 +1322,81 @@ with no evidence behind it.
   file was not reprocessed.
 - [VERIFIED-LIVE] Added public `robots.txt`, `sitemap.xml`, canonical/meta/Open Graph/Twitter SEO
   metadata and no-index rules for authenticated routes. Verified live at `https://hasheemstudio.com/`.
+
+## Homepage inline upload — 2026-09-22
+
+- [IMPLEMENTED] `apps/web/src/hooks/useVideoUpload.ts`: the upload/processing state machine
+  (file validation, resumable TUS upload wiring, finalize, job creation, real job-status polling,
+  cancel handling) extracted out of `Upload.tsx` so both the homepage hero and `/app/upload` run
+  the same tested logic. `Upload.tsx` now consumes it and is behaviourally unchanged (navigates to
+  `/app/jobs/:id` as soon as the job exists). Found and fixed one real gap while writing it: a
+  cancel requested during `createUploadSession`'s round trip (before any fetch was listening on the
+  `AbortSignal`) was previously silently ignored — now checked explicitly.
+- [IMPLEMENTED] `ConversionHero.tsx`/`.css`: "Choose video" on the homepage no longer navigates to
+  `/app/upload` — it's a plain button opening a hidden `<input type=file>` in place, and the drop
+  zone now also accepts drag-and-drop. Selecting a file swaps the hero card (framer-motion
+  crossfade) to a processing view: file name/size, a progress bar bound to real
+  `uploadFileResumable` byte counts (percentage + "X MB / Y MB", never simulated), a terminal-style
+  scrolling log built only from real stage transitions (uploading → finalizing → queuing → the
+  actual polled job status through processing/verifying), and a Cancel button wired to
+  `useVideoUpload`'s abort/cancel-job logic. Recipe selection (remux/compat_encode/inspect) moved
+  inline above the drop zone, matching `Upload.tsx`'s existing radio design. On a terminal
+  succeeded/failed/expired status the page navigates to `/app/jobs/:id`, reusing `JobResult`'s
+  existing download-gate/sign-in-gate/verification-report UI rather than duplicating it; a
+  user-cancelled upload returns straight to the idle card, ready for a new file immediately. Uses
+  only existing design tokens (dark surfaces, `--gradient-primary`, existing border/radius) — no
+  new colors or copy borrowed from the RTXFury reference used for feel only. `/app/upload` itself
+  is untouched and still works as a direct-link/bookmark fallback.
+- [TESTED-LOCAL] `pnpm typecheck` (all 3 workspaces), `pnpm --filter @hasheemstudio/web build`,
+  `pnpm test` (unit, 5/5), `pnpm test:guest-download` (11/11 API-level), `pnpm test:e2e:resumable`
+  (12/12, confirms the resumable-upload/RLS logic in `lib/upload.ts` is unaffected),
+  `pnpm test:e2e:browser` (8/8, confirms `/app/upload`'s own dedicated flow — including the
+  post-login redirect into it — is unaffected), `tests/e2e/accessibility.mjs` (27/28 → 27/27 no
+  regressions, includes the new hero card) and `tests/e2e/landing-auth.mjs` (21/21) all passed
+  against the local dedicated stack before deployment.
+- [TESTED-LOCAL] Discovered while setting up local browser testing (not a code bug, an environment
+  note for future agents): `/etc/hasheemstudio/local.env`'s `PUBLIC_API_URL` is the production API
+  URL (correct — it's baked into the containerized web build's `VITE_API_URL` build arg), but
+  `pnpm dev`'s bare-host Vite dev server also reads that same file and inherits it, so a plain
+  `pnpm dev` on this VPS points its browser client at the *production* API (real CORS failure, not
+  a bug in this change). Worked around for this session's local testing with a temporary copy of
+  the env file (only `PUBLIC_API_URL` overridden to `http://127.0.0.1:8787`) passed via
+  `HASHEEMSTUDIO_ENV_FILE`, kept outside the repo; `dev.mjs` itself was not changed.
+- [VERIFIED-LIVE] `tests/e2e/guest-auth-browser.mjs` updated to drive the new inline flow (clicks
+  the "Choose video" button and drives Playwright's `filechooser` event instead of navigating to
+  `/app/upload` first) and extended with two new real checks: the guest 100 MB limit is still
+  enforced inline with no navigation and no real upload attempted (a real sparse temp file is used
+  since Playwright caps in-memory `setFiles` buffers at 50 MB), and cancelling mid-upload actually
+  aborts the in-flight transfer and returns to the idle card immediately, ready for a new file. Ran
+  against the live production stack: `TEST_WEB_URL=https://hasheemstudio.com node
+  tests/e2e/guest-auth-browser.mjs` — full guest journey passed (100 MB rejection, cancel-and-retry,
+  real guest upload/process entirely on `/`, progressive login, return to the exact result, real
+  download of 82,239 bytes, daily-limit gate, logout, signup layout, invalid auth links). Evidence:
+  [browser.json](evidence/guest-download-gate/browser.json),
+  [live mid-upload screenshot](evidence/guest-download-gate/hero-processing.png) (captured against
+  `https://hasheemstudio.com`, not a local mock).
+- [VERIFIED-LIVE] Deployed by building only `hasheemstudio-web` from pushed
+  `74e2dab5a6b02482fb7ee8eb5be45df6d83acb85` (local `HEAD` and `origin/main` matched before and
+  after) and recreating it with `--no-deps --force-recreate`; it came up healthy. Every other
+  `hasheemstudio-*` container, Coolify, and every unrelated project's containers on this shared host
+  were confirmed unchanged (`docker ps` before/after). `https://hasheemstudio.com/` and
+  `https://api.hasheemstudio.com/health/live` both returned 200 after the recreate.
+- [VERIFIED-LIVE] Fixed a real, separately-reported bug found this session: `LoginPage.tsx` never
+  checked for an existing session, so a signed-in visitor clicking the pricing section's "Get
+  started free" link (a plain `<a href="/signup">` that doesn't check auth state, which itself
+  redirects into this same page) landed back on the sign-in form instead of the app. It now
+  redirects an already-signed-in visitor straight to their next/stored return path (default
+  `/app/upload`) on mount. Verified against both local and live production: sign in, click "Get
+  started free" from pricing, land on `/app/upload` — not the login form.
+- [VERIFIED-LIVE] Added a real favicon (`<link rel="icon">`/`apple-touch-icon`) — none existed
+  anywhere in `index.html` before this. Uses the already-approved Studio script wordmark (the same
+  asset already used in the nav), not any legacy "Hasheem Gaming" asset — this project has been
+  actively removing that branding from Studio's own UI, and `tests/e2e/landing-auth.mjs` already
+  asserts zero `img[alt="Hasheem Gaming"]` elements. Verified live: `<link rel="icon">` present and
+  the referenced asset returns 200 at `https://hasheemstudio.com/`.
+- [NOT DONE] No dedicated component/unit-test framework exists for `apps/web` (no vitest configured,
+  `apps/web/package.json` has no `test` script) — coverage for this change is the real Playwright
+  browser suites above, not isolated component tests. Only the remux recipe / resumable-upload /
+  guest-download suites were re-run as regression checks; `compat_encode`'s own e2e suite and the
+  load-test suites were not re-run this session (unrelated to this frontend-only change, and the
+  full worker/API pipeline they exercise is untouched by it).
