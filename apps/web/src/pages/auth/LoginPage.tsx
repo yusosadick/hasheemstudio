@@ -8,6 +8,7 @@ import { ArrowLeft, ArrowRight, Eye, EyeOff, Globe, Lock, Mail, User } from 'luc
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
+import { getSession } from '@/lib/auth'
 import { PageSEO } from '@/components/shared/PageSEO'
 import { AUTH_RETURN_KEY, safeReturnPath } from '@/lib/authReturn'
 
@@ -44,6 +45,19 @@ export default function LoginPage() {
   const [googleAvailable, setGoogleAvailable] = useState(false)
   useEffect(() => { let active=true; void fetch(`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/settings`, {headers:{apikey:import.meta.env.VITE_SUPABASE_ANON_KEY}}).then(r=>r.json()).then(settings=>{if(active)setGoogleAvailable(settings.external?.google===true)}).catch(()=>{}); return ()=>{active=false}; },[])
   useEffect(() => { if (nextPath) { try { localStorage.setItem(AUTH_RETURN_KEY, safeReturnPath(nextPath)) } catch { /* optional */ } } }, [nextPath])
+
+  // A signed-in visitor can land here via a CTA that doesn't check auth state first (e.g. the
+  // pricing "Get started free" link, which always points at /signup → this page) or a stale
+  // bookmark. Bounce them straight through instead of showing the sign-in form again.
+  useEffect(() => {
+    if (!getSession()) return
+    let stored: string | null = null
+    try { stored = localStorage.getItem(AUTH_RETURN_KEY) } catch { /* optional storage */ }
+    navigate(safeReturnPath(nextPath ?? stored), { replace: true })
+    // Deliberately mount-only: a session created while already on this page (Google's
+    // redirect-based OAuth) is handled by /auth/callback instead.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState('')
