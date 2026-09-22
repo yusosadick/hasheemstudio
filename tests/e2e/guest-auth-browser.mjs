@@ -1,7 +1,8 @@
 // Runs the imported auth screens against real local Supabase/API/worker, with a disposable user.
 import { chromium } from 'playwright';
-import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { readFileSync, mkdirSync, writeFileSync, openSync, ftruncateSync, closeSync, unlinkSync } from 'node:fs';
+import { homedir, tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { randomUUID,randomBytes } from 'node:crypto';
 import assert from 'node:assert/strict';
 import pg from 'pg';
@@ -16,9 +17,45 @@ const context=await browser.newContext({viewport:{width:1440,height:1000},accept
 page.setDefaultTimeout(15000);const errors=[];page.on('pageerror',e=>errors.push(e.message));let guestWorkspace;
 mkdirSync('docs/evidence/guest-download-gate',{recursive:true});
 try{
- await page.goto(base+'/');assert(await page.locator('header > div').getByRole('link',{name:'Get Started',exact:true}).isVisible());await page.getByRole('link',{name:'Choose video',exact:true}).click();
- await page.locator('input[type=file]').setInputFiles('tests/fixtures/media/synthetic-remux-test.mov');
- await page.waitForURL('**/app/jobs/*',{timeout:30000});const jobPath=new URL(page.url()).pathname;
+ await page.goto(base+'/');assert(await page.locator('header > div').getByRole('link',{name:'Get Started',exact:true}).isVisible());
+ // "Choose video" no longer navigates anywhere — it's a plain button that opens the native file
+ // picker right on this page (requirement 1). We drive that the same way a real click would.
+ const chooseVideo=page.getByRole('button',{name:'Choose video',exact:true});
+
+ // Guest 100 MB limit, enforced inline (no navigation, no real upload attempted for an oversized
+ // file — the client-side guard rejects it before any byte leaves the browser). Playwright's
+ // in-memory setFiles buffer is capped at 50 MB, so a real (sparse, cheap) file on disk is used
+ // instead of an in-memory buffer to get past that limit.
+ {
+  const oversizedPath=join(tmpdir(),`too-big-${randomUUID()}.mov`);
+  const fd=openSync(oversizedPath,'w');ftruncateSync(fd,101*1024*1024);closeSync(fd);
+  try{
+   const [chooser]=await Promise.all([page.waitForEvent('filechooser'),chooseVideo.click()]);
+   await chooser.setFiles(oversizedPath);
+   await page.getByRole('alert').filter({hasText:'Guest videos must be 100 MB or smaller.'}).waitFor({timeout:10000});
+   assert.equal(new URL(page.url()).pathname,'/');
+   assert(await chooseVideo.isVisible());
+  } finally { unlinkSync(oversizedPath); }
+ }
+
+ // Cancel mid-upload actually aborts the in-flight transfer and returns to the idle card
+ // immediately, ready for a new file — not just a UI state that looks idle while a request still
+ // completes in the background.
+ {
+  const [chooser]=await Promise.all([page.waitForEvent('filechooser'),chooseVideo.click()]);
+  await chooser.setFiles({name:'cancel-test.mp4',mimeType:'video/mp4',buffer:Buffer.alloc(24*1024*1024)});
+  await page.getByRole('progressbar').waitFor({timeout:10000});
+  await page.getByRole('button',{name:'Cancel',exact:true}).click();
+  await chooseVideo.waitFor({timeout:10000});
+  assert.equal(new URL(page.url()).pathname,'/');
+ }
+
+ const [fileChooser]=await Promise.all([page.waitForEvent('filechooser'),chooseVideo.click()]);
+ await fileChooser.setFiles('tests/fixtures/media/synthetic-remux-test.mov');
+ await page.getByRole('progressbar').waitFor({timeout:10000});
+ assert.equal(new URL(page.url()).pathname,'/','processing plays out on the same page, not a navigated-away one');
+ await page.screenshot({path:'docs/evidence/guest-download-gate/hero-processing.png',fullPage:true});
+ await page.waitForURL('**/app/jobs/*',{timeout:120000});const jobPath=new URL(page.url()).pathname;
  const jobId=jobPath.split('/').pop();guestWorkspace=(await db.query('select workspace_id from jobs where id=$1',[jobId])).rows[0].workspace_id;
  await page.getByRole('heading',{name:'Your video is ready'}).waitFor({timeout:120000});
  await page.screenshot({path:'docs/evidence/guest-download-gate/guest-result.png',fullPage:true});
