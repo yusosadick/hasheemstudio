@@ -1400,3 +1400,70 @@ with no evidence behind it.
   guest-download suites were re-run as regression checks; `compat_encode`'s own e2e suite and the
   load-test suites were not re-run this session (unrelated to this frontend-only change, and the
   full worker/API pipeline they exercise is untouched by it).
+
+## Worker verification-failure messages, H.264 level fix, remux hardening — 2026-09-22
+
+Triggered by a real user report of `Output verification failed: decodeOk=true durationOk=false`
+plus a separate complaint that a previous output "looked scratching" and a request to check global
+platform-compatibility. Diagnosed against the real failing job in the live DB, not guessed.
+
+- [VERIFIED-LIVE] Root-caused the exact reported failure: pulled the actual failed job
+  (`7db30d29-40b3-498e-84cf-7dc682fc8204`) from the live database and downloaded the real input
+  object still in storage, then ran it through the worker's own `probe`/`remux`/`decodeCheck`
+  functions directly. Real finding: a 3840x2160 HEVC file with no audio track, where FFmpeg's
+  `-c copy` stream copy hit `Packet corrupt (stream = 0, dts = 31031)` then `EOF while reading
+  input` at ~1.07s into a real 5.14s recording — the source container is genuinely
+  corrupted/truncated at the demux/sample-table level, not an edit-list or negative-timestamp
+  artifact. Confirmed this is not fixable by choosing a different recipe: a full decode+re-encode
+  (`compat_encode`'s own pipeline) hits the identical "EOF while reading input" wall on the same
+  file, since the corruption is upstream of decoding entirely. Verification correctly refused to
+  publish the silently-truncated 1-second output as if it were the full 5 — that fail-closed
+  behavior is correct and was **not** weakened.
+- [IMPLEMENTED] `jobs.error_message` (shown directly to the user on the job result page,
+  `apps/web/src/pages/JobResult.tsx`) is no longer the raw internal check string. It now
+  distinguishes: a detected source-file corruption/truncation (honest message, real measured
+  durations, told to re-export/re-upload — **not** told it's our fault, since it verifiably isn't
+  for this class of failure), a generic decode/duration-verification failure (told to re-upload or
+  try the other recipe), and our own encode step producing the wrong codec/dimensions (told it's
+  likely a bug on our end, not the file). `apps/worker/src/ffmpeg.ts` now captures FFmpeg's own
+  stderr from `remux`/`compatEncode` and scans it for corruption markers
+  (`looksLikeSourceCorruption`) to tell these apart.
+- [VERIFIED-LIVE] Reprocessed the real failing input through the live API end to end after
+  deploying the fix (fresh disposable test account, same file, `recipe: "remux"`): job correctly
+  reaches `failed`, and `errorMessage` now reads *"Your video file appears to be corrupted or
+  incomplete — only about 1.1s of the original 5.1s could be read. This isn't something we can fix
+  on our side; please try re-exporting or re-recording the video and upload the file again."*
+- [IMPLEMENTED] `compat_encode` hardcoded `-level 4.1`, but Level 4.1's MaxMBPS constraint
+  (245,760 macroblocks/sec) only covers 1080p up to ~30fps — the product's own advertised spec is
+  1080p60. Verified directly: libx264 encoding a real 1080p60 source with the old settings warns
+  `MB rate (489600) > level limit (245760)` while still tagging the output stream as level 41 —
+  i.e. a stream that misreports its own conformance, exactly the kind of mismatch strict hardware
+  decoders and platform ingest validators reject or mis-decode (a plausible cause of the separately
+  reported "scratching" playback). Raised to Level 4.2 (MaxMBPS 522,240, same essentially-universal
+  device support as 4.1); the same real 1080p60 source now encodes with zero libx264 warnings and
+  correctly reports level 42.
+- [IMPLEMENTED] `compat_encode` also now sets a real ~2 second closed GOP (`-g`/`-keyint_min` sized
+  from the actual probed source frame rate, `-sc_threshold 0` to stop scene-cut detection from
+  moving keyframes) instead of libx264's default ~250-frame GOP (4-8+ seconds at typical frame
+  rates) — short, predictable, seekable segment boundaries are what major platforms' ingest/
+  transcode pipelines expect. Also standardizes audio to `-ar 48000` rather than passing through
+  whatever sample rate the source declared. Verified directly on a real 1080p60 encode: keyframes
+  land at exactly 0.033s and 2.033s (was governed by libx264's un-set default before).
+  `remux()` gets `-avoid_negative_ts make_zero` — standard, zero-cost practice for the separate,
+  real class of duration/sync bugs caused by A/V streams not both starting at PTS 0 on stream copy;
+  confirmed it does not regress the healthy-file case (remux duration delta on the committed test
+  fixture: 0.067s, well within tolerance).
+- [VERIFIED-LIVE] Deployed by building only `hasheemstudio-worker` from pushed
+  `056a6f4ce7ef0b760d50ef43839f96da2e6f2321` and recreating it with `--no-deps --force-recreate`;
+  came up healthy. No other container touched. `pnpm typecheck` clean;
+  `tests/e2e/compat-encode.mjs` (8/8), `tests/e2e/upload-to-download.mjs` (14/14),
+  `tests/integration/hostile-media-inputs.mjs` (8/8 — still correctly ends genuinely hostile input
+  in `failed`, never fakes success) and `tests/integration/worker-crash-recovery.mjs` (6/6) all
+  passed against the live worker after the redeploy.
+- [NOT DONE] No SSIM/VMAF or other perceptual-quality scoring exists (unchanged from before this
+  session — `qualityMetric: "not_computed"` is reported honestly, not fabricated). The "scratching"
+  complaint is addressed via the H.264 level-conformance fix above, which is a real, verified
+  encoding-correctness bug; it was not possible to independently reproduce visible frame corruption
+  from the level-41-on-1080p60 case locally (no non-compliant decoder available to test against) —
+  the fix is justified by the demonstrated bitstream non-conformance itself, not by directly
+  observing "scratching" before/after.
