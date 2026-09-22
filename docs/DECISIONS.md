@@ -118,3 +118,19 @@ Pending owner inputs: exact shared Snippe vault item, plan name/TZS price/durati
 mobile/card/both, provider-approved sandbox mode/credential and test account, approved signup/recovery
 inbox, support mailbox routing confirmation. Real Google consent/session still requires owner test.
 No guessed price, credentials or synthetic provider-success claim.
+
+
+## Download-truncation root cause found and fixed — 2026-09-22
+
+A production report said large downloads were silently truncating on slow connections (VLC/WhatsApp
+rejecting the result) even after the same-day signed-URL-expiry fix (`2c683bfc`). Investigated fresh
+per explicit instruction not to assume that fix was sufficient. Real root cause: the Envoy gateway's
+`/storage/v1/` route had `timeout: 30s`, applying to the whole request, not just time-to-first-byte —
+confirmed directly from the storage service's own "ABORTED REQ" log at ~30.000s and Envoy's own
+access log showing a "200" response short by tens of megabytes. Reproduced the exact user-facing
+symptom end to end with a real throttled Chrome browser against the live production download UI, then
+fixed (`timeout: 7200s`, matching the download URL's own expiry) and reverified with the same real
+browser mechanism plus independent raw-HTTP downloads at two throttle profiles: byte-exact,
+sha256-exact, clean `ffmpeg` decode, clean VLC playback each time. Full raw evidence:
+`docs/evidence/download-truncation-fix/results.json`. No owner input was needed; this was a
+project-owned dedicated Envoy config, not shared infrastructure.

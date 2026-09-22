@@ -1467,3 +1467,81 @@ platform-compatibility. Diagnosed against the real failing job in the live DB, n
   from the level-41-on-1080p60 case locally (no non-compliant decoder available to test against) —
   the fix is justified by the demonstrated bitstream non-conformance itself, not by directly
   observing "scratching" before/after.
+
+## Download truncation on slow connections — real root cause found and fixed, 2026-09-22
+
+**A follow-up production bug report said the prior fix (`2c683bfc`, same day — signed-URL expiry
+300s → 7200s) did not fully resolve the issue.** Investigated as instructed: from scratch, assuming
+the prior fix addressed *a* cause, not necessarily *the* cause. It was partial. Full raw evidence:
+[docs/evidence/download-truncation-fix/results.json](evidence/download-truncation-fix/results.json).
+
+- [VERIFIED-LIVE] **Root cause found via the servers' own logs, not inferred from config alone.**
+  The Envoy gateway's `/storage/v1/` route (every signed download goes through this) had
+  `timeout: 30s`. This is the timeout for the *entire* request, not time-to-first-byte. Direct
+  evidence: the Supabase Storage service's own structured log shows `"ABORTED REQ"` at
+  `responseTime: 30004.82ms` for a real throttled download; Envoy's own access log for that
+  identical request shows a `"200"` response having sent only `15,204,352` of a real
+  `58,592,373`-byte file — Envoy finished the downstream response as if it had succeeded once its
+  30s budget ran out, instead of surfacing an error. A file near the 100 MB guest limit takes
+  minutes on a real slow connection (300 kbit/s ≈ 27 minutes for 58 MB), so this guaranteed
+  truncation for exactly the users who most need reliable delivery.
+- [VERIFIED-LIVE] **Reproduced the exact user-reported symptom end to end**, with a real Chrome
+  browser (Playwright + genuine CDP `Network.emulateNetworkConditions` throttling at 300 kbit/s
+  down / 250 ms latency) driving the actual production download UI against a real 58.6 MB 4K HEVC
+  output: the page shows "Job complete" / "Download video" with **zero error anywhere**,
+  `download.failure()` returns `null`, Chrome's own download manager reports success — but only
+  `11,897,584` of `58,592,373` bytes land on disk. `ffprobe` on that truncated file reports the
+  *correct* full duration/frame count (the `moov` atom, placed at the front by `+faststart`,
+  finished downloading before the truncation hit later in `mdat`), but a real `ffmpeg` decode
+  **fails**: `Invalid NAL unit size (814529 > 62144)` / `Error splitting the input into NAL units`
+  / `Decoding error: Invalid data found when processing input` — the exact class of corruption that
+  gets a file rejected by VLC and WhatsApp, confirming both halves of the original report.
+- [IMPLEMENTED] `infra/compose/volumes/api/envoy/lds.template.yaml`: storage route `timeout`
+  `30s` → `7200s` (matches `DOWNLOAD_URL_EXPIRY_SECONDS` in `apps/api/src/routes/downloads.ts`, so
+  neither the signed URL's own expiry nor this route timeout binds before the other). Listener
+  `per_connection_buffer_limit_bytes` `32768` → `1048576` (Envoy's own documented 1 MiB default —
+  32 KiB forced near-constant flow-control stalls on any large response, eating into the timeout
+  budget even faster).
+- [VERIFIED-LIVE] **Other candidate causes explicitly checked and ruled out, not assumed clear:**
+  Cloudflare (DNS-only/grey-cloud for this domain — `hasheemstudio.com`, `api.hasheemstudio.com`,
+  `supabase.hasheemstudio.com` all resolve directly to the VPS's own IP via `dig`; Cloudflare is not
+  in the request path at all). `apps/web`'s nginx (not in the download path — signed URLs point
+  straight at `supabase.hasheemstudio.com`, bypassing `apps/web` entirely). HTTP Range/206 handling
+  (tested directly end to end through the full public chain: correct `206`, correct
+  `Content-Range`, and the returned bytes verified byte-for-byte identical via `cmp` against the
+  same slice of the source file). Client-side Content-Length validation (Chrome's underlying network
+  request *did* fail — CDP `Network.loadingFailed`, `net::ERR_ABORTED` — but its download manager
+  still reported success; this is real browser behavior outside the app's control once the server
+  itself closes the response as a normal `200`, and there's no reliable client-side hook to catch it
+  after the fact given the app's `window.location.assign()`-based direct-navigation download —
+  fixing the server-side timeout so the connection is never killed mid-transfer is the correct and
+  sufficient fix, not a client-side workaround).
+- [VERIFIED-LIVE] Deployed by recreating only `hasheemstudio-envoy` (`--no-deps --force-recreate`)
+  from pushed `bbffc09bd0f8600fa4e54a8a25afdc39228b87d3`; came up healthy, config confirmed rendered
+  correctly inside the container. No other container touched (`docker ps` confirmed before/after,
+  including all unrelated shared-host services).
+- [VERIFIED-LIVE] **Full mandatory post-fix proof, repeated at two throttle profiles, both real
+  browser and raw-HTTP mechanisms** (all against the live `https://hasheemstudio.com` /
+  `supabase.hasheemstudio.com`, using genuine kernel-level traffic shaping — `tc`
+  `tbf`+`netem` via an IFB device, isolated entirely inside a throwaway Docker container's own
+  network namespace via `--cap-add=NET_ADMIN`, never applied to the shared host's real interface):
+  - **1 Mbit/s / 100 ms, raw HTTP**: `size_download=58592373` (exact), `time_total=495.4s`, sha256
+    exactly matches the original source, clean `ffmpeg -v error` decode (zero stderr), all 5
+    extracted frames (0/25/50/75/99%) visually confirmed clean, VLC exit code 0 with no
+    corruption-related output.
+  - **300 kbit/s / 250 ms, real Chrome browser** (the exact profile and exact mechanism that
+    produced the truncated/corrupted file before the fix): `saveAs` elapsed `1565.1s`
+    (~26 minutes), `download.failure()` null, saved file `58592373` bytes (exact), sha256 exactly
+    matches, clean `ffmpeg` decode, VLC exit code 0, no corruption warnings.
+  - **300 kbit/s / 250 ms, raw HTTP** (same profile as the original pre-fix reproduction):
+    `size_download=58592373` (exact), `time_total=1642.3s` (~27 minutes), sha256 exactly matches,
+    clean `ffmpeg` decode.
+  - A VLC binary did not exist in this environment; built one headless (`vlc-bin`+
+    `vlc-plugin-base` on `debian:bookworm-slim`, run as non-root with `--intf dummy --vout dummy
+    --aout dummy`) specifically for this verification. Its "Could not find ref with POC N" /
+    "late frames" warnings on the downloaded files were confirmed to be a software-4K-HEVC-decode
+    real-time-performance artifact of this constrained container — the identical warnings appear on
+    the known-clean, never-downloaded original source file, not something introduced by the
+    download.
+  - Disposable test accounts used for this investigation were deleted afterward via the GoTrue
+    admin API.

@@ -1,0 +1,112 @@
+{
+  "summary": "Real production bug: signed downloads of large files silently truncated on slow/throttled connections, no error surfaced to the user, resulting file rejected by real players. Root cause: Envoy's /storage/v1/ route had timeout: 30s, applying to the ENTIRE request not just time-to-first-byte.",
+  "priorFixWasPartial": {
+    "commit": "2c683bfc7c28f8408a5c7541c413759668019d2a",
+    "whatItDid": "Extended signed download URL expiry from 300s to 7200s, and fixed a false-positive decodeCheck.ok:true on real decode errors.",
+    "whyInsufficientAlone": "A valid, long-lived token does not help if the underlying request/response itself is killed by a route-level timeout mid-transfer."
+  },
+  "rootCauseEvidence": {
+    "storageServiceLog": {
+      "message": "hasheemstudio | GET | ABORTED REQ | 10.0.1.6 | req-454a | /object/sign/media/f99f5676-72b9-45bb-bea3-a141b43f67bc/outputs/1da8d1c4-f1bc-401c-877c-f65b9eea2733.mp4?token=redacted&download=hasheem-video.mp4 | Mozilla/5.0 ... HeadlessChrome/153.0.8010.12",
+      "responseTimeMs": 30004.823619008064,
+      "note": "Storage's own structured log shows the request was aborted at almost exactly 30.000 seconds."
+    },
+    "envoyAccessLog": {
+      "line": "10.0.1.6 - - [22/Sep/2026:16:48:00 +0000] \"GET /storage/v1/object/sign/media/f99f5676-72b9-45bb-bea3-a141b43f67bc/outputs/1da8d1c4-f1bc-401c-877c-f65b9eea2733.mp4?token=redacted&download=hasheem-video.mp4 HTTP/1.1\" 200 15204352 \"https://hasheemstudio.com/\" \"Mozilla/5.0 ... HeadlessChrome/153.0.8010.12\"",
+      "note": "Envoy logged this as a '200 complete' response having sent only 15,204,352 of the real 58,592,373-byte file. Envoy finished the downstream response as if successful once its 30s route timeout ran out, rather than surfacing it as a server error."
+    }
+  },
+  "reproduction": {
+    "method": "Real Chrome browser via Playwright, CDP Network.emulateNetworkConditions at 300kbit down / 250ms latency, driving the actual production download UI (login -> job page -> click 'Download video') against a real job with a real 58,592,373-byte 4K HEVC output.",
+    "beforeFix": {
+      "downloadFailure": null,
+      "chromeReportedSuccess": true,
+      "pageShowedError": false,
+      "pageBodyExcerpt": "Job complete / Your video is ready / Download video (no error text anywhere)",
+      "actualBytesSaved": 11897584,
+      "expectedBytes": 58592373,
+      "ffprobeMetadata": "Reports the FULL correct duration (5.138467s) and frame count (154) because the moov atom (placed at the front by -movflags +faststart) was fully downloaded before truncation hit later in mdat.",
+      "ffmpegDecodeResult": "FAILS: '[hevc] Invalid NAL unit size (814529 > 62144).' / 'Error splitting the input into NAL units.' / 'Decoding error: Invalid data found when processing input' -- exit code 0 despite the error (the exact class of bug already fixed in decodeCheck by commit 2c683bfc for the WORKER's own self-check, but that fix has no effect here since this corruption is introduced by download delivery, after the worker already verified a clean file)."
+    }
+  },
+  "fixCommit": "bbffc09bd0f8600fa4e54a8a25afdc39228b87d3",
+  "fixDiff": "infra/compose/volumes/api/envoy/lds.template.yaml: storage route timeout 30s -> 7200s (matches DOWNLOAD_URL_EXPIRY_SECONDS in apps/api/src/routes/downloads.ts); listener per_connection_buffer_limit_bytes 32768 -> 1048576 (Envoy's own documented default).",
+  "deployment": {
+    "method": "docker compose ... up -d --no-deps --force-recreate --wait api-gw (hasheemstudio-envoy only)",
+    "otherContainersTouched": "none — verified via `docker ps` before/after across all hasheemstudio-* and all unrelated shared-host containers"
+  },
+  "otherCausesRuledOut": [
+    {
+      "candidate": "Cloudflare edge/proxy timeouts or buffering",
+      "verdict": "Not in the request path at all. hasheemstudio.com, api.hasheemstudio.com and supabase.hasheemstudio.com all resolve directly to the VPS's own public IP (169.58.72.101) via `dig`, confirming Cloudflare is DNS-only (grey-cloud) for this domain."
+    },
+    {
+      "candidate": "apps/web's nginx buffering/timeouts",
+      "verdict": "Not in the download path. Signed download URLs point at supabase.hasheemstudio.com (the Envoy gateway) directly; the browser never touches apps/web's nginx for the actual file bytes."
+    },
+    {
+      "candidate": "HTTP Range request handling / full-body buffering in a proxy layer",
+      "verdict": "Tested directly: a Range: bytes=1000000-2000000 request through the full public chain returned a correct 206 with exact Content-Range and Content-Length, and the returned bytes were verified byte-for-byte identical (cmp) against the same slice of the original file via dd. No evidence of any layer buffering the full body before forwarding."
+    },
+    {
+      "candidate": "Client (browser) silently accepting a truncated response without validating Content-Length",
+      "verdict": "Partially true but not the root cause: Chrome's underlying network request DID fail (CDP Network.loadingFailed, errorText: net::ERR_ABORTED), but its download manager still reported success (download.failure() === null) and saved the partial bytes without surfacing any error to the page or the user. This is real browser behavior outside this application's control once the server itself terminates the response as if it were a normal, successful 200. Fixing the server-side timeout (so the connection is never killed mid-transfer in the first place) is the correct and sufficient fix; there is no reliable client-side hook to detect this after the fact given the app's window.location.assign()-based direct-navigation download."
+    }
+  ],
+  "postFixVerification": {
+    "originalSourceSha256": "42ff9d8681a947a537041e171bad6a5d97b3fab14ffbb6ec2d789441a3b20c2d",
+    "originalSourceSizeBytes": 58592373,
+    "runs": [
+      {
+        "profile": "1mbit / 100ms latency",
+        "method": "Raw HTTP via curl, genuine kernel-level ingress shaping (tc tbf + netem via an IFB device, isolated inside a throwaway Docker container's own network namespace -- never applied to the shared host's real interface)",
+        "httpCode": 200,
+        "sizeDownloadBytes": 58592373,
+        "timeTotalSeconds": 495.432545,
+        "speedDownloadBytesPerSec": 118265,
+        "curlExitCode": 0,
+        "sha256Match": true,
+        "ffmpegDecodeStderr": "(empty -- clean decode)",
+        "framesExtracted": ["0%", "25%", "50%", "75%", "99%"],
+        "framesVisuallyConfirmedClean": true,
+        "vlcExitCode": 0,
+        "vlcCorruptionWarnings": "none (same benign real-time-decode-performance warnings -- 'Could not find ref with POC N', 'late frames' -- also reproduced identically on the known-clean, never-downloaded original source file, confirming they are a software-4K-HEVC-decode-in-a-constrained-container artifact, not data corruption)"
+      },
+      {
+        "profile": "300kbit / 250ms latency (real Chrome browser)",
+        "method": "Real Chrome via Playwright, CDP Network.emulateNetworkConditions, driving the actual production download UI end to end (same exact mechanism as the 'before' reproduction above)",
+        "saveAsElapsedSeconds": 1565.129,
+        "saveError": null,
+        "downloadFailure": null,
+        "savedFileSizeBytes": 58592373,
+        "sha256Match": true,
+        "ffmpegDecodeStderr": "(empty -- clean decode)",
+        "vlcExitCode": 0,
+        "vlcCorruptionWarnings": "none"
+      },
+      {
+        "profile": "300kbit / 250ms latency (raw HTTP, same profile as the pre-fix reproduction)",
+        "method": "Raw HTTP via curl with genuine kernel-level shaping (same as the 1mbit run)",
+        "httpCode": 200,
+        "sizeDownloadBytes": 58592373,
+        "timeTotalSeconds": 1642.314274,
+        "speedDownloadBytesPerSec": 35676,
+        "curlExitCode": 0,
+        "sha256Match": true,
+        "ffmpegDecodeStderr": "(empty -- clean decode)"
+      }
+    ],
+    "rangeRequestTest": {
+      "request": "Range: bytes=1000000-2000000",
+      "responseStatus": 206,
+      "contentRange": "bytes 1000000-2000000/58592373",
+      "contentLength": 1000001,
+      "byteForByteMatchAgainstSource": true
+    }
+  },
+  "notes": [
+    "No VLC binary existed in this environment beforehand; built one from debian:bookworm-slim + vlc-bin + vlc-plugin-base for this verification, run headless (--intf dummy --vout dummy --aout dummy) as a non-root user.",
+    "Throttling used genuine kernel-level traffic control (tc tbf/netem via an IFB device) isolated entirely inside a throwaway Docker container's own network namespace via --cap-add=NET_ADMIN -- never applied to the shared host's real network interface, so no other tenant/service on this shared VPS was affected.",
+    "All disposable test accounts created during this investigation were deleted afterward via the GoTrue admin API."
+  ]
+}
