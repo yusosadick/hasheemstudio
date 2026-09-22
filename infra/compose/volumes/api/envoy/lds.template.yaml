@@ -1,7 +1,12 @@
 resources:
   - '@type': type.googleapis.com/envoy.config.listener.v3.Listener
     name: supabase
-    per_connection_buffer_limit_bytes: 32768  # 32 KiB
+    # Was 32 KiB — far too small for streaming large media files to a slow/throttled client.
+    # Envoy's own documented default is 1 MiB; raised to match. A tiny buffer doesn't corrupt data
+    # by itself, but it does mean flow control kicks in almost immediately on any large response,
+    # which magnifies the effect of the per-request timeout bug fixed below (every stall waiting
+    # for the buffer to drain eats into that timeout budget).
+    per_connection_buffer_limit_bytes: 1048576  # 1 MiB
 
     address:
       socket_address:
@@ -293,7 +298,22 @@ resources:
                         route:
                           cluster: storage
                           prefix_rewrite: /
-                          timeout: 30s
+                          # Real, reproduced production bug: this 30s route timeout applies to the
+                          # ENTIRE request (through full response delivery), not just
+                          # time-to-first-byte. Confirmed directly against this exact route: the
+                          # storage service's own access log shows "ABORTED REQ" at
+                          # responseTime=30004.82ms for a real throttled download, and Envoy's own
+                          # access log for that identical request shows a "200" response having sent
+                          # only 15,204,352 of a real 58,592,373-byte file — Envoy silently finished
+                          # the downstream response as if successful once its 30s budget ran out,
+                          # truncating it. A file at or near the 100 MB guest limit takes minutes on
+                          # a real slow/throttled connection (300 kbit/s ≈ 27 minutes for 58 MB), so
+                          # 30s guarantees truncation for exactly the users who most need reliable
+                          # delivery. Raised to match DOWNLOAD_URL_EXPIRY_SECONDS in
+                          # apps/api/src/routes/downloads.ts (7200s / 2h) so neither the signed URL's
+                          # own expiry nor this route timeout is the binding constraint before the
+                          # other.
+                          timeout: 7200s
                         request_headers_to_add:
                           - header:
                               key: X-Forwarded-Prefix
