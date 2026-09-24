@@ -7,7 +7,8 @@ import { mkdir, readFile, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { getPool } from "./db.js";
 import { downloadObject, uploadObject } from "./storage.js";
-import { probe, remux, compatEncode, decodeCheck, looksLikeSourceCorruption } from "./ffmpeg.js";
+import { probe, remux, compatEncode, platformOptimize, decodeCheck, looksLikeSourceCorruption } from "./ffmpeg.js";
+import { planPlatformProfile, choosePreset, PLATFORM_OPTIMIZE_TIMEOUT_MS, WHATSAPP_MAX_BYTES } from "./platformProfile.js";
 
 const SCRATCH_ROOT = process.env.WORKER_SCRATCH_DIR ?? "/tmp/hasheemstudio-scratch";
 const LEASE_MS = 10 * 60_000;
@@ -22,7 +23,7 @@ function sha256(buf: Buffer): string {
 // raw internal check string (e.g. "Output verification failed: decodeOk=true durationOk=false"),
 // which is meaningless to a user and gives them no idea whether it's their file or worth retrying.
 function verificationFailureMessage(opts: {
-  recipe: "remux" | "compat_encode";
+  recipe: "remux" | "compat_encode" | "platform_optimize";
   decodeOk: boolean;
   decodeDetail: string;
   durationOk: boolean;
@@ -256,8 +257,11 @@ export async function processJob(jobId: string): Promise<void> {
       const durationOk = durationDelta === null || durationDelta < 1.5;
       const isH264 = outputMetadata.videoCodec === "h264";
       const isAac = metadata.audioCodec === null || outputMetadata.audioCodec === "aac";
-      const dimensionsPreserved = !metadata.width || !metadata.height
-        || (outputMetadata.width! <= metadata.width && outputMetadata.height! <= metadata.height);
+      // Compare DISPLAY dimensions: ffmpeg autorotates on re-encode, so a portrait phone/drone clip
+      // stored as 3840x2160 + rotation=90 comes out 2160x3840. Comparing the coded size to the output
+      // (as this check used to) reported "dimensions grew" for every rotated source.
+      const dimensionsPreserved = !metadata.displayWidth || !metadata.displayHeight
+        || (outputMetadata.displayWidth! <= metadata.displayWidth && outputMetadata.displayHeight! <= metadata.displayHeight);
 
       verificationLevel = "compat_encode_full_decode_check";
       framesReEncoded = true;
@@ -283,6 +287,131 @@ export async function processJob(jobId: string): Promise<void> {
         if (!dimensionsPreserved) extraFailures.push("output dimensions grew beyond the source");
         throw new Error(verificationFailureMessage({
           recipe: "compat_encode",
+          decodeOk: decode.ok,
+          decodeDetail: decode.detail,
+          durationOk,
+          durationDelta,
+          inputDurationSeconds: metadata.durationSeconds,
+          outputDurationSeconds: outputMetadata.durationSeconds,
+          ffmpegStderr: encodeResult.stderr,
+          extraFailures,
+        }));
+      }
+
+      outputChecksum = sha256(outputBuffer);
+      outputObjectKey = `${claimed.workspaceId}/outputs/${claimed.id}.mp4`;
+      outputSizeBytes = outputBuffer.length;
+
+      if (!(await isStillActive(claimed.id))) {
+        console.log(`job ${claimed.id} was cancelled after processing, before publish — not uploading output`);
+        return;
+      }
+
+      await uploadObject(outputObjectKey, outputBuffer, "video/mp4");
+    } else if (claimed.recipe === "platform_optimize") {
+      if (metadata.isHdr) {
+        throw new Error(
+          "This video uses HDR (PQ/HLG) colour. Platform optimization does not tone-map HDR to SDR yet, and re-encoding it unchanged would wash out the colours. Use \"Compatible MP4 remux\" to keep it as-is, or export an SDR version and upload that.",
+        );
+      }
+      if (!metadata.displayWidth || !metadata.displayHeight) {
+        throw new Error("Could not read this video's dimensions, so it can't be platform-optimized. Please re-export the video and try again.");
+      }
+      const sourceVideoKbps = metadata.videoBitRate
+        ? metadata.videoBitRate / 1000
+        : metadata.formatBitRate ? metadata.formatBitRate / 1000 : null;
+      const plan = planPlatformProfile({
+        displayWidth: metadata.displayWidth,
+        displayHeight: metadata.displayHeight,
+        frameRate: metadata.frameRate,
+        sourceVideoKbps,
+      });
+      const presetChoice = choosePreset(plan, {
+        durationSeconds: metadata.durationSeconds,
+        inputWidth: metadata.width ?? metadata.displayWidth,
+        inputHeight: metadata.height ?? metadata.displayHeight,
+        inputFps: metadata.frameRate,
+      });
+      if (!presetChoice.ok) {
+        throw new Error(
+          `This video is too large or long to platform-optimize within the time limit (predicted about ${Math.round(presetChoice.predictedSeconds / 60)} minutes even at the fastest safe setting). Try a shorter clip or a lower resolution, or use "Compatible MP4 remux".`,
+        );
+      }
+      const preset = presetChoice.preset;
+      const outputPath = join(scratchDir, "output.mp4");
+      const encodeStartedAt = Date.now();
+      const encodeResult = await platformOptimize(inputPath, outputPath, plan, preset, PLATFORM_OPTIMIZE_TIMEOUT_MS);
+      const encodeSeconds = Math.round((Date.now() - encodeStartedAt) / 100) / 10;
+      const decode = await decodeCheck(outputPath);
+      const outputBuffer = await readFile(outputPath);
+      const outputMetadata = await probe(outputPath);
+
+      const durationDelta = metadata.durationSeconds && outputMetadata.durationSeconds
+        ? Math.abs(metadata.durationSeconds - outputMetadata.durationSeconds)
+        : null;
+      const durationOk = durationDelta === null || durationDelta < 1.5;
+      const isH264 = outputMetadata.videoCodec === "h264";
+      const isAac = metadata.audioCodec === null || outputMetadata.audioCodec === "aac";
+      const dimensionsAsPlanned = outputMetadata.displayWidth === plan.outWidth && outputMetadata.displayHeight === plan.outHeight;
+      const fpsOk = outputMetadata.frameRate === null || outputMetadata.frameRate <= plan.outFps + 0.5;
+      const mainNoBFrames = outputMetadata.videoProfile === "Main" && !outputMetadata.hasBFrames;
+      const seconds = outputMetadata.durationSeconds ?? metadata.durationSeconds ?? 0;
+      const totalKbps = seconds > 0 ? (outputBuffer.length * 8) / seconds / 1000 : null;
+      const audioKbps = outputMetadata.audioCodec ? plan.audioKbps : 0;
+      const achievedVideoKbps = totalKbps === null ? null : Math.max(0, Math.round(totalKbps - audioKbps));
+      // The VBV guarantee is per buffer window, so a clip's average can exceed -maxrate by at most the
+      // initially-full part of the buffer spread over the clip (vbv-init 0.5) plus container overhead.
+      const allowedVideoKbps = (plan.maxrateKbps + (plan.bufsizeKbps * (1 - plan.vbvInit)) / Math.max(seconds, 1)) * 1.05;
+      const bitrateWithinCeiling = achievedVideoKbps === null || achievedVideoKbps <= allowedVideoKbps;
+      const head = outputBuffer.subarray(0, Math.min(outputBuffer.length, 1 << 20));
+      const moovIdx = head.indexOf("moov");
+      const mdatIdx = head.indexOf("mdat");
+
+      verificationLevel = "platform_optimize_full_decode_check";
+      framesReEncoded = true;
+      checks = {
+        decodeCheck: decode,
+        durationDelta,
+        durationOk,
+        inputStreams: { video: metadata.videoCodec, audio: metadata.audioCodec },
+        outputStreams: { video: outputMetadata.videoCodec, audio: outputMetadata.audioCodec },
+        outputIsH264: isH264,
+        outputIsAac: isAac,
+        dimensionsAsPlanned,
+        plan: { ...plan, preset, sourceVideoKbps: sourceVideoKbps === null ? null : Math.round(sourceVideoKbps) },
+        timings: { encodeSeconds, predictedSeconds: presetChoice.predictedSeconds },
+        sizes: {
+          inputBytes: inputBuffer.length,
+          outputBytes: outputBuffer.length,
+          reductionPercent: Math.round((1 - outputBuffer.length / inputBuffer.length) * 1000) / 10,
+          achievedVideoKbps,
+          targetCeilingKbps: plan.maxrateKbps,
+          bitrateWithinCeiling,
+        },
+        platformFit: {
+          outputProfile: outputMetadata.videoProfile,
+          outputHasBFrames: outputMetadata.hasBFrames,
+          moovBeforeMdat: moovIdx !== -1 && (mdatIdx === -1 || moovIdx < mdatIdx),
+          hasEditList: head.includes("elst"),
+          // Facts about the file, not promises about a platform: WhatsApp's documented 16 MB video limit
+          // is a byte limit, so whether a file fits depends on duration as well as bitrate.
+          whatsappCloudApi16MB: outputBuffer.length <= WHATSAPP_MAX_BYTES,
+        },
+        // Honest per docs/ARCHITECTURE.md: the production ffmpeg build has no libvmaf, so perceptual
+        // scores are measured offline (docs/evidence/platform-optimize/), never fabricated per job.
+        qualityMetric: "not_computed",
+      };
+
+      if (!decode.ok || !durationOk || !isH264 || !isAac || !dimensionsAsPlanned || !fpsOk || !mainNoBFrames || !bitrateWithinCeiling) {
+        const extraFailures: string[] = [];
+        if (!isH264) extraFailures.push(`expected H.264 output, got ${outputMetadata.videoCodec ?? "unknown"}`);
+        if (!isAac) extraFailures.push(`expected AAC audio output, got ${outputMetadata.audioCodec ?? "unknown"}`);
+        if (!dimensionsAsPlanned) extraFailures.push(`output size ${outputMetadata.displayWidth}x${outputMetadata.displayHeight} differs from the planned ${plan.outWidth}x${plan.outHeight}`);
+        if (!fpsOk) extraFailures.push(`output frame rate ${outputMetadata.frameRate} exceeds the planned ${plan.outFps}`);
+        if (!mainNoBFrames) extraFailures.push("output is not H.264 Main profile without B-frames");
+        if (!bitrateWithinCeiling) extraFailures.push(`output video bitrate ${achievedVideoKbps} kbps exceeds the ${plan.maxrateKbps} kbps ceiling`);
+        throw new Error(verificationFailureMessage({
+          recipe: "platform_optimize",
           decodeOk: decode.ok,
           decodeDetail: decode.detail,
           durationOk,

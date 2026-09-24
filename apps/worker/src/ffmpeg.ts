@@ -13,6 +13,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { resolve, dirname } from "node:path";
+import type { PlatformPlan } from "./platformProfile.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -42,6 +43,23 @@ export interface ProbeResult {
   frameRate: number | null;
   isVfr: boolean;
   rotationDegrees: number;
+  // Size as a viewer sees it: coded width/height swapped when the display matrix rotates the video
+  // 90/270 degrees (typical phone/drone portrait clips are stored landscape + a rotation flag).
+  displayWidth: number | null;
+  displayHeight: number | null;
+  videoProfile: string | null;
+  hasBFrames: boolean;
+  pixFmt: string | null;
+  colorTransfer: string | null;
+  // PQ (HDR10/Dolby Vision base) or HLG transfer — colours would be washed out by a plain SDR encode.
+  isHdr: boolean;
+  videoBitRate: number | null;
+  formatBitRate: number | null;
+}
+
+export function displayDimensions(width: number | null, height: number | null, rotationDegrees: number): { width: number | null; height: number | null } {
+  const r = ((Math.abs(Math.round(rotationDegrees)) % 360) + 360) % 360;
+  return r === 90 || r === 270 ? { width: height, height: width } : { width, height };
 }
 
 function parseFrameRate(rate: string | undefined): number | null {
@@ -78,10 +96,23 @@ export async function probe(inputPath: string): Promise<ProbeResult> {
   const sideData = videoStream?.side_data_list?.find((s: any) => "rotation" in s);
   if (sideData) rotation = sideData.rotation;
 
+  const display = displayDimensions(videoStream?.width ?? null, videoStream?.height ?? null, rotation);
+  const colorTransfer: string | null = videoStream?.color_transfer ?? null;
+  const num = (v: unknown): number | null => (v !== undefined && v !== null && Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : null);
+
   return {
     durationSeconds: data.format?.duration ? parseFloat(data.format.duration) : null,
     width: videoStream?.width ?? null,
     height: videoStream?.height ?? null,
+    displayWidth: display.width,
+    displayHeight: display.height,
+    videoProfile: videoStream?.profile ?? null,
+    hasBFrames: Number(videoStream?.has_b_frames ?? 0) > 0,
+    pixFmt: videoStream?.pix_fmt ?? null,
+    colorTransfer,
+    isHdr: colorTransfer === "smpte2084" || colorTransfer === "arib-std-b67",
+    videoBitRate: num(videoStream?.bit_rate),
+    formatBitRate: num(data.format?.bit_rate),
     videoCodec: videoStream?.codec_name ?? null,
     audioCodec: audioStream?.codec_name ?? null,
     container: data.format?.format_name ?? null,
@@ -210,6 +241,64 @@ export async function compatEncode(inputPath: string, outputPath: string, opts: 
   );
 
   const { stderr } = await execFileAsync("ffmpeg", args, { timeout: MAX_PROCESS_MS, maxBuffer: 16 * 1024 * 1024 });
+  return { stderr: stderr ?? "" };
+}
+
+// platform_optimize: a re-encode whose rate control is a *capped CRF* (constant quality, but never above
+// the per-resolution/fps ceiling from planPlatformProfile). Every choice below maps to a documented
+// platform constraint (sources in platformProfile.ts / docs/ARCHITECTURE.md):
+//   - H.264 Main profile, no B-frames  -> WhatsApp (Android clients reject High + B-frames)
+//   - closed GOP, keyframe every ~2 s  -> Instagram ("closed GOP"); predictable seek/segment points
+//   - yuv420p 8-bit, progressive       -> Instagram / TikTok / WhatsApp
+//   - AAC-LC stereo 48 kHz, 128 kbps   -> Instagram (AAC <= 48 kHz, 1-2 channels, 128 kbps)
+//   - moov first + no edit list        -> Instagram ("no edit lists, moov atom at the front")
+export async function platformOptimize(
+  inputPath: string,
+  outputPath: string,
+  plan: PlatformPlan,
+  preset: string,
+  timeoutMs: number = MAX_PROCESS_MS,
+): Promise<{ stderr: string }> {
+  assertWithinScratch(inputPath, dirname(inputPath));
+  assertWithinScratch(outputPath, dirname(outputPath));
+
+  // Filters run after ffmpeg's automatic rotation, so plan.outWidth/outHeight are display dimensions.
+  const filters: string[] = [];
+  if (plan.downscaled) filters.push(`scale=${plan.outWidth}:${plan.outHeight}`);
+  if (plan.fpsCapped) filters.push(`fps=${plan.outFps}`);
+  filters.push("format=yuv420p");
+
+  const args = [
+    "-nostdin", "-y", "-v", "warning",
+    "-protocol_whitelist", "file",
+    "-i", inputPath,
+    "-map", "0:v:0",
+    "-map", "0:a:0?",
+    "-vf", filters.join(","),
+    "-c:v", "libx264",
+    "-preset", preset,
+    "-profile:v", "main",
+    "-level", "4.2",
+    "-bf", "0",
+    "-pix_fmt", "yuv420p",
+    "-crf", String(plan.crf),
+    "-maxrate", `${plan.maxrateKbps}k`,
+    "-bufsize", `${plan.bufsizeKbps}k`,
+    "-x264-params", `vbv-init=${plan.vbvInit}`,
+    "-g", String(plan.gopFrames),
+    "-keyint_min", String(plan.gopFrames),
+    "-sc_threshold", "0",
+    "-c:a", "aac",
+    "-b:a", `${plan.audioKbps}k`,
+    "-ar", "48000",
+    "-ac", "2",
+    "-movflags", "+faststart",
+    "-use_editlist", "0",
+    "-fs", String(MAX_OUTPUT_BYTES),
+    "-threads", FFMPEG_THREADS,
+    outputPath,
+  ];
+  const { stderr } = await execFileAsync("ffmpeg", args, { timeout: timeoutMs, maxBuffer: 16 * 1024 * 1024 });
   return { stderr: stderr ?? "" };
 }
 
