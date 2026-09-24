@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { IconCheckCircle, IconDownload, IconAlertTriangle } from "../components/Icons";
 import { getSession } from "../lib/auth";
 import { getJob, cancelJob, requestDownload, DownloadError, type JobView } from "../lib/api";
+import { recipeSummary } from "../hooks/useVideoUpload";
 
 const TERMINAL = new Set(["succeeded", "failed", "cancelled", "expired"]);
 const STAGES = ["queued", "processing", "verifying", "succeeded"];
@@ -64,7 +65,7 @@ export default function JobResult() {
         </h1>
         {job.status === "succeeded" && (
           <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-3 py-1 text-sm font-medium text-success">
-            <IconCheckCircle width={16} height={16} /> {job.recipe === "remux" ? "Remux only — no re-encode" : job.recipe === "compat_encode" ? "H.264/AAC re-encoded" : "Inspected"}
+            <IconCheckCircle width={16} height={16} /> {recipeSummary(job.recipe)}
           </span>
         )}
         {job.status === "failed" && (

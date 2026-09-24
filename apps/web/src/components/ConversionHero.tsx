@@ -4,13 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { FileVideo, FileCheck, RefreshCw, Pause, Play, UploadCloud, X, Loader2 } from "lucide-react";
 import "./ConversionHero.css";
 import { HeroBackdrop } from "./HeroBackdrop";
-import { useVideoUpload, formatBytes, type Recipe, type UploadStage } from "../hooks/useVideoUpload";
-
-const RECIPES: { value: Recipe; label: string }[] = [
-  { value: "remux", label: "Compatible MP4 remux" },
-  { value: "compat_encode", label: "H.264/AAC re-encode" },
-  { value: "inspect", label: "Inspect only" },
-];
+import { useVideoUpload, formatBytes, RECIPE_OPTIONS, type UploadStage } from "../hooks/useVideoUpload";
 
 const ACTIVE_STAGES = new Set<UploadStage>([
   "uploading",
@@ -148,8 +142,8 @@ export function ConversionHero() {
 
               <fieldset className="hero-upload__recipes">
                 <legend className="hero-upload__recipes-legend">What does it need?</legend>
-                {RECIPES.map((r) => (
-                  <label key={r.value} className="hero-upload__recipe">
+                {RECIPE_OPTIONS.map((r) => (
+                  <label key={r.value} title={r.hint} className="hero-upload__recipe">
                     <input
                       type="radio"
                       name="hero-recipe"

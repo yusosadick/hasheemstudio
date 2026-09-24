@@ -52,7 +52,7 @@ export async function finalizeUpload(sessionId: string): Promise<{ mediaAssetId:
   return res.json();
 }
 
-export async function createJob(mediaAssetId: string, recipe: "inspect" | "remux" | "compat_encode", idempotencyKey?: string): Promise<{ jobId: string; status: string }> {
+export async function createJob(mediaAssetId: string, recipe: "inspect" | "remux" | "compat_encode" | "platform_optimize", idempotencyKey?: string): Promise<{ jobId: string; status: string }> {
   const res = await authedFetch("/v1/jobs", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

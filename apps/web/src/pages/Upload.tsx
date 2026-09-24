@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { IconUploadCloud } from "../components/Icons";
-import { useVideoUpload } from "../hooks/useVideoUpload";
+import { useVideoUpload, RECIPE_OPTIONS } from "../hooks/useVideoUpload";
 
 export default function Upload() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -37,10 +37,10 @@ export default function Upload() {
       )}
 
       <div className="mt-6 flex flex-wrap gap-3">
-        {(["remux", "compat_encode", "inspect"] as const).map((r) => (
-          <label key={r} className="flex items-center gap-2 text-sm">
-            <input type="radio" disabled={busy} name="recipe" checked={recipe === r} onChange={() => setRecipe(r)} className="accent-accent" />
-            {r === "remux" ? "Compatible MP4 remux" : r === "compat_encode" ? "H.264/AAC re-encode" : "Inspect only"}
+        {RECIPE_OPTIONS.map((r) => (
+          <label key={r.value} title={r.hint} className="flex items-center gap-2 text-sm">
+            <input type="radio" disabled={busy} name="recipe" checked={recipe === r.value} onChange={() => setRecipe(r.value)} className="accent-accent" />
+            {r.label}
           </label>
         ))}
       </div>

@@ -8,7 +8,24 @@ import { getSession } from "../lib/auth";
 import { createUploadSession, finalizeUpload, createJob, getJob, cancelJob, type JobView } from "../lib/api";
 import { uploadFileResumable, savePendingUpload, loadPendingUpload, clearPendingUpload, type PendingUpload } from "../lib/upload";
 
-export type Recipe = "inspect" | "remux" | "compat_encode";
+export type Recipe = "inspect" | "remux" | "compat_encode" | "platform_optimize";
+
+// Single source of truth for the recipe choices shown on the homepage hero and /app/upload.
+export const RECIPE_OPTIONS: { value: Recipe; label: string; hint: string }[] = [
+  { value: "remux", label: "Compatible MP4 remux", hint: "Repackage only — no re-encode, same file size" },
+  { value: "platform_optimize", label: "Platform-optimized (smaller file)", hint: "Re-encode to a bitrate suited to TikTok, Instagram and WhatsApp" },
+  { value: "compat_encode", label: "H.264/AAC re-encode", hint: "High-quality H.264/AAC re-encode" },
+  { value: "inspect", label: "Inspect only", hint: "Report only — no output video" },
+];
+
+export function recipeSummary(recipe: string): string {
+  switch (recipe) {
+    case "remux": return "Remux only — no re-encode";
+    case "compat_encode": return "H.264/AAC re-encoded";
+    case "platform_optimize": return "Platform-optimized H.264/AAC";
+    default: return "Inspected";
+  }
+}
 
 export type UploadStage =
   | "idle"
