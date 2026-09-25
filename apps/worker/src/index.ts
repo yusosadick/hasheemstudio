@@ -3,11 +3,13 @@ loadEnv();
 
 import { startDispatcher } from "./dispatcher.js";
 import { startReconciler } from "./reconciler.js";
+import { startRetentionSweeper } from "./retention.js";
 import { startWorker } from "./queue.js";
 import { processJob } from "./processor.js";
 
 startDispatcher();
 startReconciler();
+startRetentionSweeper();
 const worker = startWorker(processJob);
 
 worker.on("failed", (job, err) => {

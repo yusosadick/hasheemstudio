@@ -64,21 +64,24 @@ try{
  for(const w of ['crf','preset','vbv','maxrate','gop','x264','ffmpeg','sha','bitrate','kbps']) assert(!tileText.includes(w),'tile leaks '+w);
  assert(await page.getByText('Prepare your video').count()===0,'headline hidden once a file is chosen');
  assert(/^hasheemstudio_\d{8}_\d{6}\.mp4$/.test((await page.locator('.result-card__file').innerText()).trim()));guestWorkspace=(await db.query('select workspace_id from jobs where id=$1',[jobId])).rows[0].workspace_id;
- await page.getByRole('heading',{name:'Your video is ready'}).waitFor({timeout:120000});
+ // The job id is in the address bar, so an accidental refresh brings the same video (and its countdown) back.
+ assert.equal(new URL(page.url()).searchParams.get('job'),jobId,'URL carries the job id once the video is processed');
+ await page.reload();await page.getByRole('heading',{name:'Your video is ready'}).waitFor({timeout:30000});
+ assert.equal(new URL(page.url()).searchParams.get('job'),jobId);assert(await page.getByRole('timer').isVisible(),'5-minute countdown is visible');
  await page.screenshot({path:'docs/evidence/guest-download-gate/guest-result.png',fullPage:true});
  await page.getByRole('link',{name:'Sign in to download'}).click();
  await page.getByRole('textbox',{name:'Email address'}).fill(email);await page.getByRole('button',{name:'Continue',exact:true}).click();
  await page.getByRole('heading',{name:'Welcome back'}).waitFor();
  await page.getByRole('textbox',{name:'Password',exact:true}).fill(password);await page.getByRole('button',{name:'Sign in',exact:true}).click();
- await page.waitForURL(base+jobPath);await page.getByRole('button',{name:'Download video',exact:true}).waitFor();
+ await page.waitForURL(base+'/?job='+jobId);await page.getByRole('button',{name:'Download video',exact:true}).waitFor();  // back on the homepage card, video restored
  const [download]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Download video',exact:true}).click()]);
  const stream=await download.createReadStream();let bytes=0;for await(const chunk of stream) bytes+=chunk.length;
  assert(bytes>0);assert(/^hasheemstudio_\d{8}_\d{6}\.mp4$/.test(download.suggestedFilename()),download.suggestedFilename());
  const response={status:200,bytes};
- // Signed-in uploads still use real direct-to-storage TUS, and processing is allowed before quota gating.
- await page.goto(base+'/app/upload');await page.locator('input[type=file]').setInputFiles('tests/fixtures/media/synthetic-remux-test.mov');
- await page.waitForURL('**/app/jobs/*',{timeout:30000});await page.getByRole('heading',{name:'Your video is ready'}).waitFor({timeout:120000});
- await page.getByRole('button',{name:'Download video',exact:true}).click();
+ // Free plan: today's video is used, so trying to prepare another one is refused up front with a clear message and the plans.
+ await page.goto(base+'/');await page.getByRole('button',{name:'Prepare another video'}).click();
+ const [second]=await Promise.all([page.waitForEvent('filechooser'),page.getByRole('button',{name:'Choose video',exact:true}).click()]);await second.setFiles('tests/fixtures/media/synthetic-remux-test.mov');
+ await page.getByRole('alert').filter({hasText:'used today’s free video'}).waitFor();
  await page.getByText('Keep going with a plan').waitFor();assert.equal(await page.locator('.plans-inline__opt').count(),2);assert(await page.locator('.plans-inline__opt').first().isDisabled(),'plans disabled while checkout is not live');
  await page.getByRole('button',{name:/Open profile menu for/}).click();
  assert.equal(await page.getByRole('menuitem').count(),1,'profile menu has only Sign out');

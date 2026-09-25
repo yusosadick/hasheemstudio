@@ -282,3 +282,9 @@
   .conversion-hero:not([data-focus]) .conversion-scene { height: 122px; }
   .conversion-hero:not([data-focus]) .conversion-hero__stage { padding-bottom: 52px; }
 }
+
+/* Limit / blocked messages (free plan used, video waiting, video in progress). */
+.hero-upload__error--rich { text-align: left; display: flex; flex-direction: column; gap: 10px; border-color: rgb(245 166 35 / 40%); background: rgb(245 166 35 / 10%); }
+.hero-upload__error--rich p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--color-foreground); }
+.hero-upload__error-action { align-self: flex-start; min-height: 36px; padding: 0 14px; border-radius: 8px; background: var(--gradient-primary); font-size: 13px; font-weight: 650; color: #fff; }
+.hero-upload .plans-inline { margin-top: 12px; }

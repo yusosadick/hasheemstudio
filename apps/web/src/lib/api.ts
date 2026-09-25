@@ -23,6 +23,11 @@ export interface UploadSession {
   expiresAt: string;
 }
 
+/** The server refused to start another video (free limit used, one still processing / waiting). `message` is user-facing. */
+export class UploadBlockedError extends Error {
+  constructor(message: string, public code: string, public jobId?: string) { super(message); }
+}
+
 export async function createUploadSession(file: File): Promise<UploadSession> {
   const res = await authedFetch("/v1/uploads/sessions", {
     method: "POST",
@@ -41,6 +46,7 @@ export async function createUploadSession(file: File): Promise<UploadSession> {
       const limitMb = Math.round(limit / (1024 * 1024));
       throw new Error(`This video is too large. The current limit is ${limitMb} MB.`);
     }
+    if (res.status === 429 && typeof detail?.error === "string" && typeof detail?.message === "string") throw new UploadBlockedError(detail.message, detail.error, detail.jobId);
     throw new Error(`Failed to create upload session: ${res.status} ${detail?.message ?? "Please check the file and try again."}`);
   }
   return res.json();

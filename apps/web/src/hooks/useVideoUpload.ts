@@ -4,8 +4,9 @@
 // by a real server response (upload byte offsets, finalize/job-creation responses, job-status
 // polling) — nothing here fabricates progress or status text (docs/AGENTS.md evidence standard).
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { getSession } from "../lib/auth";
-import { createUploadSession, finalizeUpload, createJob, getJob, cancelJob, type JobView } from "../lib/api";
+import { createUploadSession, finalizeUpload, createJob, getJob, cancelJob, UploadBlockedError, type JobView } from "../lib/api";
 import { uploadFileResumable, savePendingUpload, loadPendingUpload, clearPendingUpload, type PendingUpload } from "../lib/upload";
 
 export type Recipe = "inspect" | "remux" | "compat_encode" | "platform_optimize";
@@ -56,7 +57,25 @@ export interface UseVideoUploadOptions {
    *  Upload.tsx uses this to navigate away immediately (its existing behaviour). The homepage
    *  hero leaves this unset and keeps watching real job-status polling on the same page. */
   onJobCreated?: (jobId: string) => void;
+  /** Keep the current job in the URL (?job=<id>) so a refresh — or coming back from sign-in — restores the same
+   *  progress / finished result instead of resetting the card. Used by the homepage hero. */
+  syncUrl?: boolean;
 }
+
+// The last job is also remembered in this browser for a few minutes, so returning to the homepage by any route
+// (for example after signing in) still shows the video that was being prepared.
+const LAST_JOB_KEY = "hasheemstudio-last-job";
+const LAST_JOB_TTL_MS = 10 * 60 * 1000;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function rememberJob(id: string) { try { localStorage.setItem(LAST_JOB_KEY, JSON.stringify({ id, at: Date.now() })); } catch { /* optional */ } }
+function forgetJob() { try { localStorage.removeItem(LAST_JOB_KEY); } catch { /* optional */ } }
+function recallJob(): string | null {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LAST_JOB_KEY) ?? "null");
+    return saved && UUID_RE.test(saved.id) && Date.now() - Number(saved.at) < LAST_JOB_TTL_MS ? saved.id : null;
+  } catch { return null; }
+}
+const KNOWN_STAGES = new Set(["queued", "processing", "verifying", "succeeded", "failed", "cancelled", "expired"]);
 
 const TERMINAL_JOB_STATUSES = new Set(["succeeded", "failed", "cancelled", "expired"]);
 const POLL_INTERVAL_MS = 1500;
@@ -79,11 +98,16 @@ export function formatBytes(bytes: number): string {
 }
 
 export function useVideoUpload(options: UseVideoUploadOptions = {}) {
-  const { onJobCreated } = options;
+  const { onJobCreated, syncUrl = false } = options;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlRef = useRef({ searchParams, setSearchParams });
+  urlRef.current = { searchParams, setSearchParams };
   const [recipe, setRecipe] = useState<Recipe>("platform_optimize");
   const [stage, setStage] = useState<UploadStage>("idle");
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
+  const [errorJobId, setErrorJobId] = useState<string | null>(null);
   const [progress, setProgress] = useState<UploadProgress | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [job, setJob] = useState<JobView | null>(null);
@@ -103,6 +127,13 @@ export function useVideoUpload(options: UseVideoUploadOptions = {}) {
     logIdRef.current += 1;
     setLog((prev) => [...prev.slice(-7), { id: logIdRef.current, text }]);
   }, []);
+
+  const setUrlJob = useCallback((id: string | null) => {
+    if (!syncUrl) return;
+    const next = new URLSearchParams(urlRef.current.searchParams);
+    if (id) next.set("job", id); else next.delete("job");
+    if (next.toString() !== urlRef.current.searchParams.toString()) urlRef.current.setSearchParams(next, { replace: true });
+  }, [syncUrl]);
 
   useEffect(() => {
     const pending = loadPendingUpload();
@@ -163,7 +194,42 @@ export function useVideoUpload(options: UseVideoUploadOptions = {}) {
     setJob(null);
     setLog([]);
     setCancelling(false);
-  }, [stopPolling]);
+    setErrorCode(null);
+    setErrorJobId(null);
+    forgetJob();
+    setUrlJob(null);
+  }, [stopPolling, setUrlJob]);
+
+  // Bring back a job that already exists server-side (refresh, returning from sign-in, "view my video").
+  const restoreJob = useCallback(async (id: string, explicit: boolean) => {
+    if (busyRef.current) return;
+    try {
+      const view = await getJob(id);
+      const gone = view.status === "succeeded" && (view.outputExpired || !view.hasOutput);
+      const dead = view.status === "cancelled" || view.status === "expired" || (!explicit && (gone || view.status === "failed"));
+      if (dead) { forgetJob(); setUrlJob(null); return; }
+      const nextStage = (KNOWN_STAGES.has(view.status) ? view.status : "queued") as UploadStage;
+      jobIdRef.current = id;
+      lastJobStatusRef.current = view.status;
+      setJobId(id); setJob(view); setFile(null); setError(null); setErrorCode(null); setErrorJobId(null); setLog([]);
+      rememberJob(id); setUrlJob(id);
+      setStage(nextStage);
+      if (!TERMINAL_JOB_STATUSES.has(view.status)) pollJob(id);
+    } catch {
+      forgetJob(); setUrlJob(null);
+      if (explicit) { setError("We couldn’t find that video. Prepared videos are removed after 5 minutes."); setStage("error"); }
+    }
+  }, [pollJob, setUrlJob]);
+
+  useEffect(() => {
+    if (!syncUrl) return;
+    const fromUrl = urlRef.current.searchParams.get("job");
+    const explicit = Boolean(fromUrl && UUID_RE.test(fromUrl));
+    const id = explicit ? fromUrl! : recallJob();
+    if (id) void restoreJob(id, explicit);
+    // mount only
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const dismissResumeNotice = useCallback(() => {
     clearPendingUpload();
@@ -190,6 +256,8 @@ export function useVideoUpload(options: UseVideoUploadOptions = {}) {
       jobIdRef.current = null;
       setFile(selected);
       setError(null);
+      setErrorCode(null);
+      setErrorJobId(null);
       setJob(null);
       setJobId(null);
       setProgress(null);
@@ -251,6 +319,8 @@ export function useVideoUpload(options: UseVideoUploadOptions = {}) {
         clearPendingUpload();
         jobIdRef.current = created.jobId;
         setJobId(created.jobId);
+        rememberJob(created.jobId);
+        setUrlJob(created.jobId);
         onJobCreated?.(created.jobId);
 
         if (cancelRequestedRef.current) {
@@ -273,6 +343,8 @@ export function useVideoUpload(options: UseVideoUploadOptions = {}) {
           setStage("error");
           const message = err instanceof Error ? err.message : "Upload failed";
           setError(message);
+          setErrorCode(err instanceof UploadBlockedError ? err.code : null);
+          setErrorJobId(err instanceof UploadBlockedError ? err.jobId ?? null : null);
           appendLog(message);
         }
       } finally {
@@ -280,7 +352,7 @@ export function useVideoUpload(options: UseVideoUploadOptions = {}) {
         abortRef.current = null;
       }
     },
-    [appendLog, onJobCreated, pollJob, recipe, resetToIdle],
+    [appendLog, onJobCreated, pollJob, recipe, resetToIdle, setUrlJob],
   );
 
   const cancel = useCallback(() => {
@@ -311,6 +383,9 @@ export function useVideoUpload(options: UseVideoUploadOptions = {}) {
     stage,
     file,
     error,
+    errorCode,
+    errorJobId,
+    resumeJob: (id: string) => restoreJob(id, true),
     progress,
     jobId,
     job,

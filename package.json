@@ -43,6 +43,7 @@
     "deploy:plan": "node scripts/ops/not-implemented.mjs deploy:plan",
     "deploy": "node scripts/ops/not-implemented.mjs deploy",
     "verify:live": "node scripts/ops/not-implemented.mjs verify:live",
+    "test:limits": "pnpm --filter @hasheemstudio/api exec node --import tsx ../../tests/integration/free-limit-and-retention.mjs",
     "test:payments": "pnpm --filter @hasheemstudio/api exec node --import tsx ../../tests/integration/studio-payments.mjs",
     "test:auth-codes": "node tests/integration/auth-email-codes.mjs"
   },

@@ -30,3 +30,13 @@ export async function uploadObject(objectKey: string, data: Buffer, contentType:
   });
   if (!res.ok) throw new Error(`uploadObject failed: ${res.status} ${await res.text()}`);
 }
+
+// Idempotent: deleting an already-absent object is not an error (storage answers 200 with an empty list).
+export async function deleteObject(objectKey: string): Promise<void> {
+  const res = await fetch(`${base()}/storage/v1/object/${BUCKET}`, {
+    method: "DELETE",
+    headers: headers({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ prefixes: [objectKey] }),
+  });
+  if (!res.ok) throw new Error(`deleteObject failed: ${res.status} ${(await res.text()).slice(0, 200)}`);
+}

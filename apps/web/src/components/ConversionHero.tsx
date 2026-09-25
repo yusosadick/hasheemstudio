@@ -4,6 +4,7 @@ import { FileVideo, FileCheck, RefreshCw, Pause, Play, UploadCloud, X, Loader2, 
 import "./ConversionHero.css";
 import { HeroBackdrop } from "./HeroBackdrop";
 import { ResultCard } from "./ResultCard";
+import { UpgradeInline } from "./PlansPanel";
 import { useVideoUpload, formatBytes, RECIPE_OPTIONS, type UploadStage } from "../hooks/useVideoUpload";
 
 const ACTIVE_STAGES = new Set<UploadStage>([
@@ -54,8 +55,8 @@ export function ConversionHero() {
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
-  const upload = useVideoUpload();
-  const { stage, file, progress, error, log, recipe, setRecipe, resumeNotice, jobId, job, reset, handleFile, cancel, cancelling, dismissResumeNotice } = upload;
+  const upload = useVideoUpload({ syncUrl: true });
+  const { stage, file, progress, error, errorCode, errorJobId, resumeJob, log, recipe, setRecipe, resumeNotice, jobId, job, reset, handleFile, cancel, cancelling, dismissResumeNotice } = upload;
 
   const active = ACTIVE_STAGES.has(stage);
   const canPick = stage === "idle" || stage === "error";
@@ -184,7 +185,15 @@ export function ConversionHero() {
               </button>
               <p className="hero-upload__dropzone-hint">or drop it here</p>
 
-              {error && <p role="alert" className="hero-upload__error">{error}</p>}
+              {error && (
+                <div role="alert" className={`hero-upload__error${errorCode ? " hero-upload__error--rich" : ""}`}>
+                  <p>{error}</p>
+                  {errorJobId && (errorCode === "video_waiting" || errorCode === "video_in_progress") && (
+                    <button type="button" className="hero-upload__error-action" onClick={() => void resumeJob(errorJobId)}>{errorCode === "video_waiting" ? "Go to my video" : "Show progress"}</button>
+                  )}
+                </div>
+              )}
+              {errorCode === "free_limit_used" && <UpgradeInline />}
               {resumeNotice && (
                 <p className="hero-upload__resume" role="status">
                   {resumeNotice}{" "}
@@ -208,7 +217,7 @@ export function ConversionHero() {
               <div className="hero-upload__file">
                 <span className="hero-upload__file-icon"><FileVideo size={20} aria-hidden="true" /></span>
                 <div className="hero-upload__file-meta">
-                  <strong>{file?.name}</strong>
+                  <strong>{file?.name ?? "Your video"}</strong>
                   <span>{file ? formatBytes(file.size) : ""}</span>
                 </div>
               </div>

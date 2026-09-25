@@ -34,8 +34,9 @@ export async function downloadsRoutes(app: FastifyInstance): Promise<void> {
         if (output.status === "succeeded") return reply.code(409).send({ error: "no_output", message: "This job didn't create a video file, so there is nothing to download. Upload again and choose “Smaller file”." });
         return reply.code(409).send({ error: "output_not_ready", message: "Your video isn't ready yet. Please wait a moment and try again." });
       }
-      if (output.output_deleted_at || (output.output_retain_until && new Date(output.output_retain_until).getTime() <= Date.now())) {
-        await client.query("rollback"); return reply.code(410).send({ error: "output_expired", message: "This video has expired. Please upload it again." });
+      // Also refuse in the last few seconds: a link issued now could not finish before the file is removed.
+      if (output.output_deleted_at || (output.output_retain_until && new Date(output.output_retain_until).getTime() - Date.now() <= 15_000)) {
+        await client.query("rollback"); return reply.code(410).send({ error: "output_expired", message: "This video was removed after 5 minutes. Please prepare it again." });
       }
       const existing = await client.query(`select user_id from download_grants where job_id=$1`, [id]);
       if (existing.rows.length && existing.rows[0].user_id !== request.userId) {

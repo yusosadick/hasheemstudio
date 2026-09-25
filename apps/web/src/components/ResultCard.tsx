@@ -1,7 +1,7 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
-import { AlertTriangle, ArrowDownToLine, Clapperboard, FileVideo, Loader2, RotateCcw, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ArrowDownToLine, Clapperboard, Clock, FileVideo, Loader2, RotateCcw, ShieldCheck } from "lucide-react";
 import { UpgradeInline } from "./PlansPanel";
 import { getSession } from "../lib/auth";
 import { requestDownload, DownloadError, type JobView } from "../lib/api";
@@ -20,6 +20,20 @@ interface Tile {
   icon: ReactNode;
   accent?: boolean;
 }
+
+// Seconds until the prepared video is removed (results are kept for 5 minutes). Ticks once a second.
+function useRemaining(untilIso: string | null | undefined): number | null {
+  const until = untilIso ? new Date(untilIso).getTime() : null;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (until === null) return;
+    setNow(Date.now());
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [until]);
+  return until === null ? null : Math.max(0, Math.ceil((until - now) / 1000));
+}
+const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
 function buildTiles(job: JobView): Tile[] {
   const s = job.summary;
@@ -52,7 +66,10 @@ export function ResultCard({ jobId, job, onReset, standalone = false }: { jobId:
   const fileName = formatOutputFileName(job.summary?.completedAt ?? job.updatedAt);
   const failed = job.status === "failed" || job.status === "expired" || job.status === "cancelled";
   const signedIn = Boolean(getSession()) && !job.requiresLogin && !needsLogin;
-  const next = encodeURIComponent(`/app/jobs/${jobId}`);
+  // Return to the homepage card (which restores this exact video from ?job=) after signing in.
+  const next = encodeURIComponent(`/?job=${jobId}`);
+  const remaining = useRemaining(job.status === "succeeded" ? job.outputRetainUntil : null);
+  const expired = job.status === "succeeded" && job.hasOutput && (job.outputExpired || remaining === 0);
 
   async function download() {
     if (busy.current) return;
@@ -78,6 +95,22 @@ export function ResultCard({ jobId, job, onReset, standalone = false }: { jobId:
           <button type="button" className="result-card__primary" onClick={onReset}><RotateCcw size={17} aria-hidden="true" />Try another video</button>
         ) : (
           <Link to="/" className="result-card__primary"><RotateCcw size={17} aria-hidden="true" />Try another video</Link>
+        )}
+      </motion.section>
+    );
+  }
+
+  if (expired) {
+    return (
+      <motion.section className={`result-card result-card--failed${standalone ? " result-card--standalone" : ""}`} data-job-id={jobId} data-expired="true" aria-label="Processing result"
+        initial={reduce ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+        <span className="result-card__badge result-card__badge--failed result-card__badge--info"><Clock size={26} aria-hidden="true" /></span>
+        <h2>This video has expired</h2>
+        <p className="result-card__lead">To keep your files private, prepared videos are removed after 5 minutes. Prepare it again — it only takes a moment.</p>
+        {onReset ? (
+          <button type="button" className="result-card__primary" onClick={onReset}><RotateCcw size={17} aria-hidden="true" />Prepare again</button>
+        ) : (
+          <Link to="/" className="result-card__primary"><RotateCcw size={17} aria-hidden="true" />Prepare again</Link>
         )}
       </motion.section>
     );
@@ -113,8 +146,9 @@ export function ResultCard({ jobId, job, onReset, standalone = false }: { jobId:
           {!reduce && Array.from({ length: 8 }).map((_, i) => <i key={i} className="result-card__spark" style={{ ["--a" as string]: `${i * 45}deg` }} />)}
         </span>
         <h2>Your video is ready</h2>
-        <p className="result-card__lead">Prepared, checked and ready to post.</p>
+        <p className="result-card__lead result-card__tagline">Prepared, checked and ready to post.</p>
         <span className="result-card__file" title={fileName}><FileVideo size={14} aria-hidden="true" /><span>{fileName}</span></span>
+        {remaining !== null && <span className="result-card__timer" data-urgent={remaining < 60 || undefined} role="timer" aria-label={`Available for ${mmss(remaining)}`}><Clock size={12} aria-hidden="true" />Available for {mmss(remaining)}<span className="result-card__timer-note"> · then removed for your privacy</span></span>}
       </div>
 
       {tiles.length > 0 && (
@@ -130,7 +164,7 @@ export function ResultCard({ jobId, job, onReset, standalone = false }: { jobId:
       )}
 
       {job.outputExpired ? (
-        <p className="result-card__notice" role="status"><AlertTriangle size={16} aria-hidden="true" />This video has passed its retention period and has been deleted.</p>
+        <p className="result-card__notice" role="status"><AlertTriangle size={16} aria-hidden="true" />This video was removed after 5 minutes. Please prepare it again.</p>
       ) : signedIn ? (
         <>
           <button type="button" className="result-card__primary" disabled={unlocking} onClick={() => void download()}>
@@ -154,7 +188,6 @@ export function ResultCard({ jobId, job, onReset, standalone = false }: { jobId:
         {onReset && <button type="button" className="result-card__link" onClick={onReset}><RotateCcw size={14} aria-hidden="true" />Prepare another video</button>}
         <small>
           Free: 1 video per day, up to 100 MB. Resets at midnight UTC.
-          {job.outputRetainUntil && <> Available until {new Date(job.outputRetainUntil).toLocaleString()}.</>}
         </small>
       </div>
     </motion.section>

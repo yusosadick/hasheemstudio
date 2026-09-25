@@ -24,7 +24,7 @@ const privacy = {
       { list: [
         "Account data: your email address, your password (stored only as a salted hash by our authentication system, never in readable form), and one-time verification codes. If you choose Google Sign-In we also receive your name, email address and profile picture from Google.",
         "Your videos: the MP4 or MOV files you upload, the file name, and technical properties read from the file (for example container, codec, resolution, frame rate, duration, size and colour information). We also store the processed output we create for you and the automated check results that confirm it plays correctly.",
-        "Guest use: if you use the Service before signing in, we place a random token in your browser to keep your upload and result together, and we keep a one-way cryptographic hash of your network address to enforce the daily guest limit. We cannot reverse that hash into your address.",
+        "Guest use: if you use the Service before signing in, we place a random token in your browser (and the id of your latest video in the page address) to keep your upload and result together, and we keep a one-way cryptographic hash of your network address to enforce the daily guest limit. We cannot reverse that hash into your address.",
         "Payment records: when you buy a paid plan we store the plan, amount, currency, status, our internal reference, the payment provider’s reference and timestamps. To start a mobile-money payment we send your mobile number, first name, last name and email to our payment provider, Snippe. Our systems do not store your mobile number or your wallet PIN, and we never see your PIN.",
         "Technical and security data: IP address, browser type, requested pages, timestamps, error events and abuse-prevention signals, held in server logs.",
         "Messages: anything you send to our support address, and our replies.",
@@ -50,8 +50,8 @@ const privacy = {
     ] },
     { id: "retention", title: "6. How long we keep data", body: [
       { list: [
-        "Uploaded source videos: deleted automatically 7 days after upload for signed-in accounts and 1 day after upload for guests.",
-        "Processed results: deleted automatically 7 days after they are created. After that the result page tells you the file has expired and it cannot be recovered.",
+        "Uploaded source videos: deleted automatically within about an hour of upload (and never while your video is still being processed).",
+        "Processed results: deleted automatically 5 minutes after your video is ready. The result page shows a countdown; after that the file has been removed and cannot be recovered, and you can simply prepare the video again.",
         "Account data: kept while your account exists. You can ask us to delete your account at any time; see section 10.",
         "Payment records: kept for as long as accounting, tax and anti-fraud rules require, even if you delete your account.",
         "Server logs and security records: kept for a limited period needed for security and troubleshooting, then deleted or anonymised.",
@@ -162,7 +162,7 @@ const terms = {
         "Weekly: 2,000 Tanzanian shillings (TZS) for up to 20 video downloads within 7 days.",
         "Monthly: 5,000 TZS for up to 50 video downloads within 30 days.",
       ] },
-      "Paid plans add to, and do not replace, the free daily video. A “video download” is one distinct processed video that you unlock; downloading the same video again does not use more of your allowance. Unused videos do not carry over after a plan expires. Plan availability, prices and limits may change; changes do not affect a plan you have already paid for. Prices include applicable taxes unless we state otherwise.",
+      "On the free plan you prepare one video at a time: download your prepared video (or let it expire) before starting another. Paid plans add to, and do not replace, the free daily video. A “video download” is one distinct processed video that you unlock; downloading the same video again does not use more of your allowance. Unused videos do not carry over after a plan expires. Plan availability, prices and limits may change; changes do not affect a plan you have already paid for. Prices include applicable taxes unless we state otherwise.",
     ] },
     { id: "payments", title: "7. Payments and refunds", body: [
       { list: [
@@ -174,7 +174,7 @@ const terms = {
       ] },
     ] },
     { id: "availability", title: "8. Availability, retention and beta status", body: [
-      "We work to keep the Service reliable but do not promise uninterrupted or error-free operation. Uploads and results are deleted automatically according to the retention periods in the Privacy Policy (currently 7 days for results). Download what you need before it expires; expired files cannot be recovered. We may change, suspend or discontinue any feature at any time, and will give notice of material changes where we reasonably can.",
+      "We work to keep the Service reliable but do not promise uninterrupted or error-free operation. Uploads and results are deleted automatically according to the retention periods in the Privacy Policy (currently 5 minutes after a video is ready). Download your video before the countdown ends; expired files cannot be recovered, but you can prepare the video again. If you leave to sign in or pay, come back to the same page within that time. We may change, suspend or discontinue any feature at any time, and will give notice of material changes where we reasonably can.",
     ] },
     { id: "ip", title: "9. Our intellectual property", body: [
       "The Service, including its software, design, text, graphics, the Hasheem Studio name and logos, and our processing methods, belongs to us or our licensors and is protected by law. We grant you a personal, limited, revocable, non-transferable right to use the Service under these Terms. All other rights are reserved. If you send us feedback, we may use it without obligation to you.",

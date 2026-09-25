@@ -90,6 +90,16 @@
 
 /* Phones: keep the finished result (and its download / sign-in button) inside the first screen. */
 @media (max-width: 560px) {
-  .hero-upload .result-card__lead, .hero-upload .result-card__more, .hero-upload .result-card__foot small { display: none; }
+  .hero-upload .result-card__tagline, .hero-upload .result-card__more, .hero-upload .result-card__foot small { display: none; }
   .hero-upload .result-card__foot { margin-top: 8px; padding-top: 8px; }
 }
+
+.result-card__timer { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 4px 11px; border-radius: 999px; border: 1px solid rgb(111 207 115 / 35%); background: rgb(111 207 115 / 9%); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; color: #8fe093; }
+.result-card__timer[data-urgent] { border-color: rgb(245 166 35 / 55%); background: rgb(245 166 35 / 12%); color: #f5b74a; animation: rc-urgent 1.2s ease-in-out infinite; }
+.result-card__timer-note { font-weight: 500; opacity: .75; }
+@keyframes rc-urgent { 50% { box-shadow: 0 0 0 4px rgb(245 166 35 / 14%); } }
+@media (max-width: 560px) {
+  .hero-upload .result-card__timer { margin-top: 6px; padding: 3px 9px; font-size: 11px; }
+  .hero-upload .result-card__timer-note { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .result-card__timer[data-urgent] { animation: none; } }

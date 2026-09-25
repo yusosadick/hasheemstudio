@@ -13,6 +13,9 @@ import { planPlatformProfile, choosePreset, PLATFORM_OPTIMIZE_TIMEOUT_MS, WHATSA
 
 const SCRATCH_ROOT = process.env.WORKER_SCRATCH_DIR ?? "/tmp/hasheemstudio-scratch";
 const LEASE_MS = 10 * 60_000;
+// A processed video is kept for 5 minutes only, counted from the moment it is ready.
+export const RESULT_RETENTION_MS = 5 * 60 * 1000;
+
 const WORKER_ID = `worker-${process.pid}-${randomUUID().slice(0, 8)}`;
 
 function sha256(buf: Buffer): string {
@@ -442,7 +445,7 @@ export async function processJob(jobId: string): Promise<void> {
       // Conditional on status = 'processing' in the same statement that publishes success — closes
       // the TOCTOU gap an earlier separate isStillActive() read-then-write would leave open. If a
       // cancellation landed in that gap, this UPDATE affects 0 rows and we correctly skip publishing.
-      const outputRetainUntil = outputObjectKey ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null;
+      const outputRetainUntil = outputObjectKey ? new Date(Date.now() + RESULT_RETENTION_MS).toISOString() : null;
       const updateRes = await commitClient.query(
         `update jobs set status = 'succeeded', output_object_key = $2, output_size_bytes = $3, error_message = null, output_retain_until = $4
          where id = $1 and status = 'processing'`,

@@ -4,14 +4,15 @@ import { getPool } from "../db.js";
 import { requireActor, canAccessWorkspace } from "../actor.js";
 import { resolvePersonalWorkspaceId } from "../workspace.js";
 import { createResumableUpload, objectInfo, proxyTus } from "../storage.js";
+import { checkCanStartVideo } from "../freeSlot.js";
 
 function sanitizeFilename(name: string): string {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-120);
 }
 
 async function getPlanForWorkspace(pool: ReturnType<typeof getPool>, workspaceId: string) {
-  const res = await pool.query<{ max_upload_bytes: string }>(
-    `select p.max_upload_bytes from workspace_entitlements we join plans p on p.id = we.plan_id where we.workspace_id = $1`,
+  const res = await pool.query<{ max_upload_bytes: string; max_downloads_per_day: number }>(
+    `select p.max_upload_bytes, p.max_downloads_per_day from workspace_entitlements we join plans p on p.id = we.plan_id where we.workspace_id = $1`,
     [workspaceId],
   );
   return res.rows[0] ?? null;
@@ -60,6 +61,14 @@ export async function uploadsRoutes(app: FastifyInstance): Promise<void> {
     if (body.declaredSizeBytes! > maxUploadBytes) {
       return reply.code(413).send({ error: "file_too_large", limitBytes: maxUploadBytes });
     }
+
+    // Free-plan guard: say clearly, before any bytes are uploaded, that another video can't be started right now.
+    const block = await checkCanStartVideo(pool, {
+      userId,
+      workspaceIds: [workspaceId, ...(request.guestWorkspaceId && request.guestWorkspaceId !== workspaceId ? [request.guestWorkspaceId] : [])],
+      freePerDay: Number(plan.max_downloads_per_day ?? 1),
+    });
+    if (block) return reply.code(429).send({ error: block.code, message: block.message, jobId: block.jobId, resetAt: block.resetAt });
 
     const admission = await pool.connect();
     try {
@@ -186,7 +195,9 @@ export async function uploadsRoutes(app: FastifyInstance): Promise<void> {
       }
 
       mediaAssetId = randomUUID();
-      const retainUntil = new Date(Date.now() + (userId ? 7 : 1) * 24 * 60 * 60 * 1000).toISOString();
+      // The original is only needed until processing finishes; keep it for one hour at most (the sweeper also never
+      // removes a source while a job for it is still queued or running).
+      const retainUntil = new Date(Date.now() + 60 * 60 * 1000).toISOString();
       await client.query(
         `insert into media_assets (id, workspace_id, upload_session_id, created_by, object_key, size_bytes, retain_until)
          values ($1, $2, $3, $4, $5, $6, $7)`,
