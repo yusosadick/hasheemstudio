@@ -111,7 +111,28 @@ export async function requestDownload(jobId: string, fileName?: string): Promise
   return data.downloadUrl;
 }
 
-export type PaymentPlan={available:boolean;name?:string;amount?:number;duration?:number;downloads?:number;methods?:string[]};
-export async function getPaymentPlan():Promise<PaymentPlan>{const r=await fetch(`${API_URL}/v1/payments/plan`);if(!r.ok)return {available:false};return r.json();}
-export async function createStudioPayment(body:{jobId:string;method:'mobile';phone:string;firstname:string;lastname:string}):Promise<{id:string;status:string}>{const r=await authedFetch('/v1/payments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok)throw new Error(r.status===503?'Checkout is not available yet.':'Could not initiate payment. Please try again later.');return r.json();}
-export async function getStudioPayment(id:string):Promise<{status:string}>{const r=await authedFetch(`/v1/payments/${encodeURIComponent(id)}`);if(!r.ok)throw new Error('Could not check payment status.');return r.json();}
+export type PlanCode = "weekly" | "monthly";
+export interface PlanInfo { code: PlanCode; name: string; amountTzs: number; days: number; videos: number }
+export interface PlansCatalogue { available: boolean; currency: "TZS"; free: { videosPerDay: number }; plans: PlanInfo[] }
+export interface Entitlement { free: { perDay: number; usedToday: number }; paid: { videosRemaining: number; videosTotal: number; expiresAt: string; planCodes: PlanCode[] } | null }
+
+export async function getPlans(): Promise<PlansCatalogue> {
+  const r = await fetch(`${API_URL}/v1/payments/plans`);
+  if (!r.ok) throw new Error("Plans are unavailable right now.");
+  return r.json();
+}
+export async function getEntitlement(): Promise<Entitlement> {
+  const r = await authedFetch("/v1/payments/entitlement");
+  if (!r.ok) throw new Error("Could not load your plan.");
+  return r.json();
+}
+export async function createStudioPayment(body: { planCode: PlanCode; method: "mobile"; phone: string; firstname: string; lastname: string }): Promise<{ id: string; status: string }> {
+  const r = await authedFetch("/v1/payments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  if (!r.ok) throw new Error(r.status === 503 ? "Checkout is not available yet." : r.status === 429 ? "Too many payment attempts today. Please try again tomorrow." : "Could not start the payment. Please try again.");
+  return r.json();
+}
+export async function getStudioPayment(id: string): Promise<{ status: string }> {
+  const r = await authedFetch(`/v1/payments/${encodeURIComponent(id)}`);
+  if (!r.ok) throw new Error("Could not check payment status.");
+  return r.json();
+}

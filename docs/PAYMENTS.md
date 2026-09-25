@@ -43,3 +43,17 @@ refund/chargeback automation or financial production readiness is claimed.
 security results and rollout are recorded in STATUS. Synthetic webhook tests are **not**
 provider sandbox evidence. Pending/completed/failed UI states come from authenticated API status;
 query strings and local state never authorize a download. Physical payment evidence remains absent.
+
+## Plans (owner-approved 2026-09-25) — migration 0017
+
+| Plan | Price | Quota | Window |
+|---|---|---|---|
+| Free | 0 | 1 video / day (unchanged, 100 MB, 2 min, 1080p60) | daily, UTC |
+| Weekly | 2,000 TZS | 20 videos | 7 days |
+| Monthly | 5,000 TZS | 50 videos | 30 days |
+
+- Terms live in code (`PAID_PLANS` in `apps/api/src/payments/snippe.ts`); the browser sends only a plan **code**. Prices/quota/duration are snapshotted onto `payment_intents` and `paid_entitlements` at purchase.
+- Account-level checkout (no job needed). One open attempt per account; 5 initiations/day. `GET /v1/payments/plans` (public catalogue + `available`), `GET /v1/payments/entitlement` (free use today + paid remaining), `POST /v1/payments {planCode,method:'mobile',phone,firstname,lastname}`.
+- Download gate: the free daily video is used first; once it is used, one paid video is charged to the earliest-expiring active entitlement (`download_grants.entitlement_id`). Re-downloading an already-granted job never charges again. Expired/revoked/exhausted entitlements deny immediately.
+- Mobile money only. Card stays disabled.
+- **Checkout is OFF in production**: `STUDIO_CHECKOUT_ENABLED`/`STUDIO_PAYMENT_APPROVED` are false and no Snippe credentials are provisioned. The pricing UI shows the plans with "Opening soon" and cannot start a charge. The `STUDIO_PLAN_*` env vars are no longer read.

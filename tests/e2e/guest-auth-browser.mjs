@@ -79,8 +79,8 @@ try{
  await page.goto(base+'/app/upload');await page.locator('input[type=file]').setInputFiles('tests/fixtures/media/synthetic-remux-test.mov');
  await page.waitForURL('**/app/jobs/*',{timeout:30000});await page.getByRole('heading',{name:'Your video is ready'}).waitFor({timeout:120000});
  await page.getByRole('button',{name:'Download video',exact:true}).click();
- await page.getByRole('alert').filter({hasText:'Your daily video allowance is used'}).waitFor();
- await page.getByRole('button',{name:'Upgrade unavailable'}).waitFor();
+ await page.getByRole('alert').filter({hasText:"used today's free video"}).waitFor();
+ await page.getByText('Keep going with a plan').waitFor();assert.equal(await page.locator('.plans-inline__opt').count(),2);assert(await page.locator('.plans-inline__opt').first().isDisabled(),'plans disabled while checkout is not live');
  await page.getByRole('button',{name:/Open profile menu for/}).click();
  assert(await page.getByRole('menuitem',{name:'My Profile',exact:true}).isVisible());
  assert(await page.getByRole('menuitem',{name:'Settings',exact:true}).isVisible());

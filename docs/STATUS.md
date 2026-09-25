@@ -1582,3 +1582,9 @@ Motivation (owner): remux preserves the source bitrate, so a ~91 Mbps 4K HEVC dr
 - The result and Download button render on the homepage in the upload card (no navigation). Once a file is chosen the headline copy hides, "Pause animations" centres above the card, and the scene and 4-step stepper follow the real stage. Evidence: `docs/evidence/result-ux/` (desktop + 390 px), `tests/e2e/hero-stages-visual.mjs`.
 - Live run with the 4K HEVC drone clip: 59 MB → 4.9 MB (downloaded 5,125,168 bytes, sha256 a0eba9a6…10426f5).
 - Not yet done: manual iPhone-file testing by the owner.
+
+## Weekly / monthly plans + premium pricing UI (2026-09-25)
+- [VERIFIED-LIVE] Migration 0017 applied by the repository runner from pushed `3ce439b` after an encrypted backup; `verify` shows `noPendingOrDrift: true`.
+- [TESTED-LOCAL] `pnpm test:payments` against the real DB/API: catalogue (weekly 2000/20/7, monthly 5000/50/30), free download uncharged and second charged to the paid quota, expired/revoked denied, quota exhausts exactly at the plan limit and `/v1/payments/entitlement` agrees, invalid/stale/wrong-amount webhooks denied, duplicates settle once. Unit tests cover plan-code injection (`__proto__`, `constructor`, `free`) and checkout gating.
+- [TESTED-LOCAL] `tests/e2e/plans-ui.mjs`: pricing cards, checkout form → "Approve on your phone" → "plan is active", balance banner, desktop + 390 px (`docs/evidence/plans-ui/`). Payment endpoints are **mocked in the browser**; this is UI evidence only.
+- [BLOCKED] Real payments: no Snippe API key / webhook secret / provider-approved sandbox is provisioned, so `STUDIO_CHECKOUT_ENABLED` stays false and paid plans show "Opening soon". Needed from the owner: the exact approved Snippe credential item, the webhook URL registered as `https://api.hasheemstudio.com/webhooks/snippe`, and a sandbox/test recipient. No charge has ever been made.

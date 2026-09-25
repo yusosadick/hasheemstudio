@@ -1,3 +1,4 @@
+import { PlansPanel } from "../components/PlansPanel";
 import { ConversionHero } from "../components/ConversionHero";
 import { BadgeCheck, Gauge, MonitorSmartphone, ShieldCheck } from "lucide-react";
 
@@ -64,16 +65,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <section id="pricing" className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-        <div className="flex flex-col justify-between gap-6 rounded-2xl border border-border bg-surface1 p-6 sm:flex-row sm:items-center sm:p-8">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-text">Public beta</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight">Start with the Verified Free plan</h2>
-            <p className="mt-2 text-sm text-foreground-muted">1 video download per day · 100 MB per file · 2 minutes · 1080p60 · no card required</p>
-          </div>
-          <a href="/signup" className="inline-flex min-h-touch shrink-0 items-center justify-center rounded-md bg-gradient-primary px-6 text-sm font-semibold text-foreground-on-accent transition hover:opacity-90">Get started free</a>
-        </div>
-      </section>
+      <PlansPanel />
 
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-8 text-xs text-foreground-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">

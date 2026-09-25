@@ -2,7 +2,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { AlertTriangle, ArrowDownToLine, Clapperboard, FileVideo, Loader2, RotateCcw, ShieldCheck } from "lucide-react";
-import { DownloadUpgrade } from "./DownloadUpgrade";
+import { UpgradeInline } from "./PlansPanel";
 import { getSession } from "../lib/auth";
 import { requestDownload, DownloadError, type JobView } from "../lib/api";
 import { formatOutputFileName } from "../lib/outputName";
@@ -131,8 +131,8 @@ export function ResultCard({ jobId, job, onReset, standalone = false }: { jobId:
         </div>
       )}
 
-      {downloadError && <p role="alert" className="result-card__error">{downloadError}</p>}
-      {limitReached && <div className="result-card__upgrade"><DownloadUpgrade jobId={jobId} /></div>}
+      {downloadError && !limitReached && <p role="alert" className="result-card__error">{downloadError}</p>}
+      {limitReached && <div className="result-card__upgrade"><UpgradeInline onPaid={() => { setLimitReached(false); setDownloadError(null); }} /></div>}
 
       <div className="result-card__foot">
         {onReset && <button type="button" className="result-card__link" onClick={onReset}><RotateCcw size={14} aria-hidden="true" />Prepare another video</button>}
