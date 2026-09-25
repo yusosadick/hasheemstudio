@@ -87,19 +87,19 @@
 @media (max-width: 860px) { .plans__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 640px; margin-inline: auto; } .plan-card--featured { order: -1; grid-column: 1 / -1; } }
 @media (max-width: 420px) { .plans-dialog__row { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 560px) {
-  .plans { padding: 40px 14px 28px; }
+  .plans { padding: 52px 16px 36px; }
   .plans__head h2 { font-size: 24px; }
   .plans__head p:last-child { margin-top: 8px; font-size: 13px; }
-  .plans__grid { gap: 10px; margin-top: 26px; }
-  .plan-card { padding: 16px 14px 14px; border-radius: 14px; }
-  .plan-card--featured { padding: 20px 16px 14px; }
+  .plans__grid { gap: 12px; margin-top: 30px; }
+  .plan-card { padding: 18px 15px 15px; border-radius: 14px; }
+  .plan-card--featured { padding: 24px 17px 16px; }
   .plan-card h3 { font-size: 12px; }
   .plan-card__price { margin-top: 8px; }
   .plan-card__price strong { font-size: 30px; }
   .plan-card__price span { font-size: 12px; }
   .plan-card__quota { margin-top: 6px; font-size: 13px; }
   .plan-card__quota b { font-size: 17px; }
-  .plan-card ul { gap: 7px; margin: 12px 0 14px; padding-top: 12px; }
+  .plan-card ul { gap: 8px; margin: 14px 0 16px; padding-top: 14px; }
   .plan-card li { gap: 6px; font-size: 11.5px; line-height: 1.35; }
   .plan-card li svg { width: 12px; height: 12px; margin-top: 2px; }
   .plans-cta { min-height: 42px; padding: 0 10px; font-size: 13px; }

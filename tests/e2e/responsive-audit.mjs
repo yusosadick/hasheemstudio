@@ -8,7 +8,7 @@ import { createHmac } from "node:crypto";
 import pg from "pg";
 const base = process.env.TEST_WEB_URL ?? "http://127.0.0.1:5173";
 const i = process.argv.indexOf("--shots"); const shots = i > -1 ? process.argv[i + 1] : null; if (shots) mkdirSync(shots, { recursive: true });
-const sizes = [["iphone-se", 375, 667], ["small-android", 360, 640], ["iphone-14", 390, 844], ["large-phone", 430, 932], ["tablet", 768, 1024]];
+const sizes = [["iphone-se", 375, 667], ["small-android", 360, 640], ["samsung-chrome", 389, 680], ["iphone-14", 390, 844], ["large-phone", 430, 932], ["tablet", 768, 1024]];
 // Local runs only: the guest daily limit (3 sessions per network) would otherwise block later viewports.
 async function resetLocalGuestLimit() {
   if (!/127\.0\.0\.1|localhost/.test(base)) return;

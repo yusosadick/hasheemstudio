@@ -19,7 +19,7 @@ export default function Landing() {
   return (
     <div className="overflow-hidden">
       <section className="relative border-b border-border">
-        <div className="landing-content relative mx-auto pb-8 pt-3 sm:pb-16 sm:pt-5">
+        <div className="landing-content relative mx-auto pb-10 pt-[clamp(12px,2.4vh,24px)] sm:pb-16 sm:pt-5">
           <nav aria-label="Breadcrumb" className="relative z-10 hidden items-center gap-2 text-xs text-foreground-muted sm:flex">
             <a href="/" className="transition-colors hover:text-foreground">Home</a>
             <span aria-hidden="true">›</span><span>Video tools</span><span aria-hidden="true">›</span>
@@ -28,11 +28,11 @@ export default function Landing() {
 
           <ConversionHero />
 
-          <div id="how-it-works" className="mx-auto mt-6 max-w-5xl sm:mt-10">
+          <div id="how-it-works" className="mx-auto mt-9 max-w-5xl sm:mt-10">
             <div className="flex items-center gap-4">
               <div className="h-px flex-1 bg-border" /><h2 className="text-center text-sm font-semibold sm:text-base">How it works — 3 simple steps</h2><div className="h-px flex-1 bg-border" />
             </div>
-            <ol className="mt-4 grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3">
+            <ol className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3">
               {steps.map((step, index) => (
                 <li key={step.title} className="relative rounded-xl border border-border bg-surface1 p-3 text-center last:col-span-2 sm:p-5 md:last:col-span-1">
                   <span className="absolute left-2.5 top-2.5 flex h-6 w-6 sm:left-4 sm:top-4 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-accent/15 text-xs font-bold text-accent-text">{index + 1}</span>
@@ -46,7 +46,7 @@ export default function Landing() {
             </ol>
           </div>
 
-          <ul id="features" className="mx-auto mt-4 grid max-w-5xl grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:mt-5 lg:grid-cols-4">
+          <ul id="features" className="mx-auto mt-5 grid max-w-5xl grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:mt-5 lg:grid-cols-4">
             {benefits.map((benefit) => (
               <li key={benefit.title} className="flex gap-2.5 bg-background p-3 sm:gap-3 sm:p-4">
                 <span className="hidden h-9 w-9 shrink-0 sm:flex items-center justify-center rounded-md border border-border bg-surface1 text-accent-text">

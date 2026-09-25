@@ -259,3 +259,26 @@
   .conversion-scene[data-phase="done"] .conversion-scene__row, .conversion-scene[data-phase="failed"] .conversion-scene__row { transform: scale(.62); }
   .conversion-scene[data-phase="done"] .conversion-bridge__label, .conversion-scene[data-phase="failed"] .conversion-bridge__label { display: none; }
 }
+
+/* ── Phone breathing room. Spacing scales with the screen height (vh clamps), so tall phones get generous gaps and short
+   phones stay compact enough to keep the whole card in the first screen. Spacing only — the arrangement is unchanged. ── */
+@media (max-width: 560px) {
+  .conversion-hero:not([data-focus]) { margin-top: clamp(10px, 2.2vh, 24px); margin-bottom: 28px; }
+  .conversion-hero:not([data-focus]) .conversion-hero__stage { gap: clamp(12px, 2.5vh, 26px); padding-bottom: 46px; }
+  .conversion-hero:not([data-focus]) .conversion-hero__eyebrow { margin-bottom: clamp(8px, 1.4vh, 14px); }
+  .conversion-hero:not([data-focus]) .conversion-hero__copy h1 { line-height: 1.16; }
+  .conversion-hero:not([data-focus]) .hero-upload { margin-top: -18px; padding: 22px 18px 16px; }
+  .conversion-hero:not([data-focus]) .hero-upload__badge { margin-bottom: 10px; }
+  .conversion-hero:not([data-focus]) .hero-upload p { margin-top: 5px; }
+  .conversion-hero:not([data-focus]) .hero-upload__recipes { margin-top: 14px; }
+  .conversion-hero:not([data-focus]) .hero-upload__button { margin-top: 16px; }
+  .conversion-hero:not([data-focus]) .hero-upload__dropzone-hint { margin-top: 10px; }
+  .conversion-hero:not([data-focus]) .hero-upload small { margin-top: 12px; padding-top: 12px; }
+  /* focus mode keeps its compact fit, with a touch more air above the scene */
+  .conversion-hero[data-focus] .conversion-hero__stage { padding-top: clamp(30px, 4.4vh, 44px); }
+  .conversion-hero[data-focus] .conversion-hero__copy { top: clamp(8px, 1.2vh, 14px); }
+}
+@media (max-width: 560px) and (min-height: 760px) {
+  .conversion-hero:not([data-focus]) .conversion-scene { height: 122px; }
+  .conversion-hero:not([data-focus]) .conversion-hero__stage { padding-bottom: 52px; }
+}
