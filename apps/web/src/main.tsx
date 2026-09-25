@@ -17,6 +17,7 @@ import { MotionConfig } from "framer-motion";
 import Upload from "./pages/Upload";
 import JobResult from "./pages/JobResult";
 import AccountPage from "./pages/AccountPage";
+import NotFound from "./pages/NotFound";
 
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -39,6 +40,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="/app/upload" element={<Upload />} />
             <Route path="/app/jobs/:id" element={<JobResult />} />
             <Route path="/app/:section" element={<AccountPage />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </BrowserRouter></MotionConfig>

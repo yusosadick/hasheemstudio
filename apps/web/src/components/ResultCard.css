@@ -65,3 +65,4 @@
 }
 .hero-upload .result-card__tile small { margin: 0; padding: 0; border: 0; font-size: 12px; }
 .hero-upload .result-card__foot small { margin: 0; padding: 0; border: 0; }
+.result-card__badge--info { color: #ff8a4c; border-color: rgb(255 107 53 / 35%); background: rgb(255 107 53 / 10%); }

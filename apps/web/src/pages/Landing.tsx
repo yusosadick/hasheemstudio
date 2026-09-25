@@ -75,7 +75,10 @@ export default function Landing() {
             ){" "}
             <a href="https://yusouf.dev" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-foreground">yusouf.dev</a>
           </span>
-          <a href="/status" className="hover:text-foreground">Service status</a>
+          <nav aria-label="Legal" className="flex gap-4">
+            <a href="/privacy" className="hover:text-foreground">Privacy</a>
+            <a href="/terms" className="hover:text-foreground">Terms</a>
+          </nav>
         </div>
       </footer>
     </div>

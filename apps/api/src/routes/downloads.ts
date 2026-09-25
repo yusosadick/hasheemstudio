@@ -30,7 +30,9 @@ export async function downloadsRoutes(app: FastifyInstance): Promise<void> {
       const current = await client.query(`select * from jobs where id=$1 for update`, [id]);
       const output = current.rows[0];
       if (output.status !== "succeeded" || !output.output_object_key) {
-        await client.query("rollback"); return reply.code(409).send({ error: "output_not_ready" });
+        await client.query("rollback");
+        if (output.status === "succeeded") return reply.code(409).send({ error: "no_output", message: "This job didn't create a video file, so there is nothing to download. Upload again and choose “Smaller file”." });
+        return reply.code(409).send({ error: "output_not_ready", message: "Your video isn't ready yet. Please wait a moment and try again." });
       }
       if (output.output_deleted_at || (output.output_retain_until && new Date(output.output_retain_until).getTime() <= Date.now())) {
         await client.query("rollback"); return reply.code(410).send({ error: "output_expired", message: "This video has expired. Please upload it again." });

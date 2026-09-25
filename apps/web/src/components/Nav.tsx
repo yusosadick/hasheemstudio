@@ -1,5 +1,6 @@
 import { AuthBrandLink } from "./auth/AuthBrandLink";
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChevronDown, LogOut } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { signOut, type Session } from "../lib/auth";
@@ -40,11 +41,17 @@ export function Nav() {
     return () => document.removeEventListener("mousedown", closeOnOutside);
   }, []);
 
+  const navigate = useNavigate();
+  const [signingOut, setSigningOut] = useState(false);
+  // Signs out in place: the navbar flips to "Sign in" immediately via the auth listener, private pages are left,
+  // and App remounts the current page so no signed-in state (results, quotas) lingers. No full-page reload.
   async function logout() {
-    await signOut();
+    if (signingOut) return;
+    setSigningOut(true);
     setProfileOpen(false);
     setOpen(false);
-    window.location.assign("/");
+    try { await signOut(); } finally { setSigningOut(false); }
+    navigate("/", { replace: true });
   }
 
   const name = session ? displayName(session) : "";
@@ -81,7 +88,7 @@ export function Nav() {
               </button>
               {profileOpen && (
                 <div role="menu" className="absolute right-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-xl border border-border bg-surface1 shadow-2xl">
-                  <button role="menuitem" type="button" onClick={() => void logout()} className="flex min-h-touch w-full items-center gap-3 px-4 py-3 text-left text-sm text-danger transition-colors hover:bg-surface2"><LogOut className="h-4 w-4" />Sign out</button>
+                  <button role="menuitem" type="button" onClick={() => void logout()} className="flex min-h-touch w-full items-center gap-3 px-4 py-3 text-left text-sm text-danger transition-colors hover:bg-surface2"><LogOut className="h-4 w-4" />{signingOut ? "Signing out…" : "Sign out"}</button>
                 </div>
               )}
             </div>

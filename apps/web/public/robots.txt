@@ -1,3 +1,4 @@
+# hasheemstudio.com — public pages are open; accounts, uploads and results are private.
 User-agent: *
 Allow: /
 Disallow: /app/
@@ -8,5 +9,6 @@ Disallow: /forgot-password
 Disallow: /reset-password
 Disallow: /verify-email
 Disallow: /auth/
+Disallow: /prototypes/
 
 Sitemap: https://hasheemstudio.com/sitemap.xml

@@ -165,7 +165,7 @@ export function ConversionHero() {
 
               <fieldset className="hero-upload__recipes">
                 <legend className="sr-only">Processing mode</legend>
-                {RECIPE_OPTIONS.map((r) => (
+                {RECIPE_OPTIONS.filter((r) => r.value !== "inspect").map((r) => (
                   <label key={r.value} title={r.hint} className="hero-upload__recipe">
                     <input
                       type="radio"

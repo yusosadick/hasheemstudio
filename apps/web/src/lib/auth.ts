@@ -19,5 +19,7 @@ export async function signIn(email:string,password:string) {
   return data.session;
 }
 export async function signOut(): Promise<void> {
-  const {error}=await supabase.auth.signOut(); if(error) throw error;
+  // Revoke the session everywhere; if the network/server refuses, still end it on this device so the user is never stuck signed in.
+  const {error}=await supabase.auth.signOut();
+  if(error) await supabase.auth.signOut({scope:'local'});
 }

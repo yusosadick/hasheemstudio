@@ -83,6 +83,22 @@ export function ResultCard({ jobId, job, onReset, standalone = false }: { jobId:
     );
   }
 
+  if (job.status === "succeeded" && !job.hasOutput && !job.outputExpired) {
+    return (
+      <motion.section className={`result-card result-card--failed${standalone ? " result-card--standalone" : ""}`} data-job-id={jobId} aria-label="Processing result"
+        initial={reduce ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+        <span className="result-card__badge result-card__badge--failed result-card__badge--info"><FileVideo size={26} aria-hidden="true" /></span>
+        <h2>Inspection complete</h2>
+        <p className="result-card__lead">This mode only checks your video, so there’s no file to download. Upload again with “Smaller file” to get a video that’s ready to post.</p>
+        {onReset ? (
+          <button type="button" className="result-card__primary" onClick={onReset}><RotateCcw size={17} aria-hidden="true" />Prepare a video</button>
+        ) : (
+          <Link to="/" className="result-card__primary"><RotateCcw size={17} aria-hidden="true" />Prepare a video</Link>
+        )}
+      </motion.section>
+    );
+  }
+
   const tiles = buildTiles(job);
   const stagger = (i: number) => (reduce ? { duration: 0 } : { delay: 0.25 + i * 0.09, duration: 0.4, ease: "easeOut" as const });
 
