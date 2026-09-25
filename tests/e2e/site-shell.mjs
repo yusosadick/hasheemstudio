@@ -17,7 +17,8 @@ try {
   await page.goto(base + "/login");
   await page.getByRole("textbox", { name: "Email address" }).fill(email); await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByRole("textbox", { name: "Password", exact: true }).fill(password); await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await page.waitForURL("**/app/upload");
+  await page.waitForURL(base + "/");
+  await page.goto(base + "/app/upload");
 
   // Sign out from a private page: no reload, lands on home, navbar flips, session gone.
   await page.evaluate(() => { window.__marker = "same-document"; });

@@ -37,7 +37,7 @@ try {
     await p2.goto(base + "/login");
     await p2.getByRole("textbox", { name: "Email address" }).fill(email); await p2.getByRole("button", { name: "Continue", exact: true }).click();
     await p2.getByRole("textbox", { name: "Password", exact: true }).fill(password); await p2.getByRole("button", { name: "Sign in", exact: true }).click();
-    await p2.waitForURL("**/app/upload");
+    await p2.waitForURL(base + "/");
     await p2.goto(base + "/"); await p2.locator("#pricing").scrollIntoViewIfNeeded();
     await p2.getByRole("button", { name: "Get Monthly" }).click();
     const dlg = p2.getByRole("dialog"); await dlg.waitFor();

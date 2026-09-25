@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { CheckCircle2, ChevronDown, Loader2, LogOut } from "lucide-react";
 import { supabase } from "../lib/supabase";
-import { signOut, type Session } from "../lib/auth";
+import { getSession, signOut, type Session } from "../lib/auth";
 
 const links = [
   { href: "/#features", label: "Tools", menu: true },
@@ -22,9 +22,9 @@ function initials(name: string) {
 }
 
 export function Nav() {
-  const [open, setOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [session, setSession] = useState<Session | null>(null);
+  // Read the stored session synchronously so a signed-in visitor never sees the signed-out buttons flash first.
+  const [session, setSession] = useState<Session | null>(() => getSession());
   const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -63,7 +63,6 @@ export function Nav() {
     const minimum = new Promise((resolve) => setTimeout(resolve, reduce ? 0 : 650));
     try { await Promise.all([signOut(), minimum]); } catch { /* signOut() already falls back to a local sign-out */ }
     setProfileOpen(false);
-    setOpen(false);
     setSigningOut(false);
     setFrozen(null);
     navigate("/", { replace: true });
@@ -120,25 +119,13 @@ export function Nav() {
           ) : (
             <motion.div key="out" className="flex items-center gap-2 sm:gap-3" initial={reduce ? false : { opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }}>
               <a href="/login" className="hidden min-h-touch items-center px-3 font-mono text-xs font-semibold uppercase tracking-wider text-foreground-muted transition-colors hover:text-foreground sm:inline-flex">Sign in</a>
-              <a href="/app/upload" className="inline-flex min-h-touch items-center rounded-md bg-foreground px-3 sm:px-6 whitespace-nowrap font-mono text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-background transition-colors hover:bg-foreground/85">Get Started</a>
+              <a href="/login" className="inline-flex min-h-touch items-center rounded-md border border-[#ff006e] bg-gradient-primary px-4 sm:px-6 whitespace-nowrap font-mono text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-white shadow-[0_6px_18px_rgba(255,0,110,0.25)] transition hover:brightness-110">Get Started</a>
             </motion.div>
           )}
           </AnimatePresence>
-          <button type="button" className="inline-flex min-h-touch min-w-touch items-center justify-center rounded-md border border-border bg-surface1 lg:hidden" aria-expanded={open} aria-controls="mobile-nav" aria-label="Toggle menu" onClick={() => setOpen((v) => !v)}><span aria-hidden="true">{open ? "✕" : "☰"}</span></button>
         </div>
       </div>
 
-      {open && (
-        <nav id="mobile-nav" aria-label="Primary mobile" className="flex flex-col gap-1 border-t border-border bg-background px-4 py-4 lg:hidden">
-          {links.map((l) => <a key={l.href} href={l.href} className="min-h-touch rounded-md px-2 py-2 text-sm text-foreground-muted hover:bg-surface1 hover:text-foreground" onClick={() => setOpen(false)}>{l.label}</a>)}
-          {shown ? <>
-            <button type="button" disabled={signingOut} onClick={() => void logout()} className="flex min-h-touch items-center gap-2 px-2 py-2 text-left text-sm text-danger disabled:opacity-80">{signingOut && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}{signingOut ? "Signing out…" : "Sign out"}</button>
-          </> : <>
-            <a href="/login" className="min-h-touch rounded-md px-2 py-2 text-sm text-foreground-muted hover:bg-surface1" onClick={() => setOpen(false)}>Sign in</a>
-            <a href="/app/upload" className="mt-2 inline-flex min-h-touch items-center justify-center rounded-md bg-foreground px-5 font-mono text-xs font-semibold uppercase tracking-wider text-background">Get Started</a>
-          </>}
-        </nav>
-      )}
       <AnimatePresence>
         {toast && (
           <motion.div role="status" aria-live="polite" initial={reduce ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 24 }} transition={{ duration: 0.25 }} className="pointer-events-none fixed inset-x-0 bottom-6 z-[70] flex justify-center px-4">

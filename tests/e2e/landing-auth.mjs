@@ -13,10 +13,10 @@ try {
    await page.goto(base+path); await page.waitForTimeout(400);
    const cta=page.locator('header > div').getByRole('link',{name:'Get Started',exact:true});
    assert(await cta.isVisible(),`${name} CTA ${width}`);
-   assert.equal(await cta.getAttribute('href'),'/app/upload');
+   assert.equal(await cta.getAttribute('href'),'/login');
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${name} overflow ${width}`);
    assert.equal(await page.locator('img[src*="auth-hero"], img[src*="zahoro"], img[alt="Hasheem Gaming"]').count(),0);
-   if(width===390){await page.getByRole('button',{name:'Toggle menu'}).click();assert(await page.getByRole('navigation',{name:'Primary mobile'}).getByRole('link',{name:'Sign in',exact:true}).isVisible());await page.getByRole('button',{name:'Toggle menu'}).click();}
+   if(width===390){assert.equal(await page.getByRole('button',{name:'Toggle menu'}).count(),0,'no hamburger on phones');assert.equal(await page.getByRole('navigation',{name:'Primary mobile'}).count(),0);}
    await page.screenshot({path:`${dir}/${name}-${width}.png`,fullPage:true});
    checks.push(`${name} ${width}: navigation, CTA, no overflow`);
   }

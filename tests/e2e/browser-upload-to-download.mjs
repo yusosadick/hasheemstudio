@@ -92,8 +92,9 @@ try {
   await page.click("button[type=submit]");
 
   try {
-    await page.waitForURL("**/app/upload", { timeout: 10000 });
-    record("real login through the browser redirects to the real upload page", true, page.url());
+    await page.waitForURL(webBase + "/", { timeout: 10000 });
+    await page.goto(webBase + "/app/upload");
+    record("real login through the browser lands on the homepage", true, page.url());
   } catch (e) {
     record("real login through the browser redirects to the real upload page", false, `stuck at ${page.url()}; console: ${consoleErrors.join(" | ")}`);
     throw e;

@@ -103,3 +103,14 @@
   .hero-upload .result-card__timer-note { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .result-card__timer[data-urgent] { animation: none; } }
+/* Phones: a little tighter so the countdown chip fits without pushing the buttons off the first screen. */
+@media (max-width: 560px) {
+  .hero-upload .result-card__ring { width: 40px; height: 40px; }
+  .hero-upload .result-card__ring svg { width: 22px; height: 22px; }
+  .hero-upload .result-card h2 { margin-top: 6px; }
+  .hero-upload .result-card__timer { margin-top: 4px; }
+  .hero-upload .result-card__tiles { margin-top: 10px; }
+  .hero-upload .result-card__gate p { margin-top: 6px; }
+  .hero-upload .result-card__primary { margin-top: 10px; }
+  .hero-upload .result-card__foot { margin-top: 6px; padding-top: 6px; }
+}
