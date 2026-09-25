@@ -59,7 +59,7 @@ try{
  assert.equal(new URL(page.url()).pathname,'/','result is shown on the homepage where the upload was');
  const jobId=await page.locator('[data-job-id]').first().getAttribute('data-job-id');const jobPath=`/app/jobs/${jobId}`;
  // Exactly four plain-language details, none of them tuning data, and the copy is hidden in focus mode.
- assert.equal(await page.getByTestId('result-details').locator('> div').count(),4);
+ assert.equal(await page.getByTestId('result-details').locator('> div').count(),2);
  const tileText=(await page.getByTestId('result-details').innerText()).toLowerCase();
  for(const w of ['crf','preset','vbv','maxrate','gop','x264','ffmpeg','sha','bitrate','kbps']) assert(!tileText.includes(w),'tile leaks '+w);
  assert(await page.getByText('Prepare your video').count()===0,'headline hidden once a file is chosen');

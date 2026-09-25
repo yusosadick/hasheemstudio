@@ -12,14 +12,14 @@
 .result-card__file svg { flex-shrink: 0; color: #ff8a4c; }
 .result-card__file span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.result-card__tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 22px; text-align: left; }
+.result-card__tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; gap: 10px; margin-top: 22px; text-align: left; }
 .result-card__tile { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 14px 15px 13px; border-radius: 12px; border: 1px solid rgb(255 255 255 / 9%); background: rgb(255 255 255 / 3.5%); }
 .result-card__tile::before { content: ""; position: absolute; left: 0; top: 0; height: 2px; width: 100%; background: var(--gradient-primary); opacity: .0; }
 .result-card__tile.is-accent { border-color: rgb(255 107 53 / 28%); background: linear-gradient(140deg, rgb(255 0 110 / 8%), rgb(255 107 53 / 5%)); }
 .result-card__tile.is-accent::before { opacity: .85; }
 .result-card__tile-label { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--color-foreground-muted); }
 .result-card__tile-label svg { color: #ff8a4c; }
-.result-card__tile strong { margin-top: 6px; font-size: 22px; font-weight: 650; letter-spacing: -.03em; line-height: 1.15; overflow-wrap: anywhere; }
+.result-card__tile strong { margin-top: 8px; margin-bottom: 4px; font-size: 22px; font-weight: 650; letter-spacing: -.03em; line-height: 1.15; overflow-wrap: anywhere; }
 .result-card__tile.is-accent strong { color: #ff8a4c; }
 .result-card__tile small { font-size: 12px; line-height: 1.45; color: var(--color-foreground-muted); }
 
@@ -63,3 +63,5 @@
   .result-card__primary::after { display: none; }
   .result-card__spin { animation: none; }
 }
+.hero-upload .result-card__tile small { margin: 0; padding: 0; border: 0; font-size: 12px; }
+.hero-upload .result-card__foot small { margin: 0; padding: 0; border: 0; }

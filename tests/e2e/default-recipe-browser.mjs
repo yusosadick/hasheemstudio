@@ -38,8 +38,8 @@ try {
   await page.waitForURL("**/app/upload");
 
   await page.goto(`${base}/`);
-  const defaultChecked = await page.getByRole("radio", { name: /Platform-optimized/ }).isChecked();
-  assert.equal(defaultChecked, true, "Platform-optimized must be preselected on the homepage");
+  const defaultChecked = await page.getByRole("radio", { name: /Smaller file/ }).isChecked();
+  assert.equal(defaultChecked, true, "Smaller file must be preselected on the homepage");
   const [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.getByRole("button", { name: "Choose video", exact: true }).click()]);
   await chooser.setFiles(input);
   await page.getByRole("heading", { name: "Your video is ready" }).waitFor({ timeout: 600_000 });

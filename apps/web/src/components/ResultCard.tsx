@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
-import { AlertTriangle, ArrowDownToLine, FileVideo, Loader2, RotateCcw, ShieldCheck, Sparkles, TrendingDown, Video } from "lucide-react";
+import { AlertTriangle, ArrowDownToLine, Clapperboard, FileVideo, Loader2, RotateCcw, ShieldCheck } from "lucide-react";
 import { DownloadUpgrade } from "./DownloadUpgrade";
 import { getSession } from "../lib/auth";
 import { requestDownload, DownloadError, type JobView } from "../lib/api";
-import { formatBytes } from "../hooks/useVideoUpload";
 import { formatOutputFileName } from "../lib/outputName";
 import "./ResultCard.css";
 
@@ -22,59 +21,23 @@ interface Tile {
   accent?: boolean;
 }
 
-function useCountUp(target: number, durationMs = 900): number {
-  const reduce = useReducedMotion();
-  const [value, setValue] = useState(reduce ? target : 0);
-  useEffect(() => {
-    if (reduce) { setValue(target); return; }
-    let raf = 0;
-    const start = performance.now();
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / durationMs);
-      setValue(target * (1 - Math.pow(1 - t, 3)));
-      if (t < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, durationMs, reduce]);
-  return value;
-}
-
-function SizeValue({ percent }: { percent: number }) {
-  const shown = useCountUp(percent);
-  return <>−{Math.round(shown)}%</>;
-}
-
 function buildTiles(job: JobView): Tile[] {
   const s = job.summary;
   if (!s) return [];
-  const inB = s.inputBytes, outB = s.outputBytes;
-  const reduction = s.reductionPercent;
-
-  const size: Tile =
-    reduction !== null && reduction >= 1 && inB !== null && outB !== null
-      ? { key: "size", label: "Smaller", value: <SizeValue percent={reduction} />, sub: `${formatBytes(inB)} → ${formatBytes(outB)}`, icon: <TrendingDown size={16} aria-hidden="true" />, accent: true }
-      : { key: "size", label: "File size", value: outB !== null ? formatBytes(outB) : "Ready", sub: reduction !== null && reduction > -1 ? "Original quality kept" : "Already compact", icon: <FileVideo size={16} aria-hidden="true" /> };
-
   const video = s.format.video, audio = s.format.audio;
-  const format: Tile = {
-    key: "format", label: "Format", value: "MP4",
-    sub: video ? `${video}${audio ? ` + ${audio}` : " · no audio"}` : "Universal video file",
-    icon: <Video size={16} aria-hidden="true" />,
-  };
 
   const playback: Tile = {
     key: "playback", label: "Playback",
     value: s.verified ? "Verified" : "Checked",
-    sub: s.verified ? "Plays cleanly, start to end" : "Review before posting",
+    sub: video ? `${video} · ${audio ?? "no audio"}` : s.verified ? "Plays start to end" : "Review before posting",
     icon: <ShieldCheck size={16} aria-hidden="true" />,
   };
 
-  const fourth: Tile = s.platformReady
-    ? { key: "ready", label: "Ready for", value: "Social upload", sub: s.underWhatsAppLimit ? "TikTok · Instagram · WhatsApp — fits WhatsApp's 16 MB" : "Built for TikTok, Instagram & WhatsApp specs", icon: <Sparkles size={16} aria-hidden="true" />, accent: true }
-    : { key: "mode", label: "Mode", value: job.recipe === "remux" ? "Repackaged" : job.recipe === "compat_encode" ? "Re-encoded" : "Processed", sub: job.recipe === "remux" ? "No re-encode, nothing lost" : "H.264 video, AAC audio", icon: <Sparkles size={16} aria-hidden="true" /> };
+  const second: Tile = s.platformReady
+    ? { key: "ready", label: "Ready for", value: "Social upload", sub: s.underWhatsAppLimit ? "TikTok · Instagram · WhatsApp" : "TikTok · Instagram", icon: <Clapperboard size={16} aria-hidden="true" />, accent: true }
+    : { key: "mode", label: "Mode", value: job.recipe === "remux" ? "Repackaged" : job.recipe === "compat_encode" ? "Re-encoded" : "Processed", sub: job.recipe === "remux" ? "Nothing lost" : "H.264 · AAC", icon: <Clapperboard size={16} aria-hidden="true" /> };
 
-  return [size, format, playback, fourth];
+  return [playback, second];
 }
 
 export function ResultCard({ jobId, job, onReset, standalone = false }: { jobId: string; job: JobView; onReset?: () => void; standalone?: boolean }) {

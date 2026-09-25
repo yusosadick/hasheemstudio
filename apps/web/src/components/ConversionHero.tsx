@@ -32,6 +32,8 @@ function scenePhase(stage: UploadStage): string {
   return "idle";
 }
 
+const RECIPE_SHORT: Record<string, string> = { platform_optimize: "Smaller file", remux: "Quick repack", compat_encode: "Re-encode", inspect: "Inspect" };
+
 const STAGE_LABEL: Record<UploadStage, string> = {
   idle: "",
   uploading: "Uploading…",
@@ -91,15 +93,15 @@ export function ConversionHero() {
     <div className="conversion-hero" data-focus={focus || undefined}>
       <HeroBackdrop paused={paused} />
       <div className="conversion-hero__stage">
-        {!focus && (
         <div className="conversion-hero__copy">
           <p className="conversion-hero__eyebrow">Hasheem Studio video tools</p>
+          {!focus && (<>
           <h1>Prepare your video<br className="conversion-hero__title-break" /> for upload</h1>
           <p className="conversion-hero__description">
             Inspect, fix compatibility issues, and create a platform-ready video—with a clear report of exactly what changed.
           </p>
+          </>)}
         </div>
-        )}
 
         <div className="conversion-scene" data-paused={paused} data-phase={phase} style={{ ["--p" as string]: uploadPercent / 100 }}>
           <div className="conversion-scene__visual" role="img" aria-label="Illustration: prepare a MOV or MP4 video as a compatible MP4 with H.264 video and AAC audio.">
@@ -131,6 +133,7 @@ export function ConversionHero() {
       <div
         className="hero-upload"
         data-drag-over={canPick && dragOver || undefined}
+        data-busy={active || undefined}
         onDragOver={canPick ? (e) => { e.preventDefault(); setDragOver(true); } : undefined}
         onDragLeave={canPick ? () => setDragOver(false) : undefined}
         onDrop={canPick ? onDrop : undefined}
@@ -157,11 +160,11 @@ export function ConversionHero() {
               transition={{ duration: 0.22 }}
             >
               <span className="hero-upload__badge"><UploadCloud className="hero-upload__icon" size={29} strokeWidth={1.8} aria-hidden="true" /></span>
-              <h2>Select your video to prepare</h2>
-              <p>Upload an MP4 or MOV. Sign in when you download.</p>
+              <h2>Upload your video</h2>
+              <p>MP4 or MOV, up to 100 MB.</p>
 
               <fieldset className="hero-upload__recipes">
-                <legend className="hero-upload__recipes-legend">What does it need?</legend>
+                <legend className="sr-only">Processing mode</legend>
                 {RECIPE_OPTIONS.map((r) => (
                   <label key={r.value} title={r.hint} className="hero-upload__recipe">
                     <input
@@ -171,7 +174,7 @@ export function ConversionHero() {
                       checked={recipe === r.value}
                       onChange={() => setRecipe(r.value)}
                     />
-                    {r.label}
+                    {RECIPE_SHORT[r.value] ?? r.label}
                   </label>
                 ))}
               </fieldset>
@@ -179,7 +182,7 @@ export function ConversionHero() {
               <button type="button" className="hero-upload__button" onClick={() => inputRef.current?.click()}>
                 <UploadCloud size={17} aria-hidden="true" />Choose video
               </button>
-              <p className="hero-upload__dropzone-hint">or drop a file anywhere in this card</p>
+              <p className="hero-upload__dropzone-hint">or drop it here</p>
 
               {error && <p role="alert" className="hero-upload__error">{error}</p>}
               {resumeNotice && (
@@ -191,7 +194,7 @@ export function ConversionHero() {
                 </p>
               )}
 
-              <small>1 free video/day · 100 MB · 2 minutes · 1080p60</small>
+              <small>Free: 1 video a day · sign in to download</small>
             </motion.div>
           ) : (
             <motion.div

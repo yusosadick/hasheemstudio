@@ -120,7 +120,7 @@ try {
   }
 
   const tiles = await page.getByTestId("result-details").locator("> div").count();
-  record("result summary shows exactly four plain-language details (no raw report)", tiles === 4 && (await page.locator("pre").count()) === 0, `${tiles} tiles`);
+  record("result summary shows two plain-language details (no raw report)", tiles === 2 && (await page.locator("pre").count()) === 0, `${tiles} tiles`);
 
   const evidenceDir = join(repoRoot, "docs", "evidence", "phase4-browser-e2e");
   if (!existsSync(evidenceDir)) mkdirSync(evidenceDir, { recursive: true });
