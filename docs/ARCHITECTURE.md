@@ -77,10 +77,48 @@ Worker writes to attempt-specific output paths. Publish canonical result only if
 - Inspect: no transformation; report only.
 - Remux: copy supported streams into a compatible container, optionally fast-start; explain which metadata changes. Reject or propose conversion when incompatible; never silently re-encode.
 - Compatibility encode: explicit H.264/AAC policy, sensible pixel format and supported dimensions; handle VFR deliberately, preserve aspect ratio and orientation.
+- Platform optimize (`platform_optimize`): a re-encode whose bitrate ceiling is planned from the input's display size and frame rate — see "Platform-optimize recipe" below. Remux keeps the source bitrate; this recipe exists because a 91 Mbps drone clip remuxes to a ~58 MB file that social platforms will recompress on their own terms.
 - HDR: preserve accurately for supported paths or perform an explicit tested tone-map; otherwise refuse unsupported conversion. Never silently wash out colours.
 - Optional audio: handle absent audio, multiple tracks and unsupported codecs with explained selection rules.
 - Do not upscale or increase FPS by default; never equate higher bitrate with recovered detail.
 - Remove sensitive location/device metadata only when requested/default privacy policy allows, without stripping necessary colour/rotation information accidentally.
+
+### Platform-optimize recipe (`platform_optimize`, profile v1)
+
+Full data: `docs/evidence/platform-optimize/` (`results.json` summary, `experiments.jsonl` 59 encode runs, `production-runs.jsonl`, `quality-analysis.jsonl`). Code: `apps/worker/src/platformProfile.ts` (pure, unit-tested), `platformOptimize()` in `ffmpeg.ts`, branch in `processor.ts`.
+
+**What platforms publish (fetched from the primary pages, 2026-09-25)**
+
+| Platform | Published | Not published |
+|---|---|---|
+| TikTok ([ads specs](https://ads.tiktok.com/help/article/video-ads-specifications)) | bitrate >= 516 kbps; <= 500 MB; <= 10 min; mp4/mov/mpeg/3gp/avi | any maximum bitrate, codec, frame rate |
+| Instagram Reels ([Meta Graph API](https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media/)) | HEVC/H.264 progressive, **closed GOP**, 4:2:0; AAC <= 48 kHz, 1-2 ch, 128 kbps; 23-60 fps; <= 1920 px horizontal; **VBR 25 Mbps max**; moov first, **no edit lists**; 300 MB, 15 min (Stories video: 100 MB, 60 s) | a recommended target bitrate |
+| WhatsApp ([Cloud API media](https://developers.facebook.com/documentation/business-messaging/whatsapp/business-phone-numbers/media)) | MP4/3GP <= **16 MB**; **H.264 + AAC only**; one audio stream; **H.264 High + B-frames unsupported on Android clients, use Main without B-frames or Baseline**; faststart | a bitrate |
+| YouTube reference ([help](https://support.google.com/youtube/answer/1722171)) | recommended SDR upload: 1080p 8 / 12 Mbps (24-30 / 48-60 fps), 720p 5 / 7.5, 480p 2.5 / 4, 4K 35-45 / 53-68 | — |
+
+**The honest uncertainty:** no platform publishes a bitrate at which it will skip re-encoding, and TikTok/Instagram/WhatsApp publish only minimums, maximums and limits — never a recommended target. Third-party "TikTok wants 6-8.5 Mbps" figures are not TikTok publications and are not used. The ceilings below are engineering choices anchored on the one official per-resolution table (YouTube's), bounded by the published minimum (516 kbps) and maximum (25 Mbps), and validated by measurement. They are not claims about any platform's internals. WhatsApp's 16 MB limit is a byte limit, so whether a file fits depends on duration; the verification report states `whatsappCloudApi16MB` as a fact about the output.
+
+**Plan (`planPlatformProfile`)**: display size after rotation (a 3840x2160 clip with rotation 90 is 2160x3840); never upscale; shrink only past the product ceiling (docs/PRD.md: 1080p60), keeping aspect ratio in either orientation (1920x1080 or 1080x1920); frame rate capped at 60. Ceiling by output short side and frame rate (interpolated between 30 and 60 fps): 1080p 8000-12000 kbps, 720p 5000-7500, 480p 2500-4000, 360p 1000-1500. Never planned above 90% of the source's own video bitrate (so a small source is not inflated), never below 516 kbps.
+
+**Encode**: capped CRF 23 (`-maxrate` = ceiling, `-bufsize` = 1 s, `vbv-init=0.5`), H.264 **Main, no B-frames**, level 4.2, yuv420p, closed GOP with a keyframe every ~2 s, AAC-LC 48 kHz stereo 128 kbps, `+faststart`, `-use_editlist 0`. HDR (PQ/HLG) sources are refused with an explanation rather than silently washed out (HDR rule above).
+
+**Why these choices (measured, not assumed)**
+- *Capped CRF, not two-pass* (same ceiling, preset fast): two-pass hit the target (7975/8102/12076/11954 kbps) but inflated easy content — a 4.2 Mbps 1080p60 source became **12 Mbps (~3x its own size)** — and took ~55% longer; capped CRF gave 4590 kbps / VMAF 95.7 on typical 1080p30 vs two-pass 8102 / 98.1. Capped CRF's one weakness, overshooting the ceiling on short hard clips because the VBV buffer starts full (drone 9269 vs 8000), is removed by a 1 s buffer + `vbv-init=0.5` (7998 and 12000 kbps against 8000/12000 ceilings).
+- *Main / no B-frames*: costs 0.9-2.7 VMAF (or 7-12% bitrate) versus High + B-frames on the three sources tested — under one JND (6 points) — in exchange for Android WhatsApp compatibility per Meta's documentation.
+- *Presets*: `faster` matches `medium` quality (VMAF 94.46 vs 94.6) at ~1.8x the speed; `veryfast` loses 1.5-4.7 VMAF; `superfast`/`ultrafast` are excluded (typical 1080p30: 7.2 Mbps vs 4.4 Mbps, +62%; hard 1080p50 under the cap: VMAF 71.6 / 61.7 vs 80.0). `choosePreset` uses a conservative throughput model (decode 60 MP/s, encode 45 / 80 MP/s for faster / veryfast) measured on a loaded shared host: predictions 28/24/49/32 s vs actual 23.9/17.8/23.1/27.9 s. Per-process timeout for this recipe is 8 minutes (below the 10-minute job lease); a job predicted to overrun even at `veryfast` (e.g. 10 minutes of 4K) is refused up front instead of burning three timed-out attempts.
+
+**Verification** (same gates as the other re-encodes plus recipe-specific): full decode with any stderr = failure; duration within 1.5 s; H.264 output, AAC if the source had audio; output size exactly as planned; frame rate <= plan; profile Main and no B-frames; average bitrate within the VBV bound. The report records the plan, sizes/reduction, `moovBeforeMdat`, `hasEditList`, `whatsappCloudApi16MB`, and predicted vs actual encode seconds. `qualityMetric` stays `not_computed` per job: the production ffmpeg (5.1.9 Debian) has no libvmaf, so VMAF/SSIM are measured offline with `tests/eval/quality-compare.mjs` (VMAF `vmaf_v0.6.1`, frames paired by index with a frame-count guard) and never fabricated per job.
+
+**Measured results (real production jobs, files analysed independently)**
+
+| Source | In | Out | Reduction | Ceiling / achieved | VMAF (min) / SSIM | Clears 93? |
+|---|---|---|---|---|---|---|
+| 4K drone, 29.97 fps HEVC, portrait | 58,592,373 | 5,138,861 | 91.2% | 8000 / 8001 kbps | 74.2 (58.1) / 0.955 at 1080p; 48.8 vs the 4K reference | no |
+| Natural 1080p30 | 31,079,695 | 5,974,735 | 80.8% | 8000 / 4767 kbps | 95.6 (88.2) / 0.997 | **yes** (>= 95) |
+| Real 1080p60 (BBB, already 4.2 Mbps) | 7,643,986 | 4,685,920 | 38.7% | 3771 / 3728 kbps | 87.3 (59.0) / 0.993 | no |
+| Hard 1080p50 (crowd_run) | 82,758,928 | 10,816,920 | 86.9% | 10667 / 10788 kbps | 75.6 (64.8) / 0.976 | no |
+
+Thresholds (cited): VMAF 93 = "either indistinguishable from original or with noticeable but not annoying distortion" (Rassool, IEEE 2017); VMAF 95 = "on average subjectively indistinguishable" (Kah et al., SPIE 11842-38, 2021) — both as quoted by Fora Soft's quality-target article; 6 VMAF points ~ 1 JND (Netflix, via Ozer 2017). **Only one of four sources clears 93 at its ceiling, and that is stated plainly:** the bitrate for VMAF 93 (interpolated from the CRF sweep) is ~3.4 Mbps for typical natural 1080p30, but ~20 Mbps for the drone clip at 1080p and ~24 Mbps for crowd_run — several times any published or recommended platform bitrate — and the BBB source, already compressed to 4.2 Mbps, cannot be re-encoded smaller at >= 93 (plain CRF 23 gave 92.15 at 4.9 Mbps, larger than the source). The recipe therefore trades quality for a platform-safe, predictable file on hard content; raising ceilings is an owner decision (docs/DECISIONS.md). Test sources: the real drone clip (4K **29.97** fps, not 60), two natural Xiph.org Derf sequences (1080p30, 1080p50) and a real 1080p60 stream (Big Buck Bunny, animation); no natural 60 fps source was available.
 
 ### Output verification
 

@@ -1545,3 +1545,25 @@ the prior fix addressed *a* cause, not necessarily *the* cause. It was partial. 
     download.
   - Disposable test accounts used for this investigation were deleted afterward via the GoTrue
     admin API.
+
+## Platform-optimize recipe — 2026-09-25
+
+Motivation (owner): remux preserves the source bitrate, so a ~91 Mbps 4K HEVC drone clip stream-copies to a ~58 MB file — mathematically correct, but it defeats the product's purpose because TikTok/Instagram/WhatsApp recompress oversized uploads on their own terms. Full design, sources and numbers: [ARCHITECTURE.md "Platform-optimize recipe"](ARCHITECTURE.md); raw data: [docs/evidence/platform-optimize/](evidence/platform-optimize/results.json).
+
+- [VERIFIED-LIVE] **Migration 0016** (`job_recipe` enum + `plans.allowed_recipes`) applied by the repository runner from pushed `0c09272` after an encrypted backup: `plan` showed exactly one pending migration, no drift; `verify` returned `noPendingOrDrift: true`; a direct read-back shows the enum values `inspect, remux, compat_encode, platform_optimize` and both real plans (`verified_free`, `pro_beta`) allowing it.
+- [VERIFIED-LIVE] Rebuilt and recreated only `hasheemstudio-worker` and `hasheemstudio-web` (`--no-deps --force-recreate`); both healthy, all other containers untouched; `https://hasheemstudio.com` and the API health endpoint return 200. The recipe is selectable on `/` and `/app/upload` (default unchanged: Compatible MP4 remux).
+- [VERIFIED-LIVE] **Four real sources through the production API/queue/worker/download gate, each succeeding on the first attempt**, outputs independently re-verified (fresh `ffmpeg -v error` decode: empty stderr and exit 0 for all four; ffprobe: H.264 Main, no B-frames, yuv420p, AAC-LC 48 kHz stereo where audio existed, duration within 22 ms of the source, frame counts identical):
+
+  | Source | In → Out (bytes) | Reduction | Ceiling / achieved | VMAF (worst frame) / SSIM |
+  |---|---|---|---|---|
+  | 4K drone 29.97 fps HEVC, portrait (58.6 MB) | 58,592,373 → 5,138,861 | 91.2% | 8000 / 8001 kbps | 74.2 (58.1) / 0.955 @1080p; 48.8 vs 4K ref |
+  | natural 1080p30 (Xiph dinner) | 31,079,695 → 5,974,735 | 80.8% | 8000 / 4767 kbps | 95.6 (88.2) / 0.997 |
+  | real 1080p60 (BBB, source already 4.2 Mbps) | 7,643,986 → 4,685,920 | 38.7% | 3771 / 3728 kbps | 87.3 (59.0) / 0.993 |
+  | hard 1080p50 (Xiph crowd_run) | 82,758,928 → 10,816,920 | 86.9% | 10667 / 10788 kbps | 75.6 (64.8) / 0.976 |
+
+  Worker-measured encode times 23.9 / 17.8 / 23.1 / 27.9 s against the time model's 28 / 24 / 49 / 32 s predictions.
+- [TESTED-LOCAL/NOT A CLAIM OF TRANSPARENCY] **Quality honesty:** only the natural 1080p30 source clears VMAF 93 (cited "indistinguishable or noticeable but not annoying", Rassool 2017) / 95 ("subjectively indistinguishable", Kah et al. 2021). The other three do not, and this is the expected cost of a bitrate ceiling on hard content: reaching VMAF 93 would need ~3.4 Mbps for typical natural 1080p30 but ~20 Mbps (drone at 1080p) and ~24 Mbps (crowd_run) — several times any published or recommended platform bitrate — and an already-compressed 4.2 Mbps source cannot be re-encoded smaller at >= 93. Whether to raise the ceilings is an owner decision (DECISIONS.md). The 6-point JND and the 93/95 statements are cited; the Netflix VMAF FAQ itself defines no score bands.
+- [VERIFIED-LIVE] **Latent `compat_encode` bug found and fixed:** a real job on the 4K portrait clip (3840x2160 + rotation 90) failed on the previous worker with "output dimensions grew beyond the source" after 698 s (3 attempts), because the check compared coded size to the autorotated output. The same clip now succeeds (180 s, `dimensionsPreserved: true`). Its output is 61.5 MB — larger than the 58.6 MB source, which is why it is not a substitute for the new recipe.
+- [TESTED-LOCAL] Measurement pitfall recorded: scoring frames by timestamp reported false VMAF drops (crowd 27, bbb 75) because the no-edit-list output is shifted ~21 ms (one AAC priming block) after the first frame; frame counts were identical. `tests/eval/quality-compare.mjs` now pairs by frame index and refuses to score if frame counts differ.
+- [TESTED-LOCAL] Existing suites against this change: `pnpm typecheck` (api/worker/web) clean; `pnpm test` 22/22 (5 api + 17 new worker planning tests); `pnpm test:guest-download` 11/11 (real stack, after migration and worker deploy); `tests/e2e/guest-auth-browser.mjs` passed (real Chromium, guest upload → process → login → download).
+- [NOT DONE / LIMITS] Per-job VMAF is not computed (the production ffmpeg has no libvmaf); HDR sources are refused rather than tone-mapped; no natural 60 fps source was available (1080p60 is animation, 1080p50 is natural); the drone fixture is 4K **29.97 fps**, not 4K60; 4K clips longer than the time model allows are refused up front; recipe default remains remux; the effect on real TikTok/Instagram/WhatsApp ingest was not (and cannot be) tested from here.

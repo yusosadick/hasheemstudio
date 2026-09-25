@@ -1,0 +1,95 @@
+{
+  "summary": "platform_optimize: capped-CRF H.264/AAC re-encode with a bitrate ceiling planned per input from display size and frame rate. Deployed 2026-09-25; four real sources run end to end through the production API/queue/worker/download gate; outputs independently verified (fresh decode, ffprobe, VMAF/SSIM against the uploaded source). Raw data: experiments.jsonl (59 encode experiments), production-runs.jsonl (real jobs), quality-analysis.jsonl (independent measurements).",
+  "researchedPublishedNumbers": {
+    "tiktok": {
+      "source": "https://ads.tiktok.com/help/article/video-ads-specifications (official, fetched)",
+      "published": "bitrate >= 516 kbps; file <= 500 MB; up to 10 min; .mp4 .mov .mpeg .3gp .avi; 9:16 >= 540x960 recommended",
+      "notPublished": "no maximum bitrate, no codec, no frame-rate requirement",
+      "note": "Third-party blogs quote '>= 2,000 kbps for 1080p' and '6,000-8,500 kbps' — not TikTok publications; not used as facts."
+    },
+    "instagram": {
+      "source": "https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media/ (official Meta docs, fetched)",
+      "publishedReels": "MOV/MP4, no edit lists, moov atom at the front; HEVC or H264, progressive, closed GOP, 4:2:0; AAC <= 48 kHz, 1-2 channels, 128 kbps; 23-60 FPS; max 1920 horizontal pixels; VBR 25 Mbps maximum; 300 MB max; 15 min max",
+      "publishedStoriesVideo": "same codec/container/bitrate; 100 MB max; 60 s max",
+      "note": "A search snippet claiming an '8 MB' Reels size limit was wrong (contradicted by the primary page) and was discarded."
+    },
+    "whatsapp": {
+      "source": "https://developers.facebook.com/documentation/business-messaging/whatsapp/business-phone-numbers/media (official Meta docs, fetched)",
+      "published": "MP4/3GP video 16 MB max; only H.264 video and AAC audio; single audio stream or none; H.264 High profile with B-frames is not supported by Android WhatsApp clients — recommends Main profile without B-frames or Baseline; use -movflags faststart",
+      "note": "The 16 MB limit is a byte limit, so whether a file fits depends on duration as well as bitrate."
+    },
+    "youtubeReference": {
+      "source": "https://support.google.com/youtube/answer/1722171 (official, fetched)",
+      "published": "recommended SDR upload bitrates: 4K 35-45 / 53-68 Mbps; 1440p 16 / 24; 1080p 8 (24-30 fps) / 12 (48-60 fps); 720p 5 / 7.5; 480p 2.5 / 4; 360p 1 / 1.5",
+      "use": "The only official per-resolution/frame-rate recommended-bitrate table found from a major platform; used as the ceiling anchor, not as a claim about TikTok/Instagram/WhatsApp internals."
+    },
+    "honestUncertainty": "No platform publishes a bitrate at which it will skip re-encoding, and TikTok/Instagram/WhatsApp publish only minimums or maximums, never a recommended target. The ceilings are therefore engineering choices anchored on the one official recommendation table, bounded by the published minimum/maximum/limits above, and validated by measurement. Nothing here is a claim about what any platform does internally."
+  },
+  "qualityThresholdsCited": {
+    "justNoticeableDifference": "about 6 VMAF points = 1 JND (Netflix, via Ozer 2017; Streaming Learning Center, fetched)",
+    "vmaf93": "'either indistinguishable from original or with noticeable but not annoying distortion' (Rassool, IEEE 2017, as quoted by https://www.forasoft.com/learn/video-quality/articles-vqm/setting-a-quality-target, fetched)",
+    "vmaf95": "'on average subjectively indistinguishable from the original video signal' (Kah et al., SPIE 11842-38, 2021, same source); the Joyn study found differences invisible within 2 VMAF points and visible from 3",
+    "workingRule": "top-rung target 93-95 VMAF for premium content on a big screen (same source)",
+    "caveat": "VMAF is relative to the reference and says nothing about the source's own quality; the Netflix VMAF FAQ (github.com/Netflix/vmaf) names the 1080p model vmaf_v0.6.1 (used here) but does not itself define score bands. Only the JND figure and the 93/95 statements above are cited."
+  },
+  "sources": [
+    { "id": "drone4k", "description": "Real 4K drone clip owned by the site owner (a repeated test asset in this project), 3840x2160 @ 29.97 fps HEVC, rotation=90 (portrait), ~91 Mbps, no audio. NOT 4K60.", "sha256": "42ff9d8681a947a537041e171bad6a5d97b3fab14ffbb6ec2d789441a3b20c2d", "bytes": 58592373 },
+    { "id": "p30", "description": "Natural 1080p30: first 10 s of Xiph.org Derf test sequence dinner_1080p30.y4m (https://media.xiph.org/video/derf/y4m/), encoded to a camera-like H.264 High CRF 12 (~25 Mbps) + synthetic pink-noise AAC audio (the y4m has no audio).", "sha256": "160af9f3a2f5c99a9f1585dd3952cbe2ab2d97ff108246d996ee737e1ef3f2ce", "bytes": 31079695 },
+    { "id": "p60bbb", "description": "Real 1080p60: 10 s stream-copied segment (t=245 s) of Big Buck Bunny bbb_sunflower_1080p_60fps_normal.mp4 (Blender Foundation, CC-BY 3.0, https://download.blender.org/demo/movies/BBB/). Animation, and already only ~4.2 Mbps H.264 + MP3 — an already-compressed upload.", "sha256": "6cf4b155c9075bca7c94ffbf9c32f5f3aa78fecd8d5c3ecd7756c196938dc916", "bytes": 7643986 },
+    { "id": "p50crowd", "description": "Hard natural content: first 8 s of Xiph.org Derf crowd_run_1080p50.y4m (a standard worst-case sequence), 1080p50 (no 60 fps natural source was available), camera-like H.264 CRF 12 (~83 Mbps) + synthetic audio.", "sha256": "bff85e827614f53a0aa2959d678d9d6501f95a6bbb90906fa2fc640633bb8caf", "bytes": 82758928 }
+  ],
+  "designDecisionsWithEvidence": {
+    "rateControl": {
+      "choice": "capped CRF 23 (-maxrate = planned ceiling, -bufsize = 1 s, vbv-init 0.5), not two-pass",
+      "comparison_preset_fast_main_bf0": [
+        { "source": "drone4k", "ceilingKbps": 8000, "cappedCrf": { "kbps": 9269, "vmaf": 76.25, "vmafMin": 57.96, "secs": 33.1 }, "twoPass": { "kbps": 7975, "vmaf": 72.72, "vmafMin": 67.14, "secs": 52.3 } },
+        { "source": "p30", "ceilingKbps": 8000, "cappedCrf": { "kbps": 4590, "vmaf": 95.67, "vmafMin": 88.26, "secs": 25.3 }, "twoPass": { "kbps": 8102, "vmaf": 98.07, "vmafMin": 92.36, "secs": 38.4 } },
+        { "source": "p60bbb", "ceilingKbps": 12000, "cappedCrf": { "kbps": 5059, "vmaf": 92.06, "vmafMin": 84.86, "secs": 32.2 }, "twoPass": { "kbps": 12076, "vmaf": 96.73, "vmafMin": 92.17, "secs": 50.3 } },
+        { "source": "p50crowd", "ceilingKbps": 12000, "cappedCrf": { "kbps": 13213, "vmaf": 80.52, "vmafMin": 73.98, "secs": 39.7 }, "twoPass": { "kbps": 11954, "vmaf": 78.58, "vmafMin": 75.19, "secs": 54.2 } }
+      ],
+      "why": "Two-pass hits the target but inflates easy content up to it (a 4.2 Mbps source became 12 Mbps, ~3x its own size) and costs ~55% more time. Capped CRF never inflates and is faster; its only weakness — overshooting the ceiling on short hard clips because the VBV buffer starts full — is removed by a 1 s buffer with vbv-init 0.5 (drone 7998 kbps and crowd 12000 kbps against 8000/12000 ceilings, vs 9231/13204 with the default 2 s buffer)."
+    },
+    "profile": {
+      "choice": "H.264 Main, no B-frames (WhatsApp-safe)",
+      "measuredCost_preset_fast_crf24": [
+        { "source": "p30", "mainBf0": { "kbps": 3959, "vmaf": 94.57 }, "mainBf2": { "kbps": 3700, "vmaf": 94.38 }, "highBf2": { "kbps": 3937, "vmaf": 95.42 } },
+        { "source": "p60bbb", "mainBf0": { "kbps": 4464, "vmaf": 90.84 }, "mainBf2": { "kbps": 3924, "vmaf": 91.45 }, "highBf2": { "kbps": 3981, "vmaf": 92.52 } },
+        { "source": "p50crowd", "mainBf0": { "kbps": 13190, "vmaf": 80.55 }, "mainBf2": { "kbps": 13183, "vmaf": 81.76 }, "highBf2": { "kbps": 13184, "vmaf": 83.23 } }
+      ],
+      "why": "Costs 0.9-2.7 VMAF points (well under 1 JND = 6) or 7-12% bitrate, in exchange for not being rejected by Android WhatsApp clients per Meta's own documentation."
+    },
+    "presets": {
+      "choice": "faster by default, veryfast for heavy workloads; superfast/ultrafast excluded",
+      "measured_p30_crf23": { "faster": { "fps": 18.9, "kbps": 4450, "vmaf": 95.58 }, "veryfast": { "fps": 27.2, "kbps": 4392, "vmaf": 94.1 }, "superfast": { "fps": 34.7, "kbps": 7205, "vmaf": 96.46 }, "ultrafast": { "fps": 41.3, "kbps": 7683, "vmaf": 94.96 } },
+      "measured_p50crowd_capped": { "faster": { "fps": 14.9, "vmaf": 80.04 }, "veryfast": { "fps": 20.5, "vmaf": 75.35 }, "superfast": { "fps": 27.0, "vmaf": 71.64 }, "ultrafast": { "fps": 28.5, "vmaf": 61.66 } },
+      "faster_vs_medium_p30_crf24": { "faster": { "fps": 18.8, "vmaf": 94.46 }, "medium": { "fps": 10.4, "vmaf": 94.6 } },
+      "why": "faster matches medium quality at ~1.8x speed. superfast produced +62% size on typical content and quality collapses under a cap on hard content."
+    },
+    "decodeSpeed_2pinnedCores_loadedHost": { "4kHevc91Mbps": "67 MP/s (8.1 fps)", "h264_1080p": "81-287 MP/s" },
+    "timeModelValidation": [
+      { "source": "drone4k", "predictedSeconds": 28, "actualEncodeSeconds": 23.9 },
+      { "source": "p30", "predictedSeconds": 24, "actualEncodeSeconds": 17.8 },
+      { "source": "p60bbb", "predictedSeconds": 49, "actualEncodeSeconds": 23.1 },
+      { "source": "p50crowd", "predictedSeconds": 32, "actualEncodeSeconds": 27.9 }
+    ]
+  },
+  "productionEvidenceTable": [
+    { "source": "drone4k (4K HEVC 29.97 fps, portrait)", "inputBytes": 58592373, "outputBytes": 5138861, "reductionPercent": 91.2, "ceilingKbps": 8000, "achievedTotalKbps": 8001, "outputDims": "1080x1920", "vmafVsSource_at1080p": 74.22, "vmafMin": 58.12, "ssim": 0.9548, "vmafVsSource_at4kFull": 48.84, "ssim_full": 0.9557, "clearsVmaf93": false, "clearsVmaf95": false, "independentDecodeStderr": "(empty)", "durationSourceVsOutput": "5.138 / 5.138" },
+    { "source": "p30 (natural 1080p30)", "inputBytes": 31079695, "outputBytes": 5974735, "reductionPercent": 80.8, "ceilingKbps": 8000, "achievedTotalKbps": 4767, "outputDims": "1920x1080", "vmafVsSource": 95.59, "vmafMin": 88.2, "ssim": 0.9966, "clearsVmaf93": true, "clearsVmaf95": true, "independentDecodeStderr": "(empty)", "durationSourceVsOutput": "10.000 / 10.027" },
+    { "source": "p60bbb (real 1080p60, already 4.2 Mbps)", "inputBytes": 7643986, "outputBytes": 4685920, "reductionPercent": 38.7, "ceilingKbps": 3771, "ceilingNote": "planned at 90% of the 4190 kbps source instead of the 12000 kbps tier ceiling, so a small source is not inflated", "achievedTotalKbps": 3728, "outputDims": "1920x1080", "vmafVsSource": 87.29, "vmafMin": 59.01, "ssim": 0.9933, "clearsVmaf93": false, "clearsVmaf95": false, "independentDecodeStderr": "(empty)", "durationSourceVsOutput": "10.033 / 10.055" },
+    { "source": "p50crowd (hard 1080p50)", "inputBytes": 82758928, "outputBytes": 10816920, "reductionPercent": 86.9, "ceilingKbps": 10667, "achievedTotalKbps": 10788, "outputDims": "1920x1080", "vmafVsSource": 75.55, "vmafMin": 64.8, "ssim": 0.9759, "clearsVmaf93": false, "clearsVmaf95": false, "independentDecodeStderr": "(empty)", "durationSourceVsOutput": "8.000 / 8.021" }
+  ],
+  "honestReading": {
+    "clearsThreshold": "Only 1 of 4 sources clears VMAF 93 at its ceiling. That is what a bitrate ceiling means for content this hard, not a defect: measured CRF sweeps show the bitrate needed for VMAF 93 is ~3.4 Mbps for typical natural 1080p30 but ~20 Mbps for the 4K drone clip at 1080p and ~24 Mbps for crowd_run (linear interpolation of the measured CRF sweep) — several times any platform's published or recommended bitrate — and the 4.2 Mbps BBB source cannot be re-encoded into a smaller file at >= 93 because it is already compressed (plain CRF 23 gave 92.15 at 4.9 Mbps, larger than the source).",
+    "whatUserGets": "Predictable, platform-safe files (H.264 Main/no-B-frames/closed GOP/AAC/moov-first/no edit list) that are 39-91% smaller, with the quality loss controlled by us instead of by a platform's opaque re-encode. Users who only need a container swap for an already-suitable file should still choose remux.",
+    "measurementNote": "An early scoring pass paired frames by timestamp and reported a false VMAF drop (crowd 27, bbb 75) because the no-edit-list output is shifted ~21 ms (one AAC priming block) at every frame after the first; frame counts were identical. Scoring by frame index (with a frame-count guard) gives the figures above; the tool now does this by default."
+  },
+  "regressionProof": {
+    "compat_encode_rotation_bug": { "before": "real job on the 4K portrait clip failed after 698 s with 'output dimensions grew beyond the source'", "after": "same clip succeeded in 180 s, dimensionsPreserved=true (production-runs.jsonl)", "note": "compat_encode output is 61,524,432 bytes — larger than the 58,592,373-byte source." }
+  },
+  "environment": {
+    "workerFfmpeg": "5.1.9 (Debian bookworm), 2 CPUs, 2 GB, no libvmaf",
+    "measurementFfmpeg": "static ffmpeg 7.1 with libvmaf, model vmaf_v0.6.1",
+    "experimentHostNote": "Shared VPS with load average 17-39 during experiments; speed figures are therefore conservative and noisy, sizes and VMAF are deterministic."
+  }
+}
