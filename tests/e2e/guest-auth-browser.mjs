@@ -55,8 +55,15 @@ try{
  await page.getByRole('progressbar').waitFor({timeout:10000});
  assert.equal(new URL(page.url()).pathname,'/','processing plays out on the same page, not a navigated-away one');
  await page.screenshot({path:'docs/evidence/guest-download-gate/hero-processing.png',fullPage:true});
- await page.waitForURL('**/app/jobs/*',{timeout:120000});const jobPath=new URL(page.url()).pathname;
- const jobId=jobPath.split('/').pop();guestWorkspace=(await db.query('select workspace_id from jobs where id=$1',[jobId])).rows[0].workspace_id;
+ await page.getByRole('heading',{name:'Your video is ready'}).waitFor({timeout:120000});
+ assert.equal(new URL(page.url()).pathname,'/','result is shown on the homepage where the upload was');
+ const jobId=await page.locator('[data-job-id]').first().getAttribute('data-job-id');const jobPath=`/app/jobs/${jobId}`;
+ // Exactly four plain-language details, none of them tuning data, and the copy is hidden in focus mode.
+ assert.equal(await page.getByTestId('result-details').locator('> div').count(),4);
+ const tileText=(await page.getByTestId('result-details').innerText()).toLowerCase();
+ for(const w of ['crf','preset','vbv','maxrate','gop','x264','ffmpeg','sha','bitrate','kbps']) assert(!tileText.includes(w),'tile leaks '+w);
+ assert(await page.getByText('Prepare your video').count()===0,'headline hidden once a file is chosen');
+ assert(/^hasheemstudio_\d{8}_\d{6}\.mp4$/.test((await page.locator('.result-card__file').innerText()).trim()));guestWorkspace=(await db.query('select workspace_id from jobs where id=$1',[jobId])).rows[0].workspace_id;
  await page.getByRole('heading',{name:'Your video is ready'}).waitFor({timeout:120000});
  await page.screenshot({path:'docs/evidence/guest-download-gate/guest-result.png',fullPage:true});
  await page.getByRole('link',{name:'Sign in to download'}).click();
@@ -66,7 +73,7 @@ try{
  await page.waitForURL(base+jobPath);await page.getByRole('button',{name:'Download video',exact:true}).waitFor();
  const [download]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Download video',exact:true}).click()]);
  const stream=await download.createReadStream();let bytes=0;for await(const chunk of stream) bytes+=chunk.length;
- assert(bytes>0);assert.equal(download.suggestedFilename(),'hasheem-video.mp4');
+ assert(bytes>0);assert(/^hasheemstudio_\d{8}_\d{6}\.mp4$/.test(download.suggestedFilename()),download.suggestedFilename());
  const response={status:200,bytes};
  // Signed-in uploads still use real direct-to-storage TUS, and processing is allowed before quota gating.
  await page.goto(base+'/app/upload');await page.locator('input[type=file]').setInputFiles('tests/fixtures/media/synthetic-remux-test.mov');

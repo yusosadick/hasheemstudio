@@ -42,11 +42,12 @@ try {
   assert.equal(defaultChecked, true, "Platform-optimized must be preselected on the homepage");
   const [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.getByRole("button", { name: "Choose video", exact: true }).click()]);
   await chooser.setFiles(input);
-  await page.waitForURL("**/app/jobs/*", { timeout: 600_000 });
   await page.getByRole("heading", { name: "Your video is ready" }).waitFor({ timeout: 600_000 });
-  const badge = (await page.locator("span", { hasText: /Platform-optimized|Remux only|Kept as-is|H\.264\/AAC re-encoded/ }).first().innerText()).trim();
+  assert.equal(new URL(page.url()).pathname, "/", "result must appear on the homepage");
+  const badge = (await page.getByTestId("result-details").innerText()).replace(/\n+/g, " | ");
   const [download] = await Promise.all([page.waitForEvent("download", { timeout: 600_000 }), page.getByRole("button", { name: "Download video", exact: true }).click()]);
   await download.saveAs(out);
+  assert.match(download.suggestedFilename(), /^hasheemstudio_\d{8}_\d{6}\.mp4$/);
   const bytes = readFileSync(out);
   const result = {
     input, inputBytes: statSync(input).size, resultBadge: badge, recipeDefaultChecked: defaultChecked,

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from "react";
-import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { FileVideo, FileCheck, RefreshCw, Pause, Play, UploadCloud, X, Loader2 } from "lucide-react";
+import { FileVideo, FileCheck, RefreshCw, Pause, Play, UploadCloud, X, Loader2, Check } from "lucide-react";
 import "./ConversionHero.css";
 import { HeroBackdrop } from "./HeroBackdrop";
+import { ResultCard } from "./ResultCard";
 import { useVideoUpload, formatBytes, RECIPE_OPTIONS, type UploadStage } from "../hooks/useVideoUpload";
 
 const ACTIVE_STAGES = new Set<UploadStage>([
@@ -14,6 +14,23 @@ const ACTIVE_STAGES = new Set<UploadStage>([
   "processing",
   "verifying",
 ]);
+
+const TERMINAL_STAGES = new Set<UploadStage>(["succeeded", "failed", "expired"]);
+
+// Four plain steps for the stepper; several internal stages collapse onto one step.
+const STEPS = ["Upload", "Queue", "Process", "Verify"] as const;
+const STEP_OF: Partial<Record<UploadStage, number>> = { uploading: 0, finalizing: 1, creating_job: 1, queued: 1, processing: 2, verifying: 3, succeeded: 4 };
+
+// What the hero illustration is doing, per real pipeline stage.
+function scenePhase(stage: UploadStage): string {
+  if (stage === "uploading") return "upload";
+  if (stage === "finalizing" || stage === "creating_job" || stage === "queued") return "queue";
+  if (stage === "processing") return "process";
+  if (stage === "verifying") return "verify";
+  if (stage === "succeeded") return "done";
+  if (stage === "failed" || stage === "expired") return "failed";
+  return "idle";
+}
 
 const STAGE_LABEL: Record<UploadStage, string> = {
   idle: "",
@@ -35,21 +52,18 @@ export function ConversionHero() {
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
   const upload = useVideoUpload();
-  const { stage, file, progress, error, log, recipe, setRecipe, resumeNotice, jobId, handleFile, cancel, cancelling, dismissResumeNotice } = upload;
+  const { stage, file, progress, error, log, recipe, setRecipe, resumeNotice, jobId, job, reset, handleFile, cancel, cancelling, dismissResumeNotice } = upload;
 
   const active = ACTIVE_STAGES.has(stage);
   const canPick = stage === "idle" || stage === "error";
 
-  // Only the terminal success/failure/expiry states leave the page — the whole upload and
-  // processing pipeline plays out right here, then hands off to the real JobResult page (its own
-  // download gate, sign-in gate and verification report already exist there; not duplicated here).
-  useEffect(() => {
-    if (jobId && (stage === "succeeded" || stage === "failed" || stage === "expired")) {
-      navigate(`/app/jobs/${jobId}`);
-    }
-  }, [stage, jobId, navigate]);
+  // The whole pipeline — upload, processing and the finished result with its download button — plays out
+  // in this one card; nothing navigates away.
+  const terminal = TERMINAL_STAGES.has(stage);
+  const focus = active || terminal;
+  const phase = scenePhase(stage);
+  const step = STEP_OF[stage] ?? -1;
 
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
@@ -74,9 +88,10 @@ export function ConversionHero() {
   const barPercent = stage === "uploading" ? uploadPercent : 100;
 
   return (
-    <div className="conversion-hero">
+    <div className="conversion-hero" data-focus={focus || undefined}>
       <HeroBackdrop paused={paused} />
       <div className="conversion-hero__stage">
+        {!focus && (
         <div className="conversion-hero__copy">
           <p className="conversion-hero__eyebrow">Hasheem Studio video tools</p>
           <h1>Prepare your video<br className="conversion-hero__title-break" /> for upload</h1>
@@ -84,8 +99,9 @@ export function ConversionHero() {
             Inspect, fix compatibility issues, and create a platform-ready video—with a clear report of exactly what changed.
           </p>
         </div>
+        )}
 
-        <div className="conversion-scene" data-paused={paused}>
+        <div className="conversion-scene" data-paused={paused} data-phase={phase} style={{ ["--p" as string]: uploadPercent / 100 }}>
           <div className="conversion-scene__visual" role="img" aria-label="Illustration: prepare a MOV or MP4 video as a compatible MP4 with H.264 video and AAC audio.">
             <div className="conversion-scene__ring conversion-scene__ring--outer" />
             <div className="conversion-scene__ring conversion-scene__ring--inner" />
@@ -128,7 +144,11 @@ export function ConversionHero() {
         />
 
         <AnimatePresence mode="wait" initial={false}>
-          {canPick ? (
+          {terminal && job ? (
+            <motion.div key="result" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.22 }}>
+              <ResultCard jobId={job.id ?? jobId ?? ""} job={job} onReset={reset} />
+            </motion.div>
+          ) : canPick ? (
             <motion.div
               key="idle"
               initial={{ opacity: 0, y: 8 }}
@@ -201,6 +221,14 @@ export function ConversionHero() {
               >
                 <div className="hero-upload__progress-fill" style={{ width: `${barPercent}%` }} />
               </div>
+
+              <ol className="hero-upload__steps" aria-label="Progress">
+                {STEPS.map((label, i) => (
+                  <li key={label} data-state={i < step ? "done" : i === step ? "active" : "todo"} aria-current={i === step ? "step" : undefined}>
+                    <span>{i < step ? <Check size={11} strokeWidth={3} aria-hidden="true" /> : i + 1}</span>{label}
+                  </li>
+                ))}
+              </ol>
 
               <p className="hero-upload__status" role="status" aria-live="polite">
                 {STAGE_LABEL[stage]}

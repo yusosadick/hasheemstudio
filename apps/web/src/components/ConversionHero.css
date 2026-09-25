@@ -101,6 +101,56 @@
 @keyframes hs-travel { 0%, 8% { transform: translateX(-110%); opacity: 0; } 20% { opacity: 1; } 60%, 100% { transform: translateX(110%); opacity: 0; } }
 @keyframes hs-ripple { 0%, 12% { transform: scale(1); opacity: .6; } 70%, 100% { transform: scale(1.7); opacity: 0; } }
 @keyframes hs-output { 0%, 25%, 100% { box-shadow: 0 8px 24px rgb(255 107 53 / 5%); } 60% { box-shadow: 0 10px 30px rgb(255 107 53 / 18%); } }
+
+/* ── Focus mode: once a file is chosen the copy steps aside, the scene centres, and "Pause animations" sits
+   centred directly above the card with real breathing room. ───────────────────────────────────────────── */
+.conversion-hero[data-focus] .conversion-hero__stage { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 6px; padding: 8px 0 30px; animation: hs-focus-in .45s ease-out both; }
+.conversion-hero[data-focus] .conversion-scene { height: 236px; }
+.conversion-hero[data-focus] .conversion-scene__pause { position: static; transform: none; margin: 14px auto 0; width: fit-content; padding: 6px 14px; border-radius: 999px; border: 1px solid rgb(255 255 255 / 12%); background: rgb(255 255 255 / 3%); }
+.conversion-hero[data-focus] .conversion-scene { height: auto; display: flex; flex-direction: column; align-items: center; }
+.conversion-hero[data-focus] .conversion-scene__visual { position: relative; inset: auto; width: 100%; height: 236px; }
+.conversion-hero[data-focus] .hero-upload { margin-top: 0; }
+@keyframes hs-focus-in { from { opacity: .4; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+
+/* ── Stage-driven scene: the illustration reflects the real pipeline stage (data-phase). ─────────────── */
+.conversion-scene[data-phase="upload"] .conversion-bridge__line--out i,
+.conversion-scene[data-phase="queue"] .conversion-bridge__line--out i { animation: none; opacity: 0; }
+.conversion-scene[data-phase="upload"] .conversion-bridge__line:not(.conversion-bridge__line--out) i { animation: none; opacity: 1; transform: scaleX(var(--p, 0)); transform-origin: left; transition: transform .35s ease; }
+.conversion-scene[data-phase="upload"] .conversion-bridge__hub svg { animation-duration: 9s; }
+.conversion-scene[data-phase="upload"] .format-tile__face { animation-play-state: paused; }
+.conversion-scene[data-phase="upload"] .format-tile__face--mp4, .conversion-scene[data-phase="queue"] .format-tile__face--mp4, .conversion-scene[data-phase="process"] .format-tile__face--mp4 { opacity: 0; animation: none; }
+.conversion-scene[data-phase="upload"] .format-tile__face--mov, .conversion-scene[data-phase="queue"] .format-tile__face--mov, .conversion-scene[data-phase="process"] .format-tile__face--mov { opacity: 1; animation: none; }
+.conversion-scene[data-phase="queue"] .conversion-bridge__line:not(.conversion-bridge__line--out) i { animation: none; opacity: 1; transform: none; }
+.conversion-scene[data-phase="queue"] .conversion-bridge__hub svg { animation: hs-breathe 1.8s ease-in-out infinite; }
+.conversion-scene[data-phase="process"] .conversion-bridge__line i { animation-duration: 1.4s; }
+.conversion-scene[data-phase="process"] .conversion-bridge__hub svg { animation: hs-orbit .9s linear infinite; }
+.conversion-scene[data-phase="process"] .conversion-bridge__hub span { animation-duration: 1.4s; }
+.conversion-scene[data-phase="process"] .conversion-scene__ring--outer { animation-duration: 12s; }
+.conversion-scene[data-phase="process"] .conversion-scene__ring--inner { animation-duration: 8s; }
+.conversion-scene[data-phase="process"] .format-tile--output { animation-duration: 1.6s; }
+.conversion-scene[data-phase="verify"] .conversion-bridge__line i { animation: none; opacity: 1; transform: none; }
+.conversion-scene[data-phase="verify"] .conversion-bridge__hub svg { animation: none; }
+.conversion-scene[data-phase="verify"] .conversion-bridge__hub { animation: hs-breathe 1.2s ease-in-out infinite; border-color: rgb(255 107 53 / 70%); }
+.conversion-scene[data-phase="verify"] .format-tile--output { animation: hs-verify 1.2s ease-in-out infinite; }
+.conversion-scene[data-phase="done"] .conversion-bridge__line i { animation: none; opacity: 1; transform: none; }
+.conversion-scene[data-phase="done"] .conversion-bridge__hub svg, .conversion-scene[data-phase="done"] .conversion-bridge__hub span { animation: none; }
+.conversion-scene[data-phase="done"] .format-tile--output { animation: none; border-color: rgb(255 107 53 / 70%); box-shadow: 0 10px 40px rgb(255 0 110 / 26%); transform: scale(1.06); transition: transform .5s cubic-bezier(.2, 1.4, .4, 1), box-shadow .5s; }
+.conversion-scene[data-phase="done"] .conversion-bridge__hub { border-color: rgb(111 207 115 / 70%); color: #6fcf73; }
+.conversion-scene[data-phase="failed"] { filter: grayscale(.85) opacity(.7); }
+.conversion-scene[data-phase="failed"] * { animation: none !important; }
+@keyframes hs-breathe { 0%, 100% { transform: scale(1); opacity: .7; } 50% { transform: scale(1.1); opacity: 1; } }
+@keyframes hs-verify { 0%, 100% { box-shadow: 0 8px 24px rgb(255 107 53 / 8%); } 50% { box-shadow: 0 10px 38px rgb(111 207 115 / 34%); border-color: rgb(111 207 115 / 60%); } }
+
+/* Stepper */
+.hero-upload__steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 16px 0 0; padding: 0; list-style: none; }
+.hero-upload__steps li { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; color: var(--color-foreground-muted); position: relative; }
+.hero-upload__steps li::before { content: ""; position: absolute; top: 10px; right: 50%; width: 100%; height: 1px; background: rgb(255 255 255 / 12%); }
+.hero-upload__steps li:first-child::before { display: none; }
+.hero-upload__steps li[data-state="done"]::before, .hero-upload__steps li[data-state="active"]::before { background: var(--gradient-primary); }
+.hero-upload__steps li span { position: relative; z-index: 1; display: grid; place-items: center; width: 21px; height: 21px; border-radius: 50%; font-size: 10px; font-weight: 650; border: 1px solid rgb(255 255 255 / 16%); background: #1b1b1b; }
+.hero-upload__steps li[data-state="active"] { color: var(--color-foreground); }
+.hero-upload__steps li[data-state="active"] span { border-color: rgb(255 107 53 / 80%); color: #ff8a4c; box-shadow: 0 0 0 4px rgb(255 107 53 / 14%); animation: hs-breathe 1.6s ease-in-out infinite; }
+.hero-upload__steps li[data-state="done"] span { border-color: transparent; background: var(--gradient-primary); color: #fff; }
 @media (max-width: 1000px) { .conversion-hero__stage { gap: 28px; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); } .conversion-scene { width: 314px; } .format-tile { flex-basis: 94px; height: 106px; } .conversion-bridge { padding-inline: 8px; } }
 @media (max-width: 760px) {
   .landing-content { width: calc(100% - 40px); }
@@ -112,6 +162,8 @@
   .conversion-scene__ring--outer { width: 276px; height: 276px; }
   .conversion-scene__ring--inner { width: 206px; height: 206px; }
   .hero-upload { margin-top: -56px; padding: 28px 20px 22px; }
+  .conversion-hero[data-focus] .hero-upload { margin-top: 0; }
+  .conversion-hero[data-focus] .conversion-scene__visual { height: 218px; }
   .hero-upload h2 { font-size: 21px; }
   .conversion-hero { margin-bottom: 42px; }
 }
@@ -126,4 +178,7 @@
   .conversion-bridge__hub span, .conversion-bridge__line i, .conversion-scene__pause { display: none; }
   .hero-upload__progress[data-indeterminate="true"] .hero-upload__progress-fill { animation: none; position: static; width: 100% !important; opacity: .55; }
   .hero-upload__spin { animation: none; }
+  .hero-upload__steps li span { animation: none !important; }
+  .conversion-hero[data-focus] .conversion-scene__pause { display: none; }
+  .conversion-hero[data-focus] .conversion-hero__stage { animation: none; }
 }

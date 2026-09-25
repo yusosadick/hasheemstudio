@@ -105,9 +105,9 @@ try {
   await page.waitForURL("**/app/jobs/*", { timeout: 20000 });
   record("uploading through the real drag/drop UI navigates to a real job page", true, page.url());
 
-  await page.waitForSelector("text=/Job complete|Job failed|Job cancelled/", { timeout: 60000 });
-  const heading = await page.locator("h1").first().textContent();
-  record("job reaches a terminal state in the real rendered UI", heading?.includes("Job complete"), heading ?? "");
+  await page.waitForSelector("text=/Your video is ready|We couldn.t prepare this video/", { timeout: 60000 });
+  const heading = await page.locator("h2").first().textContent();
+  record("job reaches a terminal state in the real rendered UI", heading?.includes("Your video is ready"), heading ?? "");
 
   const downloadButton = page.getByRole("button", {name:"Download video", exact:true});
   const hasDownload = (await downloadButton.count()) > 0;
@@ -119,8 +119,8 @@ try {
     record("the gated browser action downloads real bytes", bytes>10000, `${bytes} bytes`);
   }
 
-  const verificationVisible = (await page.locator("text=Verification report").count()) > 0;
-  record("verification report is rendered in the real UI", verificationVisible);
+  const tiles = await page.getByTestId("result-details").locator("> div").count();
+  record("result summary shows exactly four plain-language details (no raw report)", tiles === 4 && (await page.locator("pre").count()) === 0, `${tiles} tiles`);
 
   const evidenceDir = join(repoRoot, "docs", "evidence", "phase4-browser-e2e");
   if (!existsSync(evidenceDir)) mkdirSync(evidenceDir, { recursive: true });

@@ -14,6 +14,7 @@
 import { readFileSync, writeFileSync, statSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { basename } from "node:path";
+import pg from "pg";
 import { tusUploadFile } from "../lib/tus-client.mjs";
 
 function arg(name, fallback = null) {
@@ -69,11 +70,16 @@ try {
     writeFileSync(outPath, bytes);
     outputBytes = bytes.length;
   }
+  // The API deliberately redacts the report; the full checks (plan, sizes, timings) are read from the DB.
+  const dbc = new pg.Client({ host: "127.0.0.1", port: Number(env.POSTGRES_PORT), user: "postgres.hasheemstudio", password: env.POSTGRES_PASSWORD, database: env.POSTGRES_DB });
+  await dbc.connect();
+  const rep = (await dbc.query("select verification_level, checks from verification_reports where job_id=$1 order by created_at desc limit 1", [job.jobId])).rows[0] ?? null;
+  await dbc.end();
   const result = {
     input: basename(input), inputBytes: statSync(input).size, recipe, jobId: job.jobId,
     status: view.status, errorMessage: view.errorMessage, processingSeconds, outputBytes,
-    verificationChecks: view.verificationReport?.checks ?? null,
-    verificationLevel: view.verificationReport?.verification_level ?? null,
+    verificationChecks: rep?.checks ?? null,
+    verificationLevel: rep?.verification_level ?? null,
   };
   console.log("RESULT " + JSON.stringify(result));
   if (view.status !== expectStatus) { console.error(`FAIL: expected status ${expectStatus}, got ${view.status} (${view.errorMessage})`); process.exitCode = 1; }
