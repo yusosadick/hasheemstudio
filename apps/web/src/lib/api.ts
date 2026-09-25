@@ -62,6 +62,17 @@ export async function createJob(mediaAssetId: string, recipe: "inspect" | "remux
   return res.json();
 }
 
+export interface JobSummary {
+  verified: boolean;
+  inputBytes: number | null;
+  outputBytes: number | null;
+  reductionPercent: number | null;
+  format: { container: "MP4"; video: string | null; audio: string | null };
+  platformReady: boolean;
+  underWhatsAppLimit: boolean | null;
+  completedAt: string | null;
+}
+
 export interface JobView {
   id: string;
   status: string;
@@ -69,6 +80,8 @@ export interface JobView {
   attemptCount: number;
   errorMessage: string | null;
   verificationReport: Record<string, unknown> | null;
+  summary: JobSummary | null;
+  updatedAt?: string;
   downloadUrl: string | null;
   hasOutput: boolean;
   requiresLogin: boolean;
@@ -90,8 +103,8 @@ export async function cancelJob(jobId: string): Promise<void> {
 export class DownloadError extends Error {
   constructor(message: string, public code: string, public resetAt?: string) { super(message); }
 }
-export async function requestDownload(jobId: string): Promise<string> {
-  const res = await authedFetch(`/v1/jobs/${jobId}/download`, {method:"POST"});
+export async function requestDownload(jobId: string, fileName?: string): Promise<string> {
+  const res = await authedFetch(`/v1/jobs/${jobId}/download`, {method:"POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(fileName ? {fileName} : {})});
   const data = await res.json();
   if (!res.ok) throw new DownloadError(data.message ?? "Could not unlock this download. Please try again.", data.error, data.resetAt);
   if (data.guestClaimed) clearGuest();

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test src/payments/snippe.test.ts"
+    "test": "node --import tsx --test src/payments/snippe.test.ts src/publicReport.test.ts"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",

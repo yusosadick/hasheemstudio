@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { randomUUID } from "node:crypto";
 import { getPool } from "../db.js";
 import { requireActor, canAccessWorkspace, canAccessJob } from "../actor.js";
+import { publicVerificationReport, buildJobSummary } from "../publicReport.js";
 
 interface Plan {
   id: string;
@@ -132,7 +133,7 @@ export async function jobsRoutes(app: FastifyInstance): Promise<void> {
     const pool = getPool();
 
     const jobRes = await pool.query(
-      `select j.*, ma.object_key as input_object_key from jobs j
+      `select j.*, ma.object_key as input_object_key, ma.size_bytes as input_size_bytes from jobs j
        join media_assets ma on ma.id = j.media_asset_id
        where j.id = $1`,
       [id],
@@ -158,7 +159,8 @@ export async function jobsRoutes(app: FastifyInstance): Promise<void> {
       errorMessage: job.error_message,
       createdAt: job.created_at,
       updatedAt: job.updated_at,
-      verificationReport: reportRes.rows[0] ?? null,
+      verificationReport: publicVerificationReport(reportRes.rows[0]),
+      summary: buildJobSummary(job, reportRes.rows[0], job.input_size_bytes !== null && job.input_size_bytes !== undefined ? Number(job.input_size_bytes) : null),
       downloadUrl: null,
       hasOutput: Boolean(job.output_object_key),
       requiresLogin: !request.userId,

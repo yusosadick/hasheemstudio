@@ -4,6 +4,7 @@ import { requireActor, canAccessJob } from "../actor.js";
 import { getPool } from "../db.js";
 import { resolvePersonalWorkspaceId } from "../workspace.js";
 import { createSignedDownloadUrl } from "../storage.js";
+import { safeOutputFileName } from "../publicReport.js";
 
 export async function downloadsRoutes(app: FastifyInstance): Promise<void> {
   app.post("/v1/jobs/:id/download", { preHandler: requireActor }, async (request, reply) => {
@@ -12,7 +13,7 @@ export async function downloadsRoutes(app: FastifyInstance): Promise<void> {
     const { id } = request.params as { id: string };
     if (!/^[0-9a-f-]{36}$/i.test(id)) return reply.code(400).send({ error: "invalid_job_id" });
     const pool = getPool();
-    const result = await pool.query(`select j.*, ma.size_bytes from jobs j join media_assets ma on ma.id=j.media_asset_id where j.id=$1`, [id]);
+    const result = await pool.query(`select j.*, ma.size_bytes, (select vr.created_at from verification_reports vr where vr.job_id=j.id order by vr.created_at desc limit 1) as completed_at from jobs j join media_assets ma on ma.id=j.media_asset_id where j.id=$1`, [id]);
     const job = result.rows[0];
     if (!job) return reply.code(404).send({ error: "not_found" });
     if (!await canAccessJob(request, job)) return reply.code(403).send({ error: "forbidden" });
@@ -77,7 +78,10 @@ export async function downloadsRoutes(app: FastifyInstance): Promise<void> {
       // file; this is still a single-use, per-job, auth-gated grant, not a public/indefinite link.
       const DOWNLOAD_URL_EXPIRY_SECONDS = 7200;
       const signed = new URL(await createSignedDownloadUrl(output.output_object_key, DOWNLOAD_URL_EXPIRY_SECONDS));
-      signed.searchParams.set("download", "hasheem-video.mp4");
+      // hasheemstudio_YYYYMMDD_HHmmss.mp4 — the client sends the completion time in the user's local time zone;
+      // anything not matching that exact shape is replaced by a UTC name from the same completion time.
+      const requestedName = (request.body as { fileName?: unknown } | undefined | null)?.fileName;
+      signed.searchParams.set("download", safeOutputFileName(requestedName, job.completed_at));
       const downloadUrl = signed.toString();
       await client.query("commit");
       return { downloadUrl, expiresIn: DOWNLOAD_URL_EXPIRY_SECONDS, guestClaimed: request.guestWorkspaceId === job.workspace_id };
