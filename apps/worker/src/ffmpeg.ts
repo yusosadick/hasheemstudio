@@ -244,6 +244,21 @@ export async function compatEncode(inputPath: string, outputPath: string, opts: 
   return { stderr: stderr ?? "" };
 }
 
+// HDR (PQ/HLG, BT.2020) -> SDR (BT.709) tone-mapping via libzimg + the tonemap filter. Runs in 32-bit float
+// linear light, so it is slow; the frame is shrunk to the output size BEFORE this chain so it works on the
+// smallest possible picture. Input colour properties (transfer/primaries/matrix) are read by zscale from
+// the frame tags, so the same chain handles PQ (HDR10 / Dolby Vision base) and HLG (iPhone default).
+export const TONEMAP_HDR_TO_SDR =
+  "zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p";
+
+export function platformVideoFilters(plan: Pick<PlatformPlan, "downscaled" | "outWidth" | "outHeight" | "fpsCapped" | "outFps">, toneMap: boolean): string {
+  const filters: string[] = [];
+  if (plan.downscaled) filters.push(`scale=${plan.outWidth}:${plan.outHeight}`);
+  if (plan.fpsCapped) filters.push(`fps=${plan.outFps}`);
+  filters.push(toneMap ? TONEMAP_HDR_TO_SDR : "format=yuv420p");
+  return filters.join(",");
+}
+
 // platform_optimize: a re-encode whose rate control is a *capped CRF* (constant quality, but never above
 // the per-resolution/fps ceiling from planPlatformProfile). Every choice below maps to a documented
 // platform constraint (sources in platformProfile.ts / docs/ARCHITECTURE.md):
@@ -258,15 +273,13 @@ export async function platformOptimize(
   plan: PlatformPlan,
   preset: string,
   timeoutMs: number = MAX_PROCESS_MS,
+  toneMap: boolean = false,
 ): Promise<{ stderr: string }> {
   assertWithinScratch(inputPath, dirname(inputPath));
   assertWithinScratch(outputPath, dirname(outputPath));
 
   // Filters run after ffmpeg's automatic rotation, so plan.outWidth/outHeight are display dimensions.
-  const filters: string[] = [];
-  if (plan.downscaled) filters.push(`scale=${plan.outWidth}:${plan.outHeight}`);
-  if (plan.fpsCapped) filters.push(`fps=${plan.outFps}`);
-  filters.push("format=yuv420p");
+  const vf = platformVideoFilters(plan, toneMap);
 
   const args = [
     "-nostdin", "-y", "-v", "warning",
@@ -274,7 +287,7 @@ export async function platformOptimize(
     "-i", inputPath,
     "-map", "0:v:0",
     "-map", "0:a:0?",
-    "-vf", filters.join(","),
+    "-vf", vf,
     "-c:v", "libx264",
     "-preset", preset,
     "-profile:v", "main",

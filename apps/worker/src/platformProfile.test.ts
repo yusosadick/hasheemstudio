@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { planPlatformProfile, choosePreset, MIN_VIDEO_KBPS, INSTAGRAM_MAX_VIDEO_KBPS } from "./platformProfile.js";
-import { displayDimensions } from "./ffmpeg.js";
+import { displayDimensions, platformVideoFilters, TONEMAP_HDR_TO_SDR } from "./ffmpeg.js";
 
 const plan = (w: number, h: number, fps: number | null, kbps: number | null = null) =>
   planPlatformProfile({ displayWidth: w, displayHeight: h, frameRate: fps, sourceVideoKbps: kbps });
@@ -117,4 +117,25 @@ test("a 10-minute 4K clip is refused up front instead of failing after eight-min
 test("free-tier ceiling (2 minutes of 1080p60) is always accepted", () => {
   const p = plan(1920, 1080, 60, 6700);
   assert.equal(choosePreset(p, work(120, 1920, 1080, 60)).ok, true);
+});
+
+test("SDR filter chain: shrink first, cap fps, then plain yuv420p — never the tone-map chain", () => {
+  const f = platformVideoFilters(plan(3840, 2160, 120), false);
+  assert.equal(f, "scale=1920:1080,fps=60,format=yuv420p");
+  assert.ok(!f.includes("tonemap"));
+});
+
+test("HDR filter chain shrinks BEFORE tone-mapping (float32 pass runs on the smallest picture) and ends 8-bit BT.709", () => {
+  const f = platformVideoFilters(plan(3840, 2160, 30), true);
+  assert.ok(f.startsWith("scale=1920:1080,"));
+  assert.ok(f.endsWith(TONEMAP_HDR_TO_SDR));
+  assert.ok(f.includes("tonemap=tonemap=hable"));
+  assert.ok(f.includes("zscale=t=bt709:m=bt709:r=tv,format=yuv420p"));
+});
+
+test("tone-mapping raises the predicted time; a 4K HDR clip of the free-tier size is still accepted", () => {
+  const p = plan(3840, 2160, 30, 50_000);
+  const base = choosePreset(p, work(16, 3840, 2160, 30));
+  const hdr = choosePreset(p, { ...work(16, 3840, 2160, 30), toneMap: true });
+  assert.ok(base.ok && hdr.ok && hdr.predictedSeconds > base.predictedSeconds);
 });

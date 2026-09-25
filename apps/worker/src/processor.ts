@@ -192,16 +192,11 @@ export async function processJob(jobId: string): Promise<void> {
     let framesReEncoded: boolean;
     let checks: Record<string, unknown>;
 
-    // Interim until HDR->SDR tone-mapping ships: an HDR source asked to be platform-optimized is delivered
-    // as a remux (kept as-is, colours intact) instead of failing, and the report says so.
-    const hdrFallback = claimed.recipe === "platform_optimize" && metadata.isHdr;
-    const effectiveRecipe = hdrFallback ? "remux" : claimed.recipe;
-
-    if (effectiveRecipe === "inspect") {
+    if (claimed.recipe === "inspect") {
       verificationLevel = "metadata_probe_only";
       framesReEncoded = false;
       checks = { probed: metadata };
-    } else if (effectiveRecipe === "remux") {
+    } else if (claimed.recipe === "remux") {
       const outputPath = join(scratchDir, "output.mp4");
       const remuxResult = await remux(inputPath, outputPath);
       const decode = await decodeCheck(outputPath);
@@ -222,7 +217,6 @@ export async function processJob(jobId: string): Promise<void> {
         inputStreams: { video: metadata.videoCodec, audio: metadata.audioCodec },
         outputStreams: { video: outputMetadata.videoCodec, audio: outputMetadata.audioCodec },
         streamsUnchanged: metadata.videoCodec === outputMetadata.videoCodec && metadata.audioCodec === outputMetadata.audioCodec,
-        ...(hdrFallback ? { recipeFallback: { requested: "platform_optimize", used: "remux", reason: "HDR (PQ/HLG) source: kept as-is so colours are not washed out; HDR-to-SDR conversion is not available yet" } } : {}),
       };
 
       if (!decode.ok || !durationOk) {
@@ -248,7 +242,7 @@ export async function processJob(jobId: string): Promise<void> {
       }
 
       await uploadObject(outputObjectKey, outputBuffer, "video/mp4");
-    } else if (effectiveRecipe === "compat_encode") {
+    } else if (claimed.recipe === "compat_encode") {
       const outputPath = join(scratchDir, "output.mp4");
       const encodeResult = await compatEncode(inputPath, outputPath, { sourceFrameRate: metadata.frameRate });
       const decode = await decodeCheck(outputPath);
@@ -314,12 +308,7 @@ export async function processJob(jobId: string): Promise<void> {
       }
 
       await uploadObject(outputObjectKey, outputBuffer, "video/mp4");
-    } else if (effectiveRecipe === "platform_optimize") {
-      if (metadata.isHdr) {
-        throw new Error(
-          "This video uses HDR (PQ/HLG) colour. Platform optimization does not tone-map HDR to SDR yet, and re-encoding it unchanged would wash out the colours. Use \"Compatible MP4 remux\" to keep it as-is, or export an SDR version and upload that.",
-        );
-      }
+    } else if (claimed.recipe === "platform_optimize") {
       if (!metadata.displayWidth || !metadata.displayHeight) {
         throw new Error("Could not read this video's dimensions, so it can't be platform-optimized. Please re-export the video and try again.");
       }
@@ -337,6 +326,7 @@ export async function processJob(jobId: string): Promise<void> {
         inputWidth: metadata.width ?? metadata.displayWidth,
         inputHeight: metadata.height ?? metadata.displayHeight,
         inputFps: metadata.frameRate,
+        toneMap: metadata.isHdr,
       });
       if (!presetChoice.ok) {
         throw new Error(
@@ -346,7 +336,7 @@ export async function processJob(jobId: string): Promise<void> {
       const preset = presetChoice.preset;
       const outputPath = join(scratchDir, "output.mp4");
       const encodeStartedAt = Date.now();
-      const encodeResult = await platformOptimize(inputPath, outputPath, plan, preset, PLATFORM_OPTIMIZE_TIMEOUT_MS);
+      const encodeResult = await platformOptimize(inputPath, outputPath, plan, preset, PLATFORM_OPTIMIZE_TIMEOUT_MS, metadata.isHdr);
       const encodeSeconds = Math.round((Date.now() - encodeStartedAt) / 100) / 10;
       const decode = await decodeCheck(outputPath);
       const outputBuffer = await readFile(outputPath);
@@ -384,6 +374,7 @@ export async function processJob(jobId: string): Promise<void> {
         outputIsH264: isH264,
         outputIsAac: isAac,
         dimensionsAsPlanned,
+        toneMappedFromHdr: metadata.isHdr,
         plan: { ...plan, preset, sourceVideoKbps: sourceVideoKbps === null ? null : Math.round(sourceVideoKbps) },
         timings: { encodeSeconds, predictedSeconds: presetChoice.predictedSeconds },
         sizes: {

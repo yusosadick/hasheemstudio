@@ -132,6 +132,9 @@ export function planPlatformProfile(input: PlatformInput): PlatformPlan {
 // 61.7 vs 80.0 on hard 1080p50 content).
 const DECODE_MPIX_PER_S = 60;
 const ENCODE_MPIX_PER_S: Record<string, number> = { faster: 45, veryfast: 80 };
+// HDR->SDR tone-mapping (float32 linear light) at the OUTPUT size adds roughly 0.02-0.04 s per 1080p frame
+// (measured: +30% to +56% on 4K HDR10 clips, i.e. 50-106 MP/s); 45 MP/s is used, conservatively.
+const TONEMAP_MPIX_PER_S = 45;
 
 /** Per-process ffmpeg timeout for this recipe; must stay below the worker's 10-minute job lease. */
 export const PLATFORM_OPTIMIZE_TIMEOUT_MS = 8 * 60_000;
@@ -141,6 +144,8 @@ export interface WorkloadInput {
   inputWidth: number;
   inputHeight: number;
   inputFps: number | null;
+  /** HDR source: adds the tone-mapping pass to the estimate. */
+  toneMap?: boolean;
 }
 
 export function estimateEncodeSeconds(plan: Pick<PlatformPlan, "outWidth" | "outHeight" | "outFps">, w: WorkloadInput, preset: string): number {
@@ -148,7 +153,8 @@ export function estimateEncodeSeconds(plan: Pick<PlatformPlan, "outWidth" | "out
   const inFps = w.inputFps && w.inputFps > 0 ? w.inputFps : 30;
   const decode = (seconds * inFps * w.inputWidth * w.inputHeight) / 1e6 / DECODE_MPIX_PER_S;
   const encode = (seconds * plan.outFps * plan.outWidth * plan.outHeight) / 1e6 / ENCODE_MPIX_PER_S[preset];
-  return decode + encode;
+  const tone = w.toneMap ? (seconds * plan.outFps * plan.outWidth * plan.outHeight) / 1e6 / TONEMAP_MPIX_PER_S : 0;
+  return decode + encode + tone;
 }
 
 export type PresetChoice = { ok: true; preset: string; predictedSeconds: number } | { ok: false; predictedSeconds: number };

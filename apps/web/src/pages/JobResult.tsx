@@ -65,7 +65,7 @@ export default function JobResult() {
         </h1>
         {job.status === "succeeded" && (
           <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-3 py-1 text-sm font-medium text-success">
-            <IconCheckCircle width={16} height={16} /> {String(job.verificationReport?.verification_level ?? "").startsWith("remux") && job.recipe !== "remux" ? "Kept as-is (HDR) — no re-encode" : recipeSummary(job.recipe)}
+            <IconCheckCircle width={16} height={16} /> {recipeSummary(job.recipe)}
           </span>
         )}
         {job.status === "failed" && (
