@@ -198,3 +198,6 @@
 /* Focus mode: the eyebrow keeps its original left-edge position instead of following the centred scene. */
 .conversion-hero[data-focus] .conversion-hero__copy { position: absolute; left: 0; top: 16px; padding: 0; text-align: left; }
 .conversion-hero[data-focus] .conversion-hero__eyebrow { margin-bottom: 0; }
+/* Focus mode: the orbit rings must end exactly at the card's top edge (visual bottom + pill 8px gap + pill height − 15px overlap), never draw over it. */
+.conversion-hero[data-focus] .conversion-scene__visual { clip-path: inset(-400px -400px -23px -400px); }
+@media (max-width: 760px) { .conversion-hero[data-focus] .conversion-hero__stage { padding-top: 40px; } }
