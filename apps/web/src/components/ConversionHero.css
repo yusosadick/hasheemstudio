@@ -188,9 +188,9 @@
 /* A small light that travels around the card while work is in progress. */
 @property --hs-angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
 .hero-upload[data-busy]::after { content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1.5px; pointer-events: none;
-  background: conic-gradient(from var(--hs-angle), transparent 0 84%, rgb(255 0 110 / 0%) 84%, #ff006e 94%, #ff8a4c 99%, transparent 100%);
+  background: conic-gradient(from var(--hs-angle), transparent 0 92%, rgb(255 0 110 / 0%) 92%, #ff006e 97%, #ff8a4c 99.5%, transparent 100%);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
-  animation: hs-revolve 3.2s linear infinite; filter: drop-shadow(0 0 6px rgb(255 107 53 / 70%)); }
+  animation: hs-revolve 6.5s linear infinite; filter: drop-shadow(0 0 6px rgb(255 107 53 / 70%)); }
 @keyframes hs-revolve { to { --hs-angle: 360deg; } }
 .conversion-hero:has(.conversion-scene[data-paused="true"]) .hero-upload[data-busy]::after { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) { .hero-upload[data-busy]::after { animation: none; --hs-angle: 40deg; } }
