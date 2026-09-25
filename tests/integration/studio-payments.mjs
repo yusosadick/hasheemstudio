@@ -20,7 +20,7 @@ async function webhook(e,{timestamp=String(Math.floor(Date.now()/1000)),invalid=
 async function download(a,j){return app.inject({method:'POST',url:`/v1/jobs/${j}/download`,headers:a.headers});}
 try{
  const a=await account(),b=await account(),j=await job(a),second=await job(a),third=await job(a),fourth=await job(a),id=await intent(a,j),e=event(id);
- {const cat=(await app.inject({url:'/v1/payments/plans'})).json();assert.equal(cat.available,false);assert.deepEqual(cat.plans.map(p=>[p.code,p.amountTzs,p.videos,p.days]),[['weekly',2000,20,7],['monthly',5000,50,30]]);}
+ {const cat=(await app.inject({url:'/v1/payments/plans'})).json();assert.equal(cat.available,false);assert.deepEqual(cat.plans.map(p=>[p.code,p.amountTzs,p.videos,p.days]),[['weekly',5000,20,7],['monthly',19900,50,30]]);}
  assert.equal((await app.inject({method:'POST',url:'/v1/payments',headers:a.headers,payload:{planCode:'weekly',method:'mobile',phone:'255700000000',firstname:'Test',lastname:'Fixture'}})).statusCode,503);checks.push('checkout disabled; no outbound charge');
  assert.equal((await download(a,j)).statusCode,200);assert.equal((await download(a,second)).statusCode,429);checks.push('free allowance enforced before payment');
  assert.equal((await webhook(e,{invalid:true})).statusCode,401);assert.equal((await webhook(e,{timestamp:String(Math.floor(Date.now()/1000)-301)})).statusCode,401);

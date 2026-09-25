@@ -159,8 +159,8 @@ const terms = {
       "The plans currently offered are:",
       { list: [
         "Free: 1 video download per day (UTC day), up to 100 MB and 2 minutes per video, up to 1080p at 60 frames per second.",
-        "Weekly: 2,000 Tanzanian shillings (TZS) for up to 20 video downloads within 7 days.",
-        "Monthly: 5,000 TZS for up to 50 video downloads within 30 days.",
+        "Weekly: 5,000 Tanzanian shillings (TZS) for up to 20 video downloads within 7 days.",
+        "Monthly: 19,900 TZS for up to 50 video downloads within 30 days.",
       ] },
       "On the free plan you prepare one video at a time: download your prepared video (or let it expire) before starting another. Paid plans add to, and do not replace, the free daily video. A “video download” is one distinct processed video that you unlock; downloading the same video again does not use more of your allowance. Unused videos do not carry over after a plan expires. Plan availability, prices and limits may change; changes do not affect a plan you have already paid for. Prices include applicable taxes unless we state otherwise.",
     ] },

@@ -13,7 +13,7 @@ const admin = { apikey: env.SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SERVI
 const email = `plans-${randomUUID()}@example.invalid`, password = `Pl1!${randomUUID()}`;
 const user = await (await fetch(`${gw}/auth/v1/admin/users`, { method: "POST", headers: admin, body: JSON.stringify({ email, password, email_confirm: true }) })).json();
 const dir = "docs/evidence/plans-ui"; mkdirSync(dir, { recursive: true });
-const catalogue = (available) => ({ available, currency: "TZS", free: { videosPerDay: 1 }, plans: [{ code: "weekly", name: "Weekly", amountTzs: 2000, days: 7, videos: 20 }, { code: "monthly", name: "Monthly", amountTzs: 5000, days: 30, videos: 50 }] });
+const catalogue = (available) => ({ available, currency: "TZS", free: { videosPerDay: 1 }, plans: [{ code: "weekly", name: "Weekly", amountTzs: 5000, days: 7, videos: 20 }, { code: "monthly", name: "Monthly", amountTzs: 19900, days: 30, videos: 50 }] });
 const browser = await chromium.launch({ headless: true });
 try {
   for (const [name, vp] of [["desktop", { width: 1440, height: 1000 }], ["mobile", { width: 390, height: 844 }]]) {
@@ -22,7 +22,7 @@ try {
     await page.goto(base + "/"); await page.locator("#pricing").scrollIntoViewIfNeeded();
     const cards = page.locator(".plan-card"); assert.equal(await cards.count(), 3);
     const text = await page.locator("#pricing").innerText();
-    for (const t of ["2,000", "5,000", "20", "50", "7 days", "30 days", "Most popular", "1 video a day"]) assert(text.includes(t), `pricing shows ${t}`);
+    for (const t of ["5,000", "19,900", "20", "50", "7 days", "30 days", "Most popular", "1 video a day"]) assert(text.includes(t), `pricing shows ${t}`);
     assert.equal(await page.getByRole("button", { name: "Opening soon" }).count(), 2);
     await page.locator("#pricing").screenshot({ path: `${dir}/${name}-pricing-not-live.png` });
     await ctx.close();
@@ -41,11 +41,11 @@ try {
     await p2.goto(base + "/"); await p2.locator("#pricing").scrollIntoViewIfNeeded();
     await p2.getByRole("button", { name: "Get Monthly" }).click();
     const dlg = p2.getByRole("dialog"); await dlg.waitFor();
-    assert((await dlg.innerText()).includes("5,000 TSh"));
+    assert((await dlg.innerText()).includes("19,900 TSh"));
     await p2.waitForTimeout(450);
     await p2.screenshot({ path: `${dir}/${name}-checkout-form.png` });
     await dlg.getByLabel("First name").fill("Amina"); await dlg.getByLabel("Last name").fill("Test"); await dlg.getByLabel("Mobile money number").fill("255 712 345 678");
-    await dlg.getByRole("button", { name: /Pay 5,000 TSh/ }).click();
+    await dlg.getByRole("button", { name: /Pay 19,900 TSh/ }).click();
     await dlg.getByText("Approve on your phone").waitFor();
     assert.deepEqual(posted, { planCode: "monthly", method: "mobile", phone: "255712345678", firstname: "Amina", lastname: "Test" });
     await p2.screenshot({ path: `${dir}/${name}-checkout-waiting.png` });

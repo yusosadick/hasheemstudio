@@ -41,9 +41,9 @@ const T = {
   dTileEdge: '#2F3542',
 };
 
-const ASSET_V = '3';
+const ASSET_V = '4';
 const ASSET_BASE = 'https://hasheemstudio.com/auth-email-assets';
-const MASTHEAD = `${ASSET_BASE}/email-masthead.png?v=${ASSET_V}`;
+const MASTHEAD = `${ASSET_BASE}/email-masthead.jpg?v=${ASSET_V}`;
 
 const SITE_URL = 'https://hasheemstudio.com';
 const SITE_LABEL = 'hasheemstudio.com';

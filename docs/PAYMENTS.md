@@ -49,11 +49,28 @@ query strings and local state never authorize a download. Physical payment evide
 | Plan | Price | Quota | Window |
 |---|---|---|---|
 | Free | 0 | 1 video / day (unchanged, 100 MB, 2 min, 1080p60) | daily, UTC |
-| Weekly | 2,000 TZS | 20 videos | 7 days |
-| Monthly | 5,000 TZS | 50 videos | 30 days |
+| Weekly | 5,000 TZS | 20 videos | 7 days |
+| Monthly | 19,900 TZS | 50 videos | 30 days |
 
 - Terms live in code (`PAID_PLANS` in `apps/api/src/payments/snippe.ts`); the browser sends only a plan **code**. Prices/quota/duration are snapshotted onto `payment_intents` and `paid_entitlements` at purchase.
 - Account-level checkout (no job needed). One open attempt per account; 5 initiations/day. `GET /v1/payments/plans` (public catalogue + `available`), `GET /v1/payments/entitlement` (free use today + paid remaining), `POST /v1/payments {planCode,method:'mobile',phone,firstname,lastname}`.
 - Download gate: the free daily video is used first; once it is used, one paid video is charged to the earliest-expiring active entitlement (`download_grants.entitlement_id`). Re-downloading an already-granted job never charges again. Expired/revoked/exhausted entitlements deny immediately.
 - Mobile money only. Card stays disabled.
 - **Checkout is OFF in production**: `STUDIO_CHECKOUT_ENABLED`/`STUDIO_PAYMENT_APPROVED` are false and no Snippe credentials are provisioned. The pricing UI shows the plans with "Opening soon" and cannot start a charge. The `STUDIO_PLAN_*` env vars are no longer read.
+
+## Go-live checklist (needs the owner; nothing here was done by an agent)
+Prices are now **Weekly 5,000 TZS / 20 videos / 7 days** and **Monthly 19,900 TZS / 50 videos / 30 days** (2026-09-25).
+The whole chain is proven against a fake provider (`pnpm test:checkout`, 8 checks: exact provider request, pending state,
+signed webhook, plan activation, paid downloads, failure/retry, forged/wrong-amount rejection). What remains is real credentials:
+1. **Credentials.** This repo's rule is that Studio never copies another project's secrets from its environment, containers or
+   database. Use the Snippe vault item you approve for Studio: run `bw unlock` in your own terminal, then
+   `./scripts/ops/fetch-vaultwarden-secret.sh "<item>" SNIPPE_API_KEY /etc/hasheemstudio/local.env` and the same for
+   `SNIPPE_WEBHOOK_SECRET`. (If Studio and Gaming share one Snippe merchant account this is the same key/secret; that is the
+   owner's decision, and payments will then appear in that shared account.)
+2. **Enable.** `./scripts/ops/enable-checkout.sh` sets `STUDIO_PAYMENT_METHODS=mobile`, `STUDIO_PAYMENT_APPROVED=true`,
+   `STUDIO_CHECKOUT_ENABLED=true`, recreates only the `api` container and waits for `/v1/payments/plans` to report `available:true`.
+3. **Webhook.** In Snippe, the webhook for these payments is `https://api.hasheemstudio.com/webhooks/snippe` (each payment also
+   carries this URL per request). Its signing secret must equal `SNIPPE_WEBHOOK_SECRET`. Studio ignores events whose metadata is not
+   `product: hasheemstudio`; check that the Gaming webhook likewise ignores Studio events if both are attached to one account.
+4. **One real small payment** with a test recipient, then confirm the plan appears on the pricing page ("N of N videos left").
+Until step 2 is done the site shows the plans with "Opening soon" and cannot start a charge.

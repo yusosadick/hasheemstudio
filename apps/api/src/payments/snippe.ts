@@ -1,12 +1,12 @@
 import {createHmac, timingSafeEqual} from 'node:crypto';
 export const PAYMENT_BASE='https://api.snippe.sh';
-// Owner-approved commercial terms (2026-09-25). Prices, quotas and durations live in code so a client can never
+// Owner-approved commercial terms (prices updated 2026-09-25: weekly 5,000 TZS, monthly 19,900 TZS). Prices, quotas and durations live in code so a client can never
 // choose them; only the plan *code* travels from the browser.
 export type PlanCode='weekly'|'monthly';
 export type PaidPlan={code:PlanCode;name:string;amount:number;durationSeconds:number;days:number;videos:number};
 export const PAID_PLANS:Record<PlanCode,PaidPlan>={
- weekly:{code:'weekly',name:'Weekly',amount:2000,durationSeconds:7*86400,days:7,videos:20},
- monthly:{code:'monthly',name:'Monthly',amount:5000,durationSeconds:30*86400,days:30,videos:50},
+ weekly:{code:'weekly',name:'Weekly',amount:5000,durationSeconds:7*86400,days:7,videos:20},
+ monthly:{code:'monthly',name:'Monthly',amount:19900,durationSeconds:30*86400,days:30,videos:50},
 };
 export function findPlan(code:unknown):PaidPlan|null {return typeof code==='string'&&Object.hasOwn(PAID_PLANS,code)?PAID_PLANS[code as PlanCode]:null;}
 /** Checkout is only live when the operator has provisioned credentials and explicitly enabled + approved it. */
@@ -36,11 +36,18 @@ export function paymentBody(p:{id:string;jobId?:string;amount:number;method:'mob
  }
  return {payment_type:p.method,details,phone_number:p.phone,customer:p.customer,webhook_url:webhookUrl,metadata:{studio_payment_intent:p.id,product:'hasheemstudio'}};
 }
+/** The provider origin. Production always uses the fixed Snippe origin; a loopback http override exists ONLY so the
+ *  integration test can stand in for the provider (a remote/https override is ignored, so it cannot be abused for SSRF). */
+export function providerBase(env:NodeJS.ProcessEnv=process.env):string {
+ const o=env.SNIPPE_API_BASE;
+ if(o){try{const u=new URL(o);if(u.protocol==='http:'&&(u.hostname==='127.0.0.1'||u.hostname==='localhost'))return u.origin;}catch{/* ignore */}}
+ return PAYMENT_BASE;
+}
 export async function createPayment(body:ReturnType<typeof paymentBody>,key:string,idempotency:string):Promise<string> {
  if(!key.startsWith('snp_')||! /^[a-f0-9]{30}$/.test(idempotency))throw new Error('invalid_payment_configuration');
  // Fixed provider origin; redirects refused, 15s timeout and 64KiB maximum. No automatic retry:
  // a lost response can mean the provider accepted a real charge.
- const r=await fetch(PAYMENT_BASE+'/v1/payments',{method:'POST',redirect:'error',signal:AbortSignal.timeout(15000),headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json','Idempotency-Key':idempotency},body:JSON.stringify(body)});
+ const r=await fetch(providerBase()+'/v1/payments',{method:'POST',redirect:'error',signal:AbortSignal.timeout(15000),headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json','Idempotency-Key':idempotency},body:JSON.stringify(body)});
  if(!r.ok||!r.body){await r.body?.cancel();throw new Error('provider_outcome_unknown');}
  const reader=r.body.getReader();const chunks:Uint8Array[]=[];let size=0;
  while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>65536){await reader.cancel();throw new Error('provider_outcome_unknown');}chunks.push(value);}
