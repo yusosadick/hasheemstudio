@@ -119,7 +119,7 @@ export function Nav() {
           ) : (
             <motion.div key="out" className="flex items-center gap-2 sm:gap-3" initial={reduce ? false : { opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }}>
               <a href="/login" className="hidden min-h-touch items-center px-3 font-mono text-xs font-semibold uppercase tracking-wider text-foreground-muted transition-colors hover:text-foreground sm:inline-flex">Sign in</a>
-              <a href="/login" className="inline-flex min-h-touch items-center rounded-md border border-[#ff006e] bg-gradient-primary px-4 sm:px-6 whitespace-nowrap font-mono text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-white shadow-[0_6px_18px_rgba(255,0,110,0.25)] transition hover:brightness-110">Get Started</a>
+              <a href="/login" className="inline-flex min-h-touch items-center rounded-md border border-[#ff006e] bg-black px-4 sm:px-6 whitespace-nowrap font-mono text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-white transition-colors hover:bg-[#ff006e]/15">Get Started</a>
             </motion.div>
           )}
           </AnimatePresence>
