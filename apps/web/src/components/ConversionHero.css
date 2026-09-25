@@ -195,3 +195,6 @@
 .conversion-hero:has(.conversion-scene[data-paused="true"]) .hero-upload[data-busy]::after { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) { .hero-upload[data-busy]::after { animation: none; --hs-angle: 40deg; } }
 .conversion-hero[data-focus] .conversion-hero__stage { z-index: 3; }
+/* Focus mode: the eyebrow keeps its original left-edge position instead of following the centred scene. */
+.conversion-hero[data-focus] .conversion-hero__copy { position: absolute; left: 0; top: 16px; padding: 0; text-align: left; }
+.conversion-hero[data-focus] .conversion-hero__eyebrow { margin-bottom: 0; }
