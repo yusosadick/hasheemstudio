@@ -67,6 +67,7 @@ signed webhook, plan activation, paid downloads, failure/retry, forged/wrong-amo
    `./scripts/ops/fetch-vaultwarden-secret.sh "<item>" SNIPPE_API_KEY /etc/hasheemstudio/local.env` and the same for
    `SNIPPE_WEBHOOK_SECRET`. (If Studio and Gaming share one Snippe merchant account this is the same key/secret; that is the
    owner's decision, and payments will then appear in that shared account.)
+(Shortcut for steps 1–2 in the terminal where Bitwarden is unlocked: `./scripts/ops/install-snippe-credentials.sh "<API key item>" "<webhook secret item>"`.)
 2. **Enable.** `./scripts/ops/enable-checkout.sh` sets `STUDIO_PAYMENT_METHODS=mobile`, `STUDIO_PAYMENT_APPROVED=true`,
    `STUDIO_CHECKOUT_ENABLED=true`, recreates only the `api` container and waits for `/v1/payments/plans` to report `available:true`.
 3. **Webhook.** In Snippe, the webhook for these payments is `https://api.hasheemstudio.com/webhooks/snippe` (each payment also
