@@ -1,5 +1,14 @@
 # Status
 
+## Snippe mobile-money checkout enabled — 2026-09-26
+
+- [VERIFIED-LIVE] Owner-approved Vaultwarden item `hasheemstudio-snippe-api` provisioned into `/etc/hasheemstudio/local.env` (0600): password field validated as `snp_` API key; username field validated as `whsec_` account webhook signing secret. Values were never printed or saved in repo evidence. Vault locked and temporary session deleted immediately after provisioning.
+- [VERIFIED-LIVE] `STUDIO_PAYMENT_METHODS=mobile`, `STUDIO_PAYMENT_APPROVED=true`, `STUDIO_CHECKOUT_ENABLED=true`; only `hasheemstudio-api` was recreated and it is healthy. Public `/v1/payments/plans` reports `available:true`; live pricing shows Weekly 5,000 TZS / 20 videos / 7 days and Monthly 19,900 TZS / 50 videos / 30 days with active CTAs (no "Opening soon").
+- [VERIFIED-PROVIDER] Snippe accepted the installed API key through the documented non-mutating `GET /v1/payments/balance` endpoint (HTTP 200, `status:success`, balance object, TZS). No amount/balance value was retained in evidence.
+- [VERIFIED-LIVE] Unsigned webhook POST is rejected 401. A correctly HMAC-signed, schema-valid synthetic `payment.completed` event for a nonexistent random Studio intent reached settlement and was safely denied 400; zero `payment_events` rows were written. This proves the configured signing secret is accepted by Studio's live verifier without granting an entitlement.
+- [TESTED] API payment tests 17/17 and fake-provider checkout chain 8/8 passed immediately before activation (exact provider request, pending state, signature/amount rejection, webhook completion, entitlements/download charging, failure/retry, anonymous denial). [Evidence](evidence/payments/snippe-live-enable.json).
+- [PENDING OWNER TEST] No real phone was charged yet. Full financial proof still requires one owner-approved 5,000 TZS Weekly mobile-money attempt, physical handset approval, provider-originated `payment.completed` webhook, activated 20-video entitlement and one paid download decrement. Do not claim the real money path end-to-end until those are observed.
+
 ## Studio product rollout — 2026-09-21
 
 - [VERIFIED-LIVE] Deployed only Studio web/API/Auth images/configuration. HTTPS login, privacy/service-information pages, API readiness and disabled checkout plan all return 200. Auth/web/API healthy; DB/Redis/Envoy/worker containers were not recreated. The crash-recovery test briefly stopped/restarted **only Studio worker**, restoring it afterward. No shared edge/DNS or unrelated services changed. [Readback](evidence/studio-product-deployment.json).

@@ -1,0 +1,37 @@
+{
+  "timestamp": "2026-09-26T00:20:50+02:00",
+  "scope": "Hasheem Studio Snippe mobile-money checkout activation",
+  "secrets": {
+    "source_item": "hasheemstudio-snippe-api",
+    "target": "/etc/hasheemstudio/local.env",
+    "api_key_format": "snp_ prefix validated; value not retained in evidence",
+    "webhook_secret_format": "whsec_ prefix validated; value not retained in evidence",
+    "target_mode": "0600",
+    "vault_locked_after_provisioning": true,
+    "temporary_session_deleted": true
+  },
+  "configuration": {
+    "STUDIO_PAYMENT_APPROVED": true,
+    "STUDIO_CHECKOUT_ENABLED": true,
+    "STUDIO_PAYMENT_METHODS": "mobile",
+    "weekly": {"amount_tzs": 5000, "videos": 20, "days": 7},
+    "monthly": {"amount_tzs": 19900, "videos": 50, "days": 30},
+    "webhook_url": "https://api.hasheemstudio.com/webhooks/snippe"
+  },
+  "verification": {
+    "api_unit_tests": "17/17 passed",
+    "checkout_provider_simulation": "8/8 passed",
+    "api_container": "healthy after API-only recreation",
+    "public_plans_available": true,
+    "snippe_api_key_provider_auth": "GET /v1/payments/balance returned HTTP 200, status success, object balance, currency TZS",
+    "unsigned_webhook": "HTTP 401 invalid_webhook",
+    "correctly_signed_unknown_intent": "HTTP 400 status denied; proves signature/schema path reached settlement without granting anything",
+    "signed_unknown_event_database_residue": 0,
+    "live_pricing_ui": "Free, Weekly 5,000 TZS/Get Weekly, Monthly 19,900 TZS/Get Monthly; no Opening soon"
+  },
+  "remaining_unverified": [
+    "No real mobile-money USSD charge has been initiated yet because no owner-approved test phone was provided.",
+    "No provider-originated payment.completed webhook has been physically observed yet.",
+    "No real paid entitlement/download decrement has been observed yet."
+  ]
+}

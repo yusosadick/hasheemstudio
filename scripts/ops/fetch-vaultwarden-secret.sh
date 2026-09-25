@@ -9,6 +9,10 @@
 #   BW_SESSION="..." ./scripts/ops/fetch-vaultwarden-secret.sh "hasheem studio DNS" CLOUDFLARE_API_TOKEN /etc/hasheemstudio/local.env
 set -euo pipefail
 
+# Compatible CLI only — the newer bw (e.g. a snap/global install) fails against this
+# VPS's self-hosted Vaultwarden server with a KeyIdBackfillError.
+BW="/home/yuso/.local/share/bitwarden-cli-2026.8/node_modules/.bin/bw"
+
 ITEM_NAME="${1:?item name required}"
 ENV_VAR_NAME="${2:?target env var name required}"
 TARGET_FILE="${3:?target env file path required}"
@@ -24,7 +28,7 @@ if [ ! -f "$TARGET_FILE" ]; then
   exit 1
 fi
 
-VALUE="$(bw get password "$ITEM_NAME" 2>/dev/null || bw get notes "$ITEM_NAME" 2>/dev/null || true)"
+VALUE="$($BW get password "$ITEM_NAME" 2>/dev/null || $BW get notes "$ITEM_NAME" 2>/dev/null || true)"
 
 if [ -z "$VALUE" ]; then
   echo "Could not read a password or notes field from Vaultwarden item '$ITEM_NAME'." >&2
