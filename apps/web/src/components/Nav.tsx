@@ -75,7 +75,7 @@ export function Nav() {
   const avatarUrl = typeof metadata?.avatar_url === "string" ? metadata.avatar_url : typeof metadata?.picture === "string" ? metadata.picture : null;
 
   return (
-    <header className="border-b border-dashed border-border bg-background/95 backdrop-blur">
+    <header className="relative z-40 border-b border-dashed border-border bg-background/95 backdrop-blur">
       <div className="mx-auto flex min-h-[60px] sm:min-h-[76px] max-w-6xl items-center justify-between px-4 sm:px-6">
         <AuthBrandLink />
 

@@ -17,13 +17,14 @@ try {
   await page.goto(base + "/login");
   await page.getByRole("textbox", { name: "Email address" }).fill(email); await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByRole("textbox", { name: "Password", exact: true }).fill(password); await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await page.waitForURL(base + "/");
-  await page.goto(base + "/app/upload");
+  await page.waitForURL(base + "/");   // sign out from the homepage itself: the page content sits right under the dropdown
 
   // Sign out from a private page: no reload, lands on home, navbar flips, session gone.
   await page.evaluate(() => { window.__marker = "same-document"; });
   await page.getByRole("button", { name: /Open profile menu for/ }).click();
   assert.equal(await page.getByRole("menuitem").count(), 1);
+  // The dropdown must be the topmost thing at its own position (a regression once left it under the page, so clicks did nothing).
+  assert.equal(await page.evaluate(() => { const m = document.querySelector("[role=menuitem]"); const r = m.getBoundingClientRect(); return m.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)); }), true, "Sign out is clickable (not covered by the page)");
   await page.getByRole("menuitem", { name: "Sign out" }).click();
   await page.getByRole("menuitem", { name: "Signing out…" }).waitFor();   // visible progress, not an instant snap
   await page.waitForURL(base + "/");

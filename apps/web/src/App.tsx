@@ -9,7 +9,12 @@ export default function App() {
   // Bumps on every sign-out (this tab or another) so the current page remounts with fresh, signed-out state.
   const [epoch, setEpoch] = useState(0);
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((event) => { if (event === "SIGNED_OUT") setEpoch((n) => n + 1); });
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== "SIGNED_OUT") return;
+      // Forget the remembered video too, so the freshly mounted homepage is genuinely reset (not the same result again).
+      try { localStorage.removeItem("hasheemstudio-last-job"); } catch { /* optional */ }
+      setEpoch((n) => n + 1);
+    });
     return () => data.subscription.unsubscribe();
   }, []);
   if (["/login", "/signup", "/register", "/forgot-password", "/reset-password", "/verify-email", "/auth/callback"].includes(pathname)) return <LandingAuthShell><Outlet key={epoch} /></LandingAuthShell>;
