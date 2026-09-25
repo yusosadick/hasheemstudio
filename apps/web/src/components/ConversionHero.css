@@ -201,3 +201,61 @@
 /* Focus mode: the orbit rings must end exactly at the card's top edge (visual bottom + pill 8px gap + pill height − 15px overlap), never draw over it. */
 .conversion-hero[data-focus] .conversion-scene__visual { clip-path: inset(-400px -400px -23px -400px); }
 @media (max-width: 760px) { .conversion-hero[data-focus] .conversion-hero__stage { padding-top: 40px; } }
+
+/* ── Phones (≤560px): the whole flow — idle, uploading, processing and the finished result — must fit inside the
+   first screen without scrolling. Everything is compacted: no breadcrumb, shorter hero, smaller scene, tighter cards. ── */
+@media (max-width: 560px) {
+  .conversion-hero { margin-top: 2px; margin-bottom: 20px; }
+  .conversion-hero__stage { gap: 8px; padding: 4px 0 40px; }
+  .conversion-hero__copy { padding: 0; }
+  .conversion-hero__eyebrow { margin-bottom: 6px; font-size: 9px; }
+  .conversion-hero__copy h1 { font-size: 26px; line-height: 1.12; }
+  .conversion-hero__title-break { display: none; }
+  .conversion-hero__description { display: none; }
+  .conversion-scene { width: min(300px, 100%); height: 112px; }
+  .conversion-scene__ring--outer { width: 232px; height: 232px; }
+  .conversion-scene__ring--inner { width: 170px; height: 170px; }
+  .format-tile { flex-basis: 78px; height: 86px; border-radius: 11px; }
+  .format-tile svg { width: 22px; height: 22px; }
+  .format-tile strong { margin-top: 6px; font-size: 12px; }
+  .format-tile small { margin-top: 3px; font-size: 7px; }
+  .conversion-bridge { padding-inline: 6px; }
+  .conversion-bridge__hub { width: 32px; height: 32px; }
+  .conversion-bridge__hub svg { width: 17px; height: 17px; }
+  .conversion-bridge__label { top: 38px; font-size: 8px; }
+  .conversion-scene__pause { bottom: -10px; }
+  .hero-upload { margin-top: -20px; padding: 20px 16px 14px; border-radius: 14px; }
+  .hero-upload__badge { width: 40px; height: 40px; margin-bottom: 8px; border-radius: 11px; }
+  .hero-upload__icon { width: 22px; height: 22px; }
+  .hero-upload h2 { font-size: 19px; }
+  .hero-upload p { margin-top: 4px; font-size: 13px; }
+  .hero-upload__recipes { margin-top: 12px; gap: 4px 12px; }
+  .hero-upload__recipe { font-size: 11.5px; }
+  .hero-upload__button { width: 100%; min-height: 46px; margin-top: 14px; }
+  .hero-upload__dropzone-hint { margin-top: 8px; font-size: 11px; }
+  .hero-upload small { margin-top: 10px; padding-top: 10px; font-size: 10.5px; }
+  .hero-upload__error, .hero-upload__resume { margin-top: 10px; padding: 8px 10px; font-size: 12px; }
+  /* focus mode (a file was chosen) */
+  .conversion-hero[data-focus] .conversion-hero__stage { padding: 28px 0 0; gap: 0; }
+  .conversion-hero[data-focus] .conversion-hero__copy { top: 6px; }
+  .conversion-hero[data-focus] .conversion-scene__visual { height: 100px; }
+  .conversion-hero[data-focus] .hero-upload { margin-top: -15px; padding-top: 38px; }
+  .hero-upload__file-icon { width: 34px; height: 34px; }
+  .hero-upload__file-meta strong { font-size: 13px; }
+  .hero-upload__progress { margin-top: 12px; height: 6px; }
+  .hero-upload__steps { margin-top: 12px; }
+  .hero-upload__status { margin-top: 6px; font-size: 12px; }
+  .hero-upload__log { display: none; }
+  .hero-upload__cancel { min-height: 38px; margin-top: 12px; }
+}
+/* Tall phones have room for one line of description. */
+@media (max-width: 560px) and (min-height: 800px) {
+  .conversion-hero__description { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 8px; font-size: 13.5px; line-height: 1.55; }
+  .conversion-hero__stage { gap: 14px; }
+}
+@media (max-width: 560px) {
+  .conversion-hero[data-focus] .conversion-scene[data-phase="done"] .conversion-scene__visual,
+  .conversion-hero[data-focus] .conversion-scene[data-phase="failed"] .conversion-scene__visual { height: 62px; }
+  .conversion-scene[data-phase="done"] .conversion-scene__row, .conversion-scene[data-phase="failed"] .conversion-scene__row { transform: scale(.62); }
+  .conversion-scene[data-phase="done"] .conversion-bridge__label, .conversion-scene[data-phase="failed"] .conversion-bridge__label { display: none; }
+}

@@ -17,7 +17,7 @@ export function LandingAuthShell({ children }: { children: ReactNode }) {
           <div className="h-1 rounded-t-xl bg-gradient-primary" />
           <div className="rounded-b-xl border border-t-0 border-border bg-surface1 p-6 sm:p-8">
             <div className="mb-6 flex justify-center" aria-label="Hasheem Studio brand">
-              <img src="/images/brand/hasheem-studio-script-wordmark.png" alt="Hasheem Studio" className="h-14 w-auto object-contain" />
+              <img src="/images/brand/hasheem-studio-script-wordmark.webp" alt="Hasheem Studio" className="h-14 w-auto object-contain" />
             </div>
             {children}
           </div>

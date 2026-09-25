@@ -24,7 +24,9 @@ try {
   await page.getByRole("button", { name: /Open profile menu for/ }).click();
   assert.equal(await page.getByRole("menuitem").count(), 1);
   await page.getByRole("menuitem", { name: "Sign out" }).click();
+  await page.getByRole("menuitem", { name: "Signing out…" }).waitFor();   // visible progress, not an instant snap
   await page.waitForURL(base + "/");
+  await page.getByRole("status").filter({ hasText: "signed out" }).waitFor();   // confirmation toast
   assert.equal(await page.evaluate(() => window.__marker), "same-document", "sign-out must not reload the page");
   await page.getByRole("link", { name: "Sign in" }).first().waitFor();
   assert.equal(await page.getByRole("button", { name: /Open profile menu for/ }).count(), 0);
@@ -37,7 +39,7 @@ try {
   assert.equal(await page.locator('link[rel="canonical"]').getAttribute("href"), "https://hasheemstudio.com/");
   assert(await page.locator('script[type="application/ld+json"]').count() >= 1);
   assert.equal(await page.locator("footer a[href='/status']").count(), 0, "no /status link");
-  for (const f of ["/favicon.ico", "/apple-touch-icon.png", "/images/brand/og-image.png", "/images/brand/logo-512.png", "/site.webmanifest", "/robots.txt", "/sitemap.xml"]) assert.equal((await page.request.get(base + f)).status(), 200, f);
+  for (const f of ["/favicon.ico", "/apple-touch-icon.png", "/images/brand/og-image.jpg", "/images/brand/logo-512.webp", "/site.webmanifest", "/robots.txt", "/sitemap.xml"]) assert.equal((await page.request.get(base + f)).status(), 200, f);
 
   // Legal pages: full content, unique title/canonical, no duplicate description tags.
   for (const [path, title, must] of [["/privacy", "Privacy Policy", ["How long we keep data", "deleted automatically", "Snippe", "Your rights"]], ["/terms", "Terms of Service", ["Acceptable use", "Payments and refunds", "Limitation of liability", "Governing law"]]]) {

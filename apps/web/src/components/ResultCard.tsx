@@ -141,7 +141,7 @@ export function ResultCard({ jobId, job, onReset, standalone = false }: { jobId:
         </>
       ) : (
         <div className="result-card__gate">
-          <p>Sign in or create a free account to download. Your finished video is saved here — no need to upload it again.</p>
+          <p>Sign in or create a free account to download.<span className="result-card__more"> Your finished video is saved here — no need to upload it again.</span></p>
           <Link to={`/login?next=${next}`} className="result-card__primary">Sign in to download</Link>
           <Link to={`/signup?next=${next}`} className="result-card__secondary">Create free account</Link>
         </div>

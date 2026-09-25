@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 const SITE_URL = 'https://hasheemstudio.com';
-const DEFAULT_IMAGE = `${SITE_URL}/images/brand/og-image.png`;
+const DEFAULT_IMAGE = `${SITE_URL}/images/brand/og-image.jpg`;
 
 type Restore = () => void;
 

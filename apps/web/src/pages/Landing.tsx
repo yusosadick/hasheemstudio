@@ -3,9 +3,9 @@ import { ConversionHero } from "../components/ConversionHero";
 import { BadgeCheck, Gauge, MonitorSmartphone, ShieldCheck } from "lucide-react";
 
 const steps = [
-  { image: "/assets/steps/upload.png", title: "Upload your video", body: "Add an MP4 or MOV file. Interrupted uploads can resume safely." },
-  { image: "/assets/steps/process.png", title: "Choose what it needs", body: "Inspect it, create a compatible MP4, or re-encode to H.264 and AAC." },
-  { image: "/assets/steps/download.png", title: "Verify & download", body: "Review what changed, then download the finished file with confidence." },
+  { image: "/assets/steps/upload.webp", title: "Upload your video", body: "Add an MP4 or MOV file. Interrupted uploads can resume safely." },
+  { image: "/assets/steps/process.webp", title: "Choose what it needs", body: "Pick smaller file, quick repack or re-encode, all as a compatible MP4." },
+  { image: "/assets/steps/download.webp", title: "Verify & download", body: "Review what changed, then download the finished file with confidence." },
 ];
 
 const benefits = [
@@ -19,8 +19,8 @@ export default function Landing() {
   return (
     <div className="overflow-hidden">
       <section className="relative border-b border-border">
-        <div className="landing-content relative mx-auto pb-14 pt-5 sm:pb-16">
-          <nav aria-label="Breadcrumb" className="relative z-10 flex items-center gap-2 text-xs text-foreground-muted">
+        <div className="landing-content relative mx-auto pb-8 pt-3 sm:pb-16 sm:pt-5">
+          <nav aria-label="Breadcrumb" className="relative z-10 hidden items-center gap-2 text-xs text-foreground-muted sm:flex">
             <a href="/" className="transition-colors hover:text-foreground">Home</a>
             <span aria-hidden="true">›</span><span>Video tools</span><span aria-hidden="true">›</span>
             <span className="text-foreground">Prepare video</span>
@@ -28,28 +28,28 @@ export default function Landing() {
 
           <ConversionHero />
 
-          <div id="how-it-works" className="mx-auto mt-10 max-w-5xl">
+          <div id="how-it-works" className="mx-auto mt-6 max-w-5xl sm:mt-10">
             <div className="flex items-center gap-4">
               <div className="h-px flex-1 bg-border" /><h2 className="text-center text-sm font-semibold sm:text-base">How it works — 3 simple steps</h2><div className="h-px flex-1 bg-border" />
             </div>
-            <ol className="mt-4 grid gap-3 md:grid-cols-3">
+            <ol className="mt-4 grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3">
               {steps.map((step, index) => (
-                <li key={step.title} className="relative rounded-xl border border-border bg-surface1 p-5 text-center">
-                  <span className="absolute left-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-accent/15 text-xs font-bold text-accent-text">{index + 1}</span>
-                  <div className="mx-auto flex h-28 items-center justify-center">
-                    <img src={step.image} alt="" width="320" height="320" className="h-28 w-28 select-none object-contain drop-shadow-[0_12px_22px_rgba(233,30,99,0.16)]" />
+                <li key={step.title} className="relative rounded-xl border border-border bg-surface1 p-3 text-center last:col-span-2 sm:p-5 md:last:col-span-1">
+                  <span className="absolute left-2.5 top-2.5 flex h-6 w-6 sm:left-4 sm:top-4 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-accent/15 text-xs font-bold text-accent-text">{index + 1}</span>
+                  <div className="mx-auto flex h-20 items-center justify-center sm:h-28">
+                    <img src={step.image} alt="" width="256" height="256" loading="lazy" decoding="async" className="h-20 w-20 select-none object-contain sm:h-28 sm:w-28 drop-shadow-[0_12px_22px_rgba(233,30,99,0.16)]" />
                   </div>
-                  <h3 className="mt-2 text-sm font-semibold">{step.title}</h3>
-                  <p className="mx-auto mt-1 max-w-[16rem] text-xs leading-5 text-foreground-muted">{step.body}</p>
+                  <h3 className="mt-1 text-[13px] font-semibold sm:mt-2 sm:text-sm">{step.title}</h3>
+                  <p className="mx-auto mt-1 max-w-[16rem] text-[11.5px] leading-4 text-foreground-muted sm:text-xs sm:leading-5">{step.body}</p>
                 </li>
               ))}
             </ol>
           </div>
 
-          <ul id="features" className="mx-auto mt-5 grid max-w-5xl gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
+          <ul id="features" className="mx-auto mt-4 grid max-w-5xl grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:mt-5 lg:grid-cols-4">
             {benefits.map((benefit) => (
-              <li key={benefit.title} className="flex gap-3 bg-background p-4">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-surface1 text-accent-text">
+              <li key={benefit.title} className="flex gap-2.5 bg-background p-3 sm:gap-3 sm:p-4">
+                <span className="hidden h-9 w-9 shrink-0 sm:flex items-center justify-center rounded-md border border-border bg-surface1 text-accent-text">
                   <benefit.icon size={18} strokeWidth={1.75} aria-hidden="true" />
                 </span>
                 <div>
