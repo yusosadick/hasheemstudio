@@ -12,8 +12,8 @@ export type Recipe = "inspect" | "remux" | "compat_encode" | "platform_optimize"
 
 // Single source of truth for the recipe choices shown on the homepage hero and /app/upload.
 export const RECIPE_OPTIONS: { value: Recipe; label: string; hint: string }[] = [
+  { value: "platform_optimize", label: "Platform-optimized (smaller file, recommended)", hint: "Re-encode to a bitrate suited to TikTok, Instagram and WhatsApp" },
   { value: "remux", label: "Compatible MP4 remux", hint: "Repackage only — no re-encode, same file size" },
-  { value: "platform_optimize", label: "Platform-optimized (smaller file)", hint: "Re-encode to a bitrate suited to TikTok, Instagram and WhatsApp" },
   { value: "compat_encode", label: "H.264/AAC re-encode", hint: "High-quality H.264/AAC re-encode" },
   { value: "inspect", label: "Inspect only", hint: "Report only — no output video" },
 ];
@@ -80,7 +80,7 @@ export function formatBytes(bytes: number): string {
 
 export function useVideoUpload(options: UseVideoUploadOptions = {}) {
   const { onJobCreated } = options;
-  const [recipe, setRecipe] = useState<Recipe>("remux");
+  const [recipe, setRecipe] = useState<Recipe>("platform_optimize");
   const [stage, setStage] = useState<UploadStage>("idle");
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
