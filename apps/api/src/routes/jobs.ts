@@ -1,3 +1,4 @@
+import { publicErrorMessage } from "../publicError.js";
 import type { FastifyInstance } from "fastify";
 import { randomUUID } from "node:crypto";
 import { getPool } from "../db.js";
@@ -156,7 +157,7 @@ export async function jobsRoutes(app: FastifyInstance): Promise<void> {
       status: job.status,
       recipe: job.recipe,
       attemptCount: job.attempt_count,
-      errorMessage: job.error_message,
+      errorMessage: publicErrorMessage(job.error_message),
       createdAt: job.created_at,
       updatedAt: job.updated_at,
       verificationReport: publicVerificationReport(reportRes.rows[0]),

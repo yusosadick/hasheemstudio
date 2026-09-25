@@ -33,12 +33,36 @@ export function assertWithinScratch(path: string, scratchDir: string): void {
   }
 }
 
+// Audio codecs ffmpeg can both decode (for the AAC re-encode) and stream-copy into MP4. Anything else — notably
+// Apple's spatial-audio "apac" track that recent iPhones store as audio stream 1 alongside a normal stereo AAC
+// track — is skipped instead of aborting the whole job.
+const USABLE_AUDIO = new Set([
+  "aac", "mp3", "mp2", "alac", "ac3", "eac3", "opus", "vorbis", "flac", "amr_nb", "amr_wb",
+  "pcm_s16le", "pcm_s16be", "pcm_s24le", "pcm_s24be", "pcm_s32le", "pcm_f32le", "pcm_u8",
+]);
+export interface AudioPick { index: number | null; codec: string | null; skipped: number }
+export function pickAudioStream(streams: Array<{ index?: number; codec_type?: string; codec_name?: string; channels?: number }>): AudioPick {
+  const audio = streams.filter((s) => s.codec_type === "audio" && typeof s.index === "number");
+  const usable = audio.filter((s) => s.codec_name && USABLE_AUDIO.has(s.codec_name));
+  // Prefer the first stereo-or-mono track (the compatibility mix); otherwise the first usable one.
+  const chosen = usable.find((s) => (s.channels ?? 0) <= 2) ?? usable[0];
+  return { index: chosen?.index ?? null, codec: chosen?.codec_name ?? null, skipped: audio.length - (chosen ? 1 : 0) };
+}
+// undefined = legacy "first audio track if any"; null = no usable audio (drop it); number = that exact stream.
+function audioMapArgs(audioStreamIndex: number | null | undefined): string[] {
+  if (audioStreamIndex === undefined) return ["-map", "0:a:0?"];
+  return audioStreamIndex === null ? [] : ["-map", `0:${audioStreamIndex}`];
+}
+
 export interface ProbeResult {
   durationSeconds: number | null;
   width: number | null;
   height: number | null;
   videoCodec: string | null;
   audioCodec: string | null;
+  // Absolute stream index of the audio track we actually use (null = none usable) and how many were skipped.
+  audioStreamIndex: number | null;
+  audioStreamsSkipped: number;
   container: string | null;
   frameRate: number | null;
   isVfr: boolean;
@@ -84,7 +108,7 @@ export async function probe(inputPath: string): Promise<ProbeResult> {
   );
   const data = JSON.parse(stdout);
   const videoStream = data.streams?.find((s: any) => s.codec_type === "video");
-  const audioStream = data.streams?.find((s: any) => s.codec_type === "audio");
+  const audioPick = pickAudioStream(data.streams ?? []);
 
   const avgFrameRate = parseFrameRate(videoStream?.avg_frame_rate);
   const rFrameRate = parseFrameRate(videoStream?.r_frame_rate);
@@ -114,7 +138,9 @@ export async function probe(inputPath: string): Promise<ProbeResult> {
     videoBitRate: num(videoStream?.bit_rate),
     formatBitRate: num(data.format?.bit_rate),
     videoCodec: videoStream?.codec_name ?? null,
-    audioCodec: audioStream?.codec_name ?? null,
+    audioCodec: audioPick.codec,
+    audioStreamIndex: audioPick.index,
+    audioStreamsSkipped: audioPick.skipped,
     container: data.format?.format_name ?? null,
     frameRate: avgFrameRate,
     isVfr,
@@ -139,7 +165,7 @@ export function looksLikeSourceCorruption(ffmpegStderr: string): boolean {
   return CORRUPTION_MARKERS.some((re) => re.test(ffmpegStderr));
 }
 
-export async function remux(inputPath: string, outputPath: string): Promise<{ stderr: string }> {
+export async function remux(inputPath: string, outputPath: string, audioStreamIndex?: number | null): Promise<{ stderr: string }> {
   assertWithinScratch(inputPath, dirname(inputPath));
   assertWithinScratch(outputPath, dirname(outputPath));
   const { stderr } = await execFileAsync(
@@ -151,7 +177,7 @@ export async function remux(inputPath: string, outputPath: string): Promise<{ st
       "-protocol_whitelist", "file",
       "-i", inputPath,
       "-map", "0:v:0",
-      "-map", "0:a:0?", // ignore data/attachment streams that cannot be muxed into MP4
+      ...audioMapArgs(audioStreamIndex), // only the chosen, readable audio track; data/attachment streams are never mapped
       "-c", "copy",
       // Very common on phone-recorded MOV/MP4: video and audio don't both start at PTS 0 (an
       // edit-list-trimmed lead-in, or a few ms of audio before the first video frame). A plain
@@ -171,6 +197,8 @@ export async function remux(inputPath: string, outputPath: string): Promise<{ st
 }
 
 export interface CompatEncodeOptions {
+  // See audioMapArgs: which audio stream to keep (undefined = first, null = none).
+  audioStreamIndex?: number | null;
   // Preserve source dimensions/orientation by default — no upscale, no forced resize, per
   // docs/ARCHITECTURE.md "Do not upscale ... by default."
   maxWidth?: number;
@@ -191,7 +219,7 @@ export async function compatEncode(inputPath: string, outputPath: string, opts: 
     "-protocol_whitelist", "file",
     "-i", inputPath,
     "-map", "0:v:0",
-    "-map", "0:a:0?", // optional audio track — absent audio is handled, not an error
+    ...audioMapArgs(opts.audioStreamIndex), // optional audio track — absent/unreadable audio is handled, not an error
   ];
 
   // A ~2 second closed GOP with scene-cut detection disabled: predictable, seekable segment
@@ -274,6 +302,7 @@ export async function platformOptimize(
   preset: string,
   timeoutMs: number = MAX_PROCESS_MS,
   toneMap: boolean = false,
+  audioStreamIndex?: number | null,
 ): Promise<{ stderr: string }> {
   assertWithinScratch(inputPath, dirname(inputPath));
   assertWithinScratch(outputPath, dirname(outputPath));
@@ -286,7 +315,7 @@ export async function platformOptimize(
     "-protocol_whitelist", "file",
     "-i", inputPath,
     "-map", "0:v:0",
-    "-map", "0:a:0?",
+    ...audioMapArgs(audioStreamIndex),
     "-vf", vf,
     "-c:v", "libx264",
     "-preset", preset,

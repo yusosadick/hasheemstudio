@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test src/platformProfile.test.ts"
+    "test": "node --import tsx --test src/platformProfile.test.ts src/audioSelect.test.ts"
   },
   "dependencies": {
     "bullmq": "^5.34.4",

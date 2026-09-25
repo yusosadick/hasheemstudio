@@ -7,6 +7,7 @@ import { mkdir, readFile, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { getPool } from "./db.js";
 import { downloadObject, uploadObject } from "./storage.js";
+import { toUserFacingError } from "./userError.js";
 import { probe, remux, compatEncode, platformOptimize, decodeCheck, looksLikeSourceCorruption } from "./ffmpeg.js";
 import { planPlatformProfile, choosePreset, PLATFORM_OPTIMIZE_TIMEOUT_MS, WHATSAPP_MAX_BYTES } from "./platformProfile.js";
 
@@ -198,7 +199,7 @@ export async function processJob(jobId: string): Promise<void> {
       checks = { probed: metadata };
     } else if (claimed.recipe === "remux") {
       const outputPath = join(scratchDir, "output.mp4");
-      const remuxResult = await remux(inputPath, outputPath);
+      const remuxResult = await remux(inputPath, outputPath, metadata.audioStreamIndex);
       const decode = await decodeCheck(outputPath);
       const outputBuffer = await readFile(outputPath);
       const outputMetadata = await probe(outputPath);
@@ -214,7 +215,7 @@ export async function processJob(jobId: string): Promise<void> {
         decodeCheck: decode,
         durationDelta,
         durationOk,
-        inputStreams: { video: metadata.videoCodec, audio: metadata.audioCodec },
+        inputStreams: { video: metadata.videoCodec, audio: metadata.audioCodec, audioTracksSkipped: metadata.audioStreamsSkipped },
         outputStreams: { video: outputMetadata.videoCodec, audio: outputMetadata.audioCodec },
         streamsUnchanged: metadata.videoCodec === outputMetadata.videoCodec && metadata.audioCodec === outputMetadata.audioCodec,
       };
@@ -244,7 +245,7 @@ export async function processJob(jobId: string): Promise<void> {
       await uploadObject(outputObjectKey, outputBuffer, "video/mp4");
     } else if (claimed.recipe === "compat_encode") {
       const outputPath = join(scratchDir, "output.mp4");
-      const encodeResult = await compatEncode(inputPath, outputPath, { sourceFrameRate: metadata.frameRate });
+      const encodeResult = await compatEncode(inputPath, outputPath, { sourceFrameRate: metadata.frameRate, audioStreamIndex: metadata.audioStreamIndex });
       const decode = await decodeCheck(outputPath);
       const outputBuffer = await readFile(outputPath);
       const outputMetadata = await probe(outputPath);
@@ -269,7 +270,7 @@ export async function processJob(jobId: string): Promise<void> {
         decodeCheck: decode,
         durationDelta,
         durationOk,
-        inputStreams: { video: metadata.videoCodec, audio: metadata.audioCodec },
+        inputStreams: { video: metadata.videoCodec, audio: metadata.audioCodec, audioTracksSkipped: metadata.audioStreamsSkipped },
         outputStreams: { video: outputMetadata.videoCodec, audio: outputMetadata.audioCodec },
         outputIsH264: isH264,
         outputIsAac: isAac,
@@ -336,7 +337,7 @@ export async function processJob(jobId: string): Promise<void> {
       const preset = presetChoice.preset;
       const outputPath = join(scratchDir, "output.mp4");
       const encodeStartedAt = Date.now();
-      const encodeResult = await platformOptimize(inputPath, outputPath, plan, preset, PLATFORM_OPTIMIZE_TIMEOUT_MS, metadata.isHdr);
+      const encodeResult = await platformOptimize(inputPath, outputPath, plan, preset, PLATFORM_OPTIMIZE_TIMEOUT_MS, metadata.isHdr, metadata.audioStreamIndex);
       const encodeSeconds = Math.round((Date.now() - encodeStartedAt) / 100) / 10;
       const decode = await decodeCheck(outputPath);
       const outputBuffer = await readFile(outputPath);
@@ -369,7 +370,7 @@ export async function processJob(jobId: string): Promise<void> {
         decodeCheck: decode,
         durationDelta,
         durationOk,
-        inputStreams: { video: metadata.videoCodec, audio: metadata.audioCodec },
+        inputStreams: { video: metadata.videoCodec, audio: metadata.audioCodec, audioTracksSkipped: metadata.audioStreamsSkipped },
         outputStreams: { video: outputMetadata.videoCodec, audio: outputMetadata.audioCodec },
         outputIsH264: isH264,
         outputIsAac: isAac,
@@ -492,9 +493,9 @@ export async function processJob(jobId: string): Promise<void> {
       [claimed.id, claimed.attemptCount, message],
     );
     if (claimed.attemptCount >= claimed.maxAttempts) {
-      await markFailed(claimed.id, message);
+      await markFailed(claimed.id, toUserFacingError(message));
     } else {
-      await requeueForRetry(claimed.id, message);
+      await requeueForRetry(claimed.id, toUserFacingError(message));
       throw err; // let BullMQ's own attempts/backoff drive the retry
     }
   } finally {
