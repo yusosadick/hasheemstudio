@@ -12,7 +12,7 @@ export async function settlePayment(pool:Pool,event:PaymentEvent,digest:string):
   if(['completed','failed','voided','expired'].includes(p.status)&&p.status!==event.type){await c.query('rollback');return 'denied';}
   await c.query('insert into payment_events(webhook_event_id,payment_intent_id,event_type,provider_reference,amount_tzs,currency,payload_digest) values($1,$2,$3,$4,$5,$6,$7)',[event.id,p.id,event.type,event.reference,event.amount,event.currency,digest]);
   await c.query('update payment_intents set status=$2,provider_reference=$3,updated_at=now() where id=$1',[p.id,event.type,event.reference]);
-  if(event.type==='completed')await c.query(`insert into paid_entitlements(user_id,payment_intent_id,downloads_per_day,expires_at) values($1,$2,$3,now()+make_interval(secs=>$4)) on conflict(payment_intent_id) do nothing`,[p.user_id,p.id,p.downloads_per_day,p.duration_seconds]);
+  if(event.type==='completed')await c.query(`insert into paid_entitlements(user_id,payment_intent_id,downloads_per_day,plan_code,downloads_total,expires_at) values($1,$2,$3,$4,$5,now()+make_interval(secs=>$6)) on conflict(payment_intent_id) do nothing`,[p.user_id,p.id,p.downloads_per_day,p.plan_code,p.downloads_total,p.duration_seconds]);
   await c.query('commit');return 'accepted';
  }catch{await c.query('rollback');throw new Error('payment_settlement_failed');}finally{c.release();}
 }

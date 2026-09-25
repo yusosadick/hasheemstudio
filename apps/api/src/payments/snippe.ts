@@ -1,11 +1,17 @@
 import {createHmac, timingSafeEqual} from 'node:crypto';
 export const PAYMENT_BASE='https://api.snippe.sh';
-export type Plan={name:string;amount:number;duration:number;downloads:number;methods:('mobile'|'card')[]};
-export function configuredPlan(e:NodeJS.ProcessEnv=process.env):Plan|null {
- const amount=Number(e.STUDIO_PLAN_AMOUNT_TZS),duration=Number(e.STUDIO_PLAN_DURATION_SECONDS),downloads=Number(e.STUDIO_PLAN_DOWNLOADS_PER_DAY);
- const methods=(e.STUDIO_PAYMENT_METHODS??'').split(',');
- if(e.STUDIO_CHECKOUT_ENABLED!=='true'||e.STUDIO_PAYMENT_APPROVED!=='true'||!e.SNIPPE_API_KEY?.startsWith('snp_')||!e.SNIPPE_WEBHOOK_SECRET||!e.STUDIO_PLAN_NAME||e.STUDIO_PLAN_NAME.length>80||!Number.isSafeInteger(amount)||amount<500||!Number.isSafeInteger(duration)||duration<60||duration>31622400||!Number.isSafeInteger(downloads)||downloads<1||downloads>1000||!methods.length||methods.some(m=>!['mobile','card'].includes(m)))return null;
- return {name:e.STUDIO_PLAN_NAME,amount,duration,downloads,methods:methods as Plan['methods']};
+// Owner-approved commercial terms (2026-09-25). Prices, quotas and durations live in code so a client can never
+// choose them; only the plan *code* travels from the browser.
+export type PlanCode='weekly'|'monthly';
+export type PaidPlan={code:PlanCode;name:string;amount:number;durationSeconds:number;days:number;videos:number};
+export const PAID_PLANS:Record<PlanCode,PaidPlan>={
+ weekly:{code:'weekly',name:'Weekly',amount:2000,durationSeconds:7*86400,days:7,videos:20},
+ monthly:{code:'monthly',name:'Monthly',amount:5000,durationSeconds:30*86400,days:30,videos:50},
+};
+export function findPlan(code:unknown):PaidPlan|null {return typeof code==='string'&&Object.hasOwn(PAID_PLANS,code)?PAID_PLANS[code as PlanCode]:null;}
+/** Checkout is only live when the operator has provisioned credentials and explicitly enabled + approved it. */
+export function checkoutEnabled(e:NodeJS.ProcessEnv=process.env):boolean {
+ return e.STUDIO_CHECKOUT_ENABLED==='true'&&e.STUDIO_PAYMENT_APPROVED==='true'&&!!e.SNIPPE_API_KEY?.startsWith('snp_')&&!!e.SNIPPE_WEBHOOK_SECRET;
 }
 export function validSignature(raw:Buffer,timestamp:unknown,signature:unknown,secret:string,now=Date.now()):boolean {
  if(!secret||typeof timestamp!=='string'||!/^\d{10}$/.test(timestamp)||Math.abs(now/1000-Number(timestamp))>300||typeof signature!=='string'||! /^[a-f0-9]{64}$/i.test(signature))return false;
@@ -20,13 +26,13 @@ export function parseEvent(raw:Buffer):PaymentEvent|null {
   return {id:e.id,type,intentId:d.metadata.studio_payment_intent,reference:d.reference,amount:d.amount.value,currency:'TZS'};
  } catch {return null;}
 }
-export function paymentBody(p:{id:string;jobId:string;amount:number;method:'mobile'|'card';phone:string;customer:Record<string,string>},webhookUrl:string) {
- if(!uuid.test(p.id)||!uuid.test(p.jobId)||!Number.isSafeInteger(p.amount)||p.amount<500||!/^255[67]\d{8}$/.test(p.phone)||!['mobile','card'].includes(p.method))throw new Error('invalid_payment');
+export function paymentBody(p:{id:string;jobId?:string;amount:number;method:'mobile'|'card';phone:string;customer:Record<string,string>},webhookUrl:string) {
+ if(!uuid.test(p.id)||(p.jobId!==undefined&&!uuid.test(p.jobId))||!Number.isSafeInteger(p.amount)||p.amount<500||!/^255[67]\d{8}$/.test(p.phone)||!['mobile','card'].includes(p.method))throw new Error('invalid_payment');
  const hook=new URL(webhookUrl);if(hook.protocol!=='https:'||hook.hostname!=='api.hasheemstudio.com'||hook.pathname!=='/webhooks/snippe'||hook.search||hook.username||hook.password||hook.port||hook.hash)throw new Error('invalid_webhook_url');
  const details:Record<string,unknown>={amount:p.amount,currency:'TZS'};
  if(p.method==='card'){
   for(const field of ['address','city','state','postcode','country'])if(!p.customer[field])throw new Error('missing_billing_field');
-  details.redirect_url=`https://hasheemstudio.com/app/jobs/${p.jobId}`;details.cancel_url=details.redirect_url;
+  details.redirect_url=p.jobId?`https://hasheemstudio.com/app/jobs/${p.jobId}`:'https://hasheemstudio.com/';details.cancel_url=details.redirect_url;
  }
  return {payment_type:p.method,details,phone_number:p.phone,customer:p.customer,webhook_url:webhookUrl,metadata:{studio_payment_intent:p.id,product:'hasheemstudio'}};
 }
