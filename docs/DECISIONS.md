@@ -140,10 +140,10 @@ project-owned dedicated Envoy config, not shared infrastructure.
 
 Built as a selectable recipe (not the default). Owner decisions this leaves open, each with the measured trade-off in docs/evidence/platform-optimize/:
 
-1. **Default recipe.** Left as "Compatible MP4 remux" so guests do not silently start paying encode time/CPU. Making `platform_optimize` the default (or offering it first) is a product call; it costs the worker ~18-28 s of encode per 5-10 s of 1080p-4K video.
+1. **Default recipe.** ~~Left as remux~~ **Changed 2026-09-25 at the owner's request: `platform_optimize` is now preselected and listed first** (remux and the others remain selectable). Cost: ~18-40 s of worker encode per 5-10 s of video; a guest waits that long.
 2. **Bitrate ceilings.** Chosen from the only official per-resolution recommendation (YouTube: 1080p 8/12 Mbps at 30/60 fps, 720p 5/7.5, 480p 2.5/4) because TikTok, Instagram and WhatsApp publish only minimums, maximums and limits, never a target. Only 1 of 4 real sources clears VMAF 93 at those ceilings; hard content needs ~20-24 Mbps for 93. Raising ceilings improves hard-content quality and shrinks the size win; lowering them does the reverse.
 3. **WhatsApp-safe encoding (Main profile, no B-frames)** costs 0.9-2.7 VMAF or 7-12% bitrate versus High + B-frames, adopted because Meta documents that Android WhatsApp clients reject High + B-frames. Revisit if WhatsApp guidance changes.
 4. **Two-pass rejected** for this recipe: exact target adherence but it inflated an already-small source to ~3x its size and cost ~55% more time.
-5. **HDR** is refused, not tone-mapped, per docs/ARCHITECTURE.md's rule against silently washing out colours; a tested tone-map path is future work.
+5. **HDR**: initially refused; **implemented 2026-09-25** as tone-mapping to SDR (hable), tested on real HDR10 footage and synthetic iPhone-style HLG/PQ clips. Not tested on a real iPhone file.
 6. **In-worker VMAF** would need an ffmpeg build with libvmaf in the worker image; not done, quality remains an offline measurement.
 No owner input was required to ship this; nothing here touches shared infrastructure.

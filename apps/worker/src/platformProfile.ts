@@ -135,6 +135,11 @@ const ENCODE_MPIX_PER_S: Record<string, number> = { faster: 45, veryfast: 80 };
 // HDR->SDR tone-mapping (float32 linear light) at the OUTPUT size adds roughly 0.02-0.04 s per 1080p frame
 // (measured: +30% to +56% on 4K HDR10 clips, i.e. 50-106 MP/s); 45 MP/s is used, conservatively.
 const TONEMAP_MPIX_PER_S = 45;
+// Real production runs of HDR jobs (docs/evidence/platform-optimize/hdr-runs.json) ran up to 1.98x slower than
+// the sum above for high-bitrate 10-bit HEVC (predicted 20 s, actual 39.6 s) and up to 3x faster for
+// low-bitrate 4K clips. The estimate is used to protect the time limit, so it is scaled by the worst
+// observed under-prediction.
+const TONEMAP_SAFETY_FACTOR = 2;
 
 /** Per-process ffmpeg timeout for this recipe; must stay below the worker's 10-minute job lease. */
 export const PLATFORM_OPTIMIZE_TIMEOUT_MS = 8 * 60_000;
@@ -154,7 +159,7 @@ export function estimateEncodeSeconds(plan: Pick<PlatformPlan, "outWidth" | "out
   const decode = (seconds * inFps * w.inputWidth * w.inputHeight) / 1e6 / DECODE_MPIX_PER_S;
   const encode = (seconds * plan.outFps * plan.outWidth * plan.outHeight) / 1e6 / ENCODE_MPIX_PER_S[preset];
   const tone = w.toneMap ? (seconds * plan.outFps * plan.outWidth * plan.outHeight) / 1e6 / TONEMAP_MPIX_PER_S : 0;
-  return decode + encode + tone;
+  return (decode + encode + tone) * (w.toneMap ? TONEMAP_SAFETY_FACTOR : 1);
 }
 
 export type PresetChoice = { ok: true; preset: string; predictedSeconds: number } | { ok: false; predictedSeconds: number };

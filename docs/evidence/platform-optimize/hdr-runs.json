@@ -1,0 +1,77 @@
+{
+  "summary": "HDR-to-SDR tone-mapping for platform_optimize, real production jobs (2026-09-25).",
+  "runs": [
+    {
+      "source": "iphone_like_hlg",
+      "description": "synthetic iPhone-style: HEVC 10-bit BT.2020 HLG, portrait 1080x1920, QuickTime MOV, two AAC tracks (made from the real drone footage; NOT a real iPhone file)",
+      "inputBytes": 29029121,
+      "outputBytes": 5299356,
+      "reductionPercent": 81.7,
+      "status": "succeeded",
+      "toneMapped": true,
+      "preset": "faster",
+      "encodeSeconds": 39.6,
+      "predictedSeconds": 20,
+      "independentOutputCheck": "H.264 Main, yuv420p 8-bit, color_transfer/primaries/space all bt709, exactly 1 audio track (or none), clean ffmpeg decode"
+    },
+    {
+      "source": "iphone_like_pq",
+      "description": "same, PQ transfer",
+      "inputBytes": 16738883,
+      "outputBytes": 5272757,
+      "reductionPercent": 68.5,
+      "status": "succeeded",
+      "toneMapped": true,
+      "preset": "faster",
+      "encodeSeconds": 27.4,
+      "predictedSeconds": 20,
+      "independentOutputCheck": "H.264 Main, yuv420p 8-bit, color_transfer/primaries/space all bt709, exactly 1 audio track (or none), clean ffmpeg decode"
+    },
+    {
+      "source": "brightdoor",
+      "description": "REAL HDR10 (PQ) 4K HEVC clip, 6 s, no audio (github.com/haasn/hdr-tests)",
+      "inputBytes": 9993572,
+      "outputBytes": 862967,
+      "reductionPercent": 91.4,
+      "status": "succeeded",
+      "toneMapped": true,
+      "preset": "faster",
+      "encodeSeconds": 22,
+      "predictedSeconds": 33,
+      "independentOutputCheck": "H.264 Main, yuv420p 8-bit, color_transfer/primaries/space all bt709, exactly 1 audio track (or none), clean ffmpeg decode"
+    },
+    {
+      "source": "aquaman_hdr10",
+      "description": "REAL HDR10 (PQ) 4K HEVC clip, 8 s, TrueHD audio converted to AAC (github.com/haasn/hdr-tests)",
+      "inputBytes": 12027181,
+      "outputBytes": 1478990,
+      "reductionPercent": 87.7,
+      "status": "succeeded",
+      "toneMapped": true,
+      "preset": "faster",
+      "encodeSeconds": 31,
+      "predictedSeconds": 46,
+      "independentOutputCheck": "H.264 Main, yuv420p 8-bit, color_transfer/primaries/space all bt709, exactly 1 audio track (or none), clean ffmpeg decode"
+    }
+  ],
+  "plumbingTest_exactInverseCurve_vs_SDR_original": {
+    "hlg": {
+      "vmaf": 98.26,
+      "vmafMin": 92,
+      "ssim": 0.9883
+    },
+    "pq": {
+      "vmaf": 86.66,
+      "vmafMin": 82.42,
+      "ssim": 0.9803
+    },
+    "note": "Synthetic HDR made from an SDR original by linear scaling; tonemap=none is its exact inverse, so a correct pipeline must reproduce the original. The production curve (hable) is deliberately NOT an inverse, so scoring it against that original is meaningless (it scored VMAF ~11 and darker) \u2014 an earlier draft of this test wrongly used it and was discarded."
+  },
+  "realHdr10Visual": "hdr-brightdoor-naive-washed-out.jpg vs hdr-brightdoor-tonemapped.jpg: same frame; the naive conversion is grey and flat, the tone-mapped frame has proper contrast, deep blacks and natural warm colour.",
+  "timeModelFinding": "Predicted vs actual encode seconds: 20 vs 39.6, 20 vs 27.4, 33 vs 22, 46 vs 31. High-bitrate 10-bit HEVC ran up to 1.98x slower than predicted, so HDR estimates are scaled x2 (TONEMAP_SAFETY_FACTOR).",
+  "limits": [
+    "No real iPhone file was available; iPhone-style inputs are synthetic and real HDR10 is PQ, not iPhone HLG/Dolby Vision.",
+    "Tone-mapping curve is hable with npl=100 (FFmpeg-documented chain); it is a look choice, not a colour-accurate reference, and was judged by eye plus the plumbing test.",
+    "Dolby Vision RPU metadata is ignored (the HLG/HDR10 base layer is used)."
+  ]
+}
