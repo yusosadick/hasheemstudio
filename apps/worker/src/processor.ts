@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { getPool } from "./db.js";
 import { downloadObject, uploadObject } from "./storage.js";
 import { toUserFacingError } from "./userError.js";
+import { sanitizeMp4Brands } from "./mp4Compat.js";
 import { probe, remux, compatEncode, platformOptimize, decodeCheck, looksLikeSourceCorruption } from "./ffmpeg.js";
 import { planPlatformProfile, choosePreset, PLATFORM_OPTIMIZE_TIMEOUT_MS, WHATSAPP_MAX_BYTES } from "./platformProfile.js";
 
@@ -203,6 +204,7 @@ export async function processJob(jobId: string): Promise<void> {
     } else if (claimed.recipe === "remux") {
       const outputPath = join(scratchDir, "output.mp4");
       const remuxResult = await remux(inputPath, outputPath, metadata.audioStreamIndex);
+      await sanitizeMp4Brands(outputPath);
       const decode = await decodeCheck(outputPath);
       const outputBuffer = await readFile(outputPath);
       const outputMetadata = await probe(outputPath);
@@ -249,6 +251,7 @@ export async function processJob(jobId: string): Promise<void> {
     } else if (claimed.recipe === "compat_encode") {
       const outputPath = join(scratchDir, "output.mp4");
       const encodeResult = await compatEncode(inputPath, outputPath, { sourceFrameRate: metadata.frameRate, audioStreamIndex: metadata.audioStreamIndex });
+      await sanitizeMp4Brands(outputPath);
       const decode = await decodeCheck(outputPath);
       const outputBuffer = await readFile(outputPath);
       const outputMetadata = await probe(outputPath);
@@ -341,6 +344,7 @@ export async function processJob(jobId: string): Promise<void> {
       const outputPath = join(scratchDir, "output.mp4");
       const encodeStartedAt = Date.now();
       const encodeResult = await platformOptimize(inputPath, outputPath, plan, preset, PLATFORM_OPTIMIZE_TIMEOUT_MS, metadata.isHdr, metadata.audioStreamIndex);
+      await sanitizeMp4Brands(outputPath);
       const encodeSeconds = Math.round((Date.now() - encodeStartedAt) / 100) / 10;
       const decode = await decodeCheck(outputPath);
       const outputBuffer = await readFile(outputPath);

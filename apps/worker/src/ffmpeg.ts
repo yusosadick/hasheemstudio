@@ -187,6 +187,8 @@ export async function remux(inputPath: string, outputPath: string, audioStreamIn
       // permissive decoder (like the ffmpeg decode check below) plays through it fine.
       "-avoid_negative_ts", "make_zero",
       "-movflags", "+faststart",
+      "-map_metadata", "-1", // drop source tags (GPS position, device model, Dolby/QuickTime brands)
+      "-map_chapters", "-1",
       "-fs", String(MAX_OUTPUT_BYTES),
       "-threads", FFMPEG_THREADS,
       outputPath,
@@ -263,6 +265,8 @@ export async function compatEncode(inputPath: string, outputPath: string, opts: 
 
   args.push(
     "-movflags", "+faststart",
+      "-map_metadata", "-1", // drop source tags (GPS position, device model, Dolby/QuickTime brands)
+      "-map_chapters", "-1",
     "-fs", String(MAX_OUTPUT_BYTES),
     "-threads", FFMPEG_THREADS,
     outputPath,
@@ -335,6 +339,8 @@ export async function platformOptimize(
     "-ar", "48000",
     "-ac", "2",
     "-movflags", "+faststart",
+      "-map_metadata", "-1", // drop source tags (GPS position, device model, Dolby/QuickTime brands)
+      "-map_chapters", "-1",
     "-use_editlist", "0",
     "-fs", String(MAX_OUTPUT_BYTES),
     "-threads", FFMPEG_THREADS,
