@@ -1,6 +1,6 @@
 import { AuthBrandLink } from "./auth/AuthBrandLink";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, LogOut, Settings, UserRound } from "lucide-react";
+import { ChevronDown, LogOut } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { signOut, type Session } from "../lib/auth";
 
@@ -80,10 +80,7 @@ export function Nav() {
                 <ChevronDown className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
               </button>
               {profileOpen && (
-                <div role="menu" className="absolute right-0 top-full z-50 mt-2 w-60 overflow-hidden rounded-xl border border-border bg-surface1 shadow-2xl">
-                  <a role="menuitem" href="/app/profile" onClick={() => setProfileOpen(false)} className="flex min-h-touch items-center gap-3 px-4 py-3 text-sm text-foreground transition-colors hover:bg-surface2"><UserRound className="h-4 w-4 text-foreground-muted" />My Profile</a>
-                  <a role="menuitem" href="/app/settings" onClick={() => setProfileOpen(false)} className="flex min-h-touch items-center gap-3 px-4 py-3 text-sm text-foreground transition-colors hover:bg-surface2"><Settings className="h-4 w-4 text-foreground-muted" />Settings</a>
-                  <div className="border-t border-border" />
+                <div role="menu" className="absolute right-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-xl border border-border bg-surface1 shadow-2xl">
                   <button role="menuitem" type="button" onClick={() => void logout()} className="flex min-h-touch w-full items-center gap-3 px-4 py-3 text-left text-sm text-danger transition-colors hover:bg-surface2"><LogOut className="h-4 w-4" />Sign out</button>
                 </div>
               )}
@@ -102,8 +99,6 @@ export function Nav() {
         <nav id="mobile-nav" aria-label="Primary mobile" className="flex flex-col gap-1 border-t border-border bg-background px-4 py-4 lg:hidden">
           {links.map((l) => <a key={l.href} href={l.href} className="min-h-touch rounded-md px-2 py-2 text-sm text-foreground-muted hover:bg-surface1 hover:text-foreground" onClick={() => setOpen(false)}>{l.label}</a>)}
           {session ? <>
-            <a href="/app/profile" className="min-h-touch rounded-md px-2 py-2 text-sm text-foreground-muted hover:bg-surface1" onClick={() => setOpen(false)}>My Profile</a>
-            <a href="/app/settings" className="min-h-touch rounded-md px-2 py-2 text-sm text-foreground-muted hover:bg-surface1" onClick={() => setOpen(false)}>Settings</a>
             <button type="button" onClick={() => void logout()} className="min-h-touch px-2 py-2 text-left text-sm text-danger">Sign out</button>
           </> : <>
             <a href="/login" className="min-h-touch rounded-md px-2 py-2 text-sm text-foreground-muted hover:bg-surface1" onClick={() => setOpen(false)}>Sign in</a>
