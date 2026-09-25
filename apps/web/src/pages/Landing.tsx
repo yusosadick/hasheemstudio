@@ -69,7 +69,12 @@ export default function Landing() {
 
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-8 text-xs text-foreground-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <span>© Bisso Technologies Ltd. Hasheem Studio is in public beta.</span>
+          <span>
+            © Hasheem Studio, Developed: Yusuf Sadick (Ig:{" "}
+            <a href="https://www.instagram.com/yuso_sadick/" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-foreground">yuso_sadick</a>
+            ){" "}
+            <a href="https://yusouf.dev" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-foreground">yusouf.dev</a>
+          </span>
           <a href="/status" className="hover:text-foreground">Service status</a>
         </div>
       </footer>
