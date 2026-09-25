@@ -37,7 +37,7 @@ Premium creative workstation, not a generic admin template. Large type hierarchy
 
 Before full application implementation, build realistic landing, upload wizard and job-result prototypes in both themes. Capture at 390, 768 and 1440 px. Review spacing, line length, contrast, icons and empty/error states. Obtain owner feedback before polishing all screens. Continue independent backend work while waiting; do not mistake code generation for visual approval.
 
-**Current status:** first-pass prototype built and screenshotted, awaiting owner visual approval.
+**Current status:** first-pass prototype was owner-approved and has since been superseded by the real pages; the `/prototypes/*` routes and mock pages were removed (2026-09-25).
 
 - Tokens implemented for real in `packages/ui/src/tokens.css`, consumed by `apps/web` via
   Tailwind CSS variable mapping (`apps/web/tailwind.config.ts`).

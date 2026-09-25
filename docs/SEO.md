@@ -6,7 +6,7 @@
 - `apps/web/index.html`: title, description, canonical, robots (`max-image-preview:large`), Open Graph + Twitter card (1200x630 `og-image.png`), icons (`favicon.ico` 16/32/48, `favicon-*.png`, 192/512 PNG, `apple-touch-icon.png`), `site.webmanifest`, JSON-LD (`Organization` with logo, `WebSite`, `SoftwareApplication` with author), and a `<noscript>` summary.
 - `apps/web/scripts/seo-prerender.mjs` (runs in `pnpm build`): writes static `privacy/index.html`, `terms/index.html` with their own head tags, breadcrumb JSON-LD and the **full legal text**, and a `noindex` `404.html`. The React app replaces the body on load, so users see the normal app while crawlers get full content without JavaScript.
 - `apps/web/nginx.conf`: unknown URLs return a real **404** (with the noindex page) instead of a 200 duplicate; app/auth routes return `X-Robots-Tag: noindex, nofollow`; manifest gets `application/manifest+json`; hashed assets are immutable.
-- `robots.txt`: allows public pages; disallows `/app/`, auth pages, `/prototypes/`; declares the sitemap. `sitemap.xml`: the three public URLs with `lastmod` (bump `lastmod` in `public/sitemap.xml` when the pages change materially).
+- `robots.txt`: allows public pages; disallows `/app/` and auth pages; declares the sitemap. `sitemap.xml`: the three public URLs with `lastmod` (bump `lastmod` in `public/sitemap.xml` when the pages change materially).
 - `PageSEO` updates the existing tags (no duplicates) and restores them on unmount; auth pages are `noindex`.
 - `/status` was removed (no such page existed; it would have rendered the app shell).
 

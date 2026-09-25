@@ -5,8 +5,6 @@ import "./index.css";
 import ServiceInformation from "./pages/ServiceInformation";
 import App from "./App";
 import Landing from "./pages/Landing";
-import UploadWizardPrototype from "./pages/UploadWizardPrototype";
-import JobResultPrototype from "./pages/JobResultPrototype";
 import Login from "./pages/auth/LoginPage";
 import Signup from "./pages/auth/RegisterPage";
 import ForgotPassword from "./pages/auth/ForgotPasswordPage";
@@ -35,8 +33,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/prototypes/upload" element={<UploadWizardPrototype />} />
-          <Route path="/prototypes/job-result" element={<JobResultPrototype />} />
             <Route path="/app/upload" element={<Upload />} />
             <Route path="/app/jobs/:id" element={<JobResult />} />
             <Route path="/app/:section" element={<AccountPage />} />

@@ -9,6 +9,5 @@ Disallow: /forgot-password
 Disallow: /reset-password
 Disallow: /verify-email
 Disallow: /auth/
-Disallow: /prototypes/
 
 Sitemap: https://hasheemstudio.com/sitemap.xml
