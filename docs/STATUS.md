@@ -1,5 +1,12 @@
 # Status
 
+## Production auth outage recovered — 2026-09-30
+
+- [VERIFIED-LIVE] Root cause was not React, pricing or Google OAuth configuration: `hasheemstudio-envoy` crash-looped 457 times with Envoy's fatal `inotify_fd_ >= 0` assertion. VPS `fs.inotify.max_user_instances=128` was fully exhausted by root-owned container processes (measured exactly 128/128; 168 total host instances), so every Supabase route behind Envoy returned 502 and the login page surfaced a browser CORS error plus “Google sign-in unavailable.”
+- [VERIFIED-LIVE] Raised only `fs.inotify.max_user_instances` to 1024 and persisted `/etc/sysctl.d/99-container-inotify.conf`; existing `max_user_watches` and queue limits were unchanged. Restarted only `hasheemstudio-envoy`. It remains running with restart count 0 after recovery; no other project container was restarted.
+- [VERIFIED-LIVE] Fresh Chromium at 390px: `/login` loads `/auth/v1/settings` HTTP 200, Continue with Google is visible, zero console/network errors. Pricing endpoint is available and returns Weekly 5,000 TZS / 20 videos / 7 days and Monthly 19,900 TZS / 50 videos / 30 days; live landing displays those exact plans and active CTAs.
+- [UI FOLLOW-UP] Fresh mobile evidence still shows a truncated hero description (`…`), dense pricing hierarchy (Monthly first, Free/Weekly side-by-side), and cramped footer wrapping. These are real presentation issues but separate from the recovered auth outage.
+
 ## Snippe mobile-money checkout enabled — 2026-09-26
 
 - [VERIFIED-LIVE] Owner-approved Vaultwarden item `hasheemstudio-snippe-api` provisioned into `/etc/hasheemstudio/local.env` (0600): password field validated as `snp_` API key; username field validated as `whsec_` account webhook signing secret. Values were never printed or saved in repo evidence. Vault locked and temporary session deleted immediately after provisioning.
