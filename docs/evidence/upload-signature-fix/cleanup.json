@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "objectKeys": 7,
+  "usersDeleted": 2,
+  "usersRemaining": 0,
+  "objectsRemaining": 0,
+  "abandonedTusTerminated": 1,
+  "guestWorkspaceMetadataRetained": 1,
+  "method": "Storage DELETE exact synthetic keys; TUS DELETE; Auth admin DELETE exact disposable users; read-only SQL verification. No owner data deleted."
+}

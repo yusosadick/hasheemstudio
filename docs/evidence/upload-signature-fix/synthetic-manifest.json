@@ -1,0 +1,58 @@
+{
+  "users": [
+    "51da4f8f-56b5-4f5e-90cb-57ce331bfd5c",
+    "e1796031-ade9-4453-a59e-111631971d6f"
+  ],
+  "workspaces": [
+    "9965abc9-923d-4c97-ab60-85166e3b3968",
+    "81175be9-74b8-44ea-9ce6-ccf3cd1d8e40",
+    "fc8c856d-f9d5-47cc-a1c7-865696dc1211",
+    "a63ad670-f0d0-4b01-aa31-1dc4ae848ce3"
+  ],
+  "sessions": [
+    {
+      "id": "e9aaed5b-2272-45fd-a7a8-79ae1d46c914",
+      "workspace_id": "9965abc9-923d-4c97-ab60-85166e3b3968",
+      "object_key": "9965abc9-923d-4c97-ab60-85166e3b3968/uploads/e9aaed5b-2272-45fd-a7a8-79ae1d46c914-synthetic-remux-test.mov",
+      "state": "completed"
+    },
+    {
+      "id": "9031e998-2a47-44b5-91f4-ecccaec891d2",
+      "workspace_id": "81175be9-74b8-44ea-9ce6-ccf3cd1d8e40",
+      "object_key": "81175be9-74b8-44ea-9ce6-ccf3cd1d8e40/uploads/9031e998-2a47-44b5-91f4-ecccaec891d2-synthetic-retry.mov",
+      "state": "completed"
+    },
+    {
+      "id": "5d8accc4-b1ca-4a4f-9920-bf9f4caa4d7e",
+      "workspace_id": "81175be9-74b8-44ea-9ce6-ccf3cd1d8e40",
+      "object_key": "81175be9-74b8-44ea-9ce6-ccf3cd1d8e40/uploads/5d8accc4-b1ca-4a4f-9920-bf9f4caa4d7e-synthetic-remux-test.mov",
+      "state": "pending"
+    },
+    {
+      "id": "f7fa57e0-74b5-4c79-8fd5-7a49e74db6ed",
+      "workspace_id": "a63ad670-f0d0-4b01-aa31-1dc4ae848ce3",
+      "object_key": "a63ad670-f0d0-4b01-aa31-1dc4ae848ce3/uploads/f7fa57e0-74b5-4c79-8fd5-7a49e74db6ed-synthetic-remux-test.mov",
+      "state": "completed"
+    }
+  ],
+  "jobs": [
+    {
+      "id": "178bea7a-a228-4052-8ed1-a85bc51c2f57",
+      "workspace_id": "9965abc9-923d-4c97-ab60-85166e3b3968",
+      "status": "succeeded",
+      "output_object_key": "9965abc9-923d-4c97-ab60-85166e3b3968/outputs/178bea7a-a228-4052-8ed1-a85bc51c2f57.mp4"
+    },
+    {
+      "id": "66fa71a5-8778-4749-9503-315efa952e2c",
+      "workspace_id": "a63ad670-f0d0-4b01-aa31-1dc4ae848ce3",
+      "status": "succeeded",
+      "output_object_key": "a63ad670-f0d0-4b01-aa31-1dc4ae848ce3/outputs/66fa71a5-8778-4749-9503-315efa952e2c.mp4"
+    },
+    {
+      "id": "9a82ee87-0100-473d-bcef-fe10ac2a7aa9",
+      "workspace_id": "81175be9-74b8-44ea-9ce6-ccf3cd1d8e40",
+      "status": "succeeded",
+      "output_object_key": "81175be9-74b8-44ea-9ce6-ccf3cd1d8e40/outputs/9a82ee87-0100-473d-bcef-fe10ac2a7aa9.mp4"
+    }
+  ]
+}

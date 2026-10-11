@@ -1,0 +1,28 @@
+{
+  "env": "local",
+  "connected": true,
+  "dbHost": "127.0.0.1",
+  "dbPort": 55432,
+  "dbBootstrapMarker": "hasheemstudio",
+  "appliedVersions": [
+    "0001_bootstrap.sql",
+    "0002_profiles_workspaces.sql",
+    "0003_platform_admins.sql",
+    "0004_media_assets_and_uploads.sql",
+    "0005_jobs.sql",
+    "0006_outbox.sql",
+    "0007_entitlements_and_usage.sql",
+    "0008_storage_rls.sql",
+    "0009_upload_sessions_tus.sql",
+    "0010_retention.sql",
+    "0011_fix_deletion_cascades.sql",
+    "0012_fix_remaining_deletion_cascades.sql",
+    "0013_guest_processing_download_grants.sql",
+    "0014_progressive_auth_email_lookup.sql",
+    "0015_studio_payments.sql",
+    "0016_platform_optimize_recipe.sql",
+    "0017_studio_plans.sql"
+  ],
+  "pendingVersions": [],
+  "driftedVersions": []
+}

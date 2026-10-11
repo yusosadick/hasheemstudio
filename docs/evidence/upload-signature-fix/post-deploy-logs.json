@@ -1,0 +1,17 @@
+{
+  "api": {
+    "signatureFailureCount": 0,
+    "tusOperations": {}
+  },
+  "storage": {
+    "signatureFailureCount": 0,
+    "tusOperations": {
+      "storage.tus.upload.create:201": 2,
+      "storage.tus.upload.get:200": 4,
+      "storage.tus.upload.part:204": 4,
+      "storage.tus.upload.part:403": 1,
+      "storage.tus.upload.delete:400": 2,
+      "storage.tus.upload.delete:204": 1
+    }
+  }
+}

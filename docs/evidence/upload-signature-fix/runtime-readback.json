@@ -1,0 +1,77 @@
+{
+  "timestamp": "2026-10-11T03:07:49.583870+00:00",
+  "releaseSha": "d0bdeb243b6c033b13a1b6ee5858ec7fed865f5d",
+  "changedPreexistingContainers": [
+    "hasheemstudio-api"
+  ],
+  "onlyStudioApiRecreated": true,
+  "services": [
+    {
+      "name": "/hasheemstudio-api",
+      "containerId": "55f13ddbccf57f7851a92c1d786d7ccae7be2b6e421185eec06a76d3935ae4ef",
+      "imageId": "sha256:1c2715eacb0e80ff1ea5f853dd6dd46c1428dfea544dbf0162f3567e2024ec51",
+      "imageReference": "sha256:1c2715eacb0e80ff1ea5f853dd6dd46c1428dfea544dbf0162f3567e2024ec51",
+      "releaseRevision": "d0bdeb243b6c033b13a1b6ee5858ec7fed865f5d",
+      "health": "healthy",
+      "storageHost": "hasheemstudio-envoy",
+      "serviceKeyHash": "1e7a00b0d28af87851d75b34efe89e1045988edda3b9f62e4f289560a0eeed0b"
+    },
+    {
+      "name": "/hasheemstudio-web",
+      "containerId": "3e0eb69639676b8cd3fbaa361a374aea62c14d0163e83e8ff84531e3f5e67823",
+      "imageId": "sha256:92aad327d244cdaad5bd18abb9002626330e7502b67f7d922f92251f08edbd1e",
+      "imageReference": "hasheemstudio-web",
+      "releaseRevision": "d5fb0119cf5c6a94cba03474ccc841bbe037fa87",
+      "health": "healthy",
+      "storageHost": null,
+      "serviceKeyHash": null
+    },
+    {
+      "name": "/hasheemstudio-worker",
+      "containerId": "bb1cd43b7b40249ee8eb5dec6f60f31ceb810fa5c25c4717135bfc0bf4b1cf3b",
+      "imageId": "sha256:39cc78d6e512488f1b229af64dcab7149581398f142c2086f1d8ff2909d67ed2",
+      "imageReference": "hasheemstudio-worker",
+      "releaseRevision": null,
+      "health": "running",
+      "storageHost": null,
+      "serviceKeyHash": "1e7a00b0d28af87851d75b34efe89e1045988edda3b9f62e4f289560a0eeed0b"
+    },
+    {
+      "name": "/hasheemstudio-envoy",
+      "containerId": "670df70e1e436340dc6bf9a714f88cc774b451b250b2f9471a81498526d0a30b",
+      "imageId": "sha256:57e14a549d7bd43c8d3f6d03e8cfa653e037d4b38e133acd9b54f38c524401b4",
+      "imageReference": "envoyproxy/envoy:v1.39.1",
+      "releaseRevision": null,
+      "health": "healthy",
+      "storageHost": null,
+      "serviceKeyHash": "1e7a00b0d28af87851d75b34efe89e1045988edda3b9f62e4f289560a0eeed0b"
+    },
+    {
+      "name": "/hasheemstudio-storage",
+      "containerId": "02c43d2075da6ba4b70a8ff674d8675d483d7f962d6f5babae2aa5a17d875762",
+      "imageId": "sha256:f1546fac6d1c7e345428ac904bfaa7be7cecd50a1f549fe1cf38c628a7b15c85",
+      "imageReference": "supabase/storage-api:v1.74.0",
+      "releaseRevision": null,
+      "health": "healthy",
+      "storageHost": null,
+      "serviceKeyHash": "1e7a00b0d28af87851d75b34efe89e1045988edda3b9f62e4f289560a0eeed0b"
+    }
+  ],
+  "https": [
+    {
+      "url": "https://hasheemstudio.com",
+      "status": 200,
+      "expectedStatus": 200
+    },
+    {
+      "url": "https://api.hasheemstudio.com/health/ready",
+      "status": 200,
+      "expectedStatus": 200
+    },
+    {
+      "url": "https://supabase.hasheemstudio.com/auth/v1/health",
+      "status": 401,
+      "expectedStatus": 401
+    }
+  ]
+}

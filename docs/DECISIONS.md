@@ -147,3 +147,8 @@ Built as a selectable recipe (not the default). Owner decisions this leaves open
 5. **HDR**: initially refused; **implemented 2026-09-25** as tone-mapping to SDR (hable), tested on real HDR10 footage and synthetic iPhone-style HLG/PQ clips. Not tested on a real iPhone file.
 6. **In-worker VMAF** would need an ffmpeg build with libvmaf in the worker image; not done, quality remains an offline measurement.
 No owner input was required to ship this; nothing here touches shared infrastructure.
+
+
+## Upload incident follow-up — 2026-10-11
+
+`UPLOAD-PROXY-PIN` — Read-only discovery during the signature repair found the existing API_TRUST_PROXY value `10.0.1.6` differs from the current shared proxy address `10.0.1.7`. The scoped upload routing fix does not change the pin or shared proxy. Follow-up: verify actual ingress peer/forwarded-header behavior, narrowly correct the Studio-owned pin if confirmed, and test guest per-network allowance separation and forged-header rejection. Full proxy/rate-limit correctness is not claimed by this repair. No owner credential or other-project change is needed for that investigation. See [incident evidence](evidence/upload-signature-fix/README.md).

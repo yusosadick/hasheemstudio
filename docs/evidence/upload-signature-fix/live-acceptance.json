@@ -1,0 +1,102 @@
+{
+  "timestamp": "2026-10-11T03:09:25.152Z",
+  "passed": true,
+  "checks": [
+    {
+      "name": "upload rejects missing",
+      "passed": true
+    },
+    {
+      "name": "upload rejects invalid bearer",
+      "passed": true
+    },
+    {
+      "name": "upload rejects invalid guest",
+      "passed": true
+    },
+    {
+      "name": "guest 100 MiB server admission limit",
+      "passed": true
+    },
+    {
+      "name": "browser interrupted after first real chunk",
+      "passed": true
+    },
+    {
+      "name": "cross-account guest upload proxy rejected",
+      "passed": true
+    },
+    {
+      "name": "live guest choose -> resume -> processing -> result",
+      "passed": true
+    },
+    {
+      "name": "resumed source checksum equals synthetic original",
+      "passed": true
+    },
+    {
+      "name": "guest download requires sign-in",
+      "passed": true
+    },
+    {
+      "name": "unrelated account cannot claim guest result",
+      "passed": true
+    },
+    {
+      "name": "private output cannot be read directly",
+      "passed": true
+    },
+    {
+      "name": "browser login returns to same result; gated download fully decodes",
+      "passed": true
+    },
+    {
+      "name": "claim invalidates guest and rejects wrong account",
+      "passed": true
+    },
+    {
+      "name": "owner raw output read and self-sign remain denied",
+      "passed": true
+    },
+    {
+      "name": "repeat download consumes only one grant",
+      "passed": true
+    },
+    {
+      "name": "free daily allowance remains enforced",
+      "passed": true
+    },
+    {
+      "name": "authenticated browser direct TUS -> processing -> result; cross-account PATCH denied",
+      "passed": true
+    },
+    {
+      "name": "authenticated output download fully decodes",
+      "passed": true
+    }
+  ],
+  "guestJob": "9a82ee87-0100-473d-bcef-fe10ac2a7aa9",
+  "guestResume": {
+    "sessionCreates": 1,
+    "interruptedAt": 262144,
+    "resumedAt": 262144,
+    "originalBytes": 781679,
+    "sourceChecksumMatched": true
+  },
+  "cleanup": {
+    "passed": true,
+    "objectKeys": 7,
+    "usersDeleted": 2,
+    "usersRemaining": 0,
+    "objectsRemaining": 0,
+    "abandonedTusTerminated": 1,
+    "guestWorkspaceMetadataRetained": 1,
+    "method": "Storage DELETE exact synthetic keys; TUS DELETE; Auth admin DELETE exact disposable users; read-only SQL verification. No owner data deleted."
+  },
+  "fixture": "Synthetic H.264/AAC MOV. Owner provided screenshot only; original owner file not exercised.",
+  "harnessNote": "All 18 functional assertions passed on first post-deploy run. Cleanup initially failed because harness sent JSON Content-Type with an empty TUS DELETE; removing that harness-only header returned 204. Cleanup resumed from exact synthetic manifest and independently verified.",
+  "limitations": [
+    "No naturally expired user JWT tested",
+    "Browser is VPS-hosted Chromium, not owner device/network"
+  ]
+}
