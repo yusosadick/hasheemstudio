@@ -1,5 +1,13 @@
 # Status
 
+## Guest upload signature failure — repair in progress, 2026-10-11
+
+- [REPRODUCED-LIVE] In tmux `hasheem-upload-fix`, public Chromium choosing generated `synthetic-remux-test.mov` reproduced the exact 500 / createResumableUpload 400 / AccessDenied / signature-verification error. No owner media was used. Evidence: [reproduction](evidence/upload-signature-fix/reproduction.json), [screenshot](evidence/upload-signature-fix/before.png).
+- [ROOT CAUSE] API_STORAGE_HOST=`api-gw` resolves to both Studio and another project's gateway on shared ingress. Studio key hashes match and its service-role HS256 signature/expiry are valid. Failed calls miss Studio Storage; successful calls reach it. [DNS](evidence/upload-signature-fix/dns-before.json), [configuration hashes](evidence/upload-signature-fix/config-before.json).
+- [IMPLEMENTED] Minimum fix: API_STORAGE_HOST=`hasheemstudio-envoy`. No other runtime setting, credential, UI, auth/RLS, limit, schema or worker change. Read-only real-DNS regression failed before the edit and passed after it. [Scoped security review](evidence/upload-signature-fix/review.md).
+- [TESTED-LOCAL] Frozen install, workspace typecheck, unit tests and production build passed (existing bundle-size warning). DB identity `hasheemstudio`, migrations 0001–0017, no pending/checksum drift; no migration needed.
+- [NOT DONE YET] Immutable commit/image release and full live acceptance are pending. Original checkout remains on main; no branch/worktree/clone, other-project change, secret rotation or broad restart.
+
 ## Production auth outage recovered — 2026-09-30
 
 - [VERIFIED-LIVE] Root cause was not React, pricing or Google OAuth configuration: `hasheemstudio-envoy` crash-looped 457 times with Envoy's fatal `inotify_fd_ >= 0` assertion. VPS `fs.inotify.max_user_instances=128` was fully exhausted by root-owned container processes (measured exactly 128/128; 168 total host instances), so every Supabase route behind Envoy returned 502 and the login page surfaced a browser CORS error plus “Google sign-in unavailable.”

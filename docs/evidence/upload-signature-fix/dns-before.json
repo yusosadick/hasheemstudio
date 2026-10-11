@@ -1,0 +1,23 @@
+{
+  "api-gw": {
+    "addresses": [
+      "fdf3:7fb9:2ad9::6",
+      "fdf3:7fb9:2ad9::19",
+      "10.0.1.25",
+      "10.0.1.6"
+    ],
+    "owners": [
+      "akventure-envoy",
+      "hasheemstudio-envoy"
+    ]
+  },
+  "hasheemstudio-envoy": {
+    "addresses": [
+      "fdf3:7fb9:2ad9::19",
+      "10.0.1.25"
+    ],
+    "owners": [
+      "hasheemstudio-envoy"
+    ]
+  }
+}

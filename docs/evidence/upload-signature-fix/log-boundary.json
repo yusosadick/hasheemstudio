@@ -1,0 +1,611 @@
+[
+  {
+    "service": "api",
+    "time": 1791687340836,
+    "signatureFailure": true,
+    "stack": [
+      "    at createResumableUpload (/app/apps/api/src/storage.ts:56:22)",
+      "    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)",
+      "    at async Object.<anonymous> (/app/apps/api/src/routes/uploads.ts:85:27)"
+    ]
+  },
+  {
+    "service": "api",
+    "time": 1791687353896,
+    "signatureFailure": true,
+    "stack": [
+      "    at createResumableUpload (/app/apps/api/src/storage.ts:56:22)",
+      "    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)",
+      "    at async Object.<anonymous> (/app/apps/api/src/routes/uploads.ts:85:27)"
+    ]
+  },
+  {
+    "service": "api",
+    "time": 1791687650790,
+    "signatureFailure": true,
+    "stack": [
+      "    at createResumableUpload (/app/apps/api/src/storage.ts:56:22)",
+      "    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)",
+      "    at async Object.<anonymous> (/app/apps/api/src/routes/uploads.ts:85:27)"
+    ]
+  },
+  {
+    "service": "storage",
+    "time": 1791687538278,
+    "operation": "storage.tus.upload.create",
+    "status": 201
+  },
+  {
+    "service": "storage",
+    "time": 1791687538493,
+    "operation": "storage.tus.upload.get",
+    "status": 200
+  },
+  {
+    "service": "storage",
+    "time": 1791687538806,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687563244,
+    "operation": "storage.tus.upload.create",
+    "status": 201
+  },
+  {
+    "service": "storage",
+    "time": 1791687563282,
+    "operation": "storage.tus.upload.get",
+    "status": 200
+  },
+  {
+    "service": "storage",
+    "time": 1791687745017,
+    "operation": "storage.tus.upload.create",
+    "status": 201
+  },
+  {
+    "service": "storage",
+    "time": 1791687746145,
+    "operation": "storage.tus.upload.get",
+    "status": 200
+  },
+  {
+    "service": "storage",
+    "time": 1791687747521,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687748473,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687749420,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687750330,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687751238,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687752107,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687752962,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687753836,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687754683,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687755516,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687756404,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687757207,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687758028,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687758923,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687759786,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687760610,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687761434,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687762237,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687763054,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687763868,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687764668,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687765490,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687766302,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687767108,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687767938,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687768714,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687769489,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687770236,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687771027,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687771798,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687772711,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687773495,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687774643,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687775460,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687776289,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687777062,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687777813,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687778582,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687779312,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687780055,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687780823,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687781587,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687782347,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687783106,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687783871,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687784628,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687785361,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687786082,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687786872,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687787628,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687788368,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687789102,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687789840,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687790653,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687791430,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687792145,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687792905,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687793631,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687794498,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687795242,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687796025,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687797354,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687798206,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687798910,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687799643,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687800359,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687801061,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687801760,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687802453,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687803161,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687803929,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687804632,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687805318,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687806143,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687806862,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687807556,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687808267,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687809011,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687809765,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687810487,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687811186,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687811883,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687812577,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687813259,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687813939,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687814637,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "storage",
+    "time": 1791687815313,
+    "operation": "storage.tus.upload.part",
+    "status": 204
+  },
+  {
+    "service": "envoy",
+    "tusCreate": true,
+    "status": "201"
+  },
+  {
+    "service": "envoy",
+    "tusCreate": true,
+    "status": "201"
+  },
+  {
+    "service": "envoy",
+    "tusCreate": true,
+    "status": "201"
+  }
+]

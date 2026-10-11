@@ -1,0 +1,361 @@
+{"passed":true,"mode":"candidate","host":"hasheemstudio-envoy","uniqueAddresses":2,"allAddressesBelongToStudio":true,"dnsLookups":12}
+Scope: all 5 workspace projects
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+   ╭───────────────────────────────────────────────────────────────────╮
+   │                                                                   │
+   │                Update available! 9.15.0 → 12.11.2.                │
+   │   Changelog: https://github.com/pnpm/pnpm/releases/tag/v12.11.2   │
+   │                 Run "pnpm add -g pnpm" to update.                 │
+   │                                                                   │
+   ╰───────────────────────────────────────────────────────────────────╯
+
+
+Done in 2.7s
+
+> hasheemstudio@0.0.0 typecheck /home/yuso/hasheemstudio
+> pnpm -r --if-present typecheck
+
+Scope: 4 of 5 workspace projects
+apps/api typecheck$ tsc --noEmit
+apps/worker typecheck$ tsc --noEmit
+apps/worker typecheck: Done
+apps/api typecheck: Done
+apps/web typecheck$ tsc -b --noEmit
+apps/web typecheck: Done
+
+> hasheemstudio@0.0.0 test /home/yuso/hasheemstudio
+> pnpm -r --if-present test
+
+Scope: 4 of 5 workspace projects
+apps/api test$ node --import tsx --test src/payments/snippe.test.ts src/publicReport.test.ts src/publicError.test.ts
+apps/worker test$ node --import tsx --test src/platformProfile.test.ts src/audioSelect.test.ts src/mp4Compat.test.ts
+apps/worker test: TAP version 13
+apps/api test: TAP version 13
+apps/api test: # Subtest: raw signature, stale/future time, malformed/invalid signature
+apps/api test: ok 1 - raw signature, stale/future time, malformed/invalid signature
+apps/api test:   ---
+apps/api test:   duration_ms: 2.626353
+apps/api test:   type: 'test'
+apps/api test:   ...
+apps/api test: # Subtest: strict provider shape, version, amount and Studio correlation
+apps/api test: ok 2 - strict provider shape, version, amount and Studio correlation
+apps/api test:   ---
+apps/api test:   duration_ms: 1.392734
+apps/api test:   type: 'test'
+apps/api test:   ...
+apps/api test: # Subtest: no credential or approval means no checkout
+apps/api test: ok 3 - no credential or approval means no checkout
+apps/api test:   ---
+apps/api test:   duration_ms: 0.348034
+apps/api test:   type: 'test'
+apps/api test:   ...
+apps/api test: # Subtest: approved plan terms are fixed server-side and unknown codes are rejected
+apps/api test: ok 4 - approved plan terms are fixed server-side and unknown codes are rejected
+apps/api test:   ---
+apps/api test:   duration_ms: 1.171395
+apps/api test:   type: 'test'
+apps/api test:   ...
+apps/api test: # Subtest: request contract and redirects are server-owned
+apps/api test: ok 5 - request contract and redirects are server-owned
+apps/api test:   ---
+apps/api test:   duration_ms: 2.122133
+apps/api test:   type: 'test'
+apps/api test:   ...
+apps/api test: # Subtest: reject malformed keys and oversized idempotency before network
+apps/api test: ok 6 - reject malformed keys and oversized idempotency before network
+apps/api test:   ---
+apps/api test:   duration_ms: 0.79562
+apps/api test:   type: 'test'
+apps/api test:   ...
+apps/api test: # Subtest: provider origin cannot be redirected in production-like configs
+apps/api test: ok 7 - provider origin cannot be redirected in production-like configs
+apps/api test:   ---
+apps/api test:   duration_ms: 0.521674
+apps/api test:   type: 'test'
+apps/api test:   ...
+apps/worker test: # Subtest: skips Apple spatial audio and uses the stereo AAC track
+apps/worker test: ok 1 - skips Apple spatial audio and uses the stereo AAC track
+apps/worker test:   ---
+apps/worker test:   duration_ms: 2.236213
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: plain single AAC track
+apps/worker test: ok 2 - plain single AAC track
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.544747
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: no audio at all
+apps/worker test: ok 3 - no audio at all
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.372698
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: only unreadable audio is dropped, not fatal
+apps/worker test: ok 4 - only unreadable audio is dropped, not fatal
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.199739
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: prefers the stereo compatibility mix over surround
+apps/worker test: ok 5 - prefers the stereo compatibility mix over surround
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.310273
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: error text never leaks encoder settings, paths or tool output
+apps/worker test: ok 6 - error text never leaks encoder settings, paths or tool output
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.928025
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/api test: # Subtest: raw tool output stored on old failed jobs is never sent to the browser
+apps/api test: ok 8 - raw tool output stored on old failed jobs is never sent to the browser
+apps/api test:   ---
+apps/api test:   duration_ms: 7.597944
+apps/api test:   type: 'test'
+apps/api test:   ...
+apps/api test: # Subtest: friendly messages, null and empty pass through correctly
+apps/api test: ok 9 - friendly messages, null and empty pass through correctly
+apps/api test:   ---
+apps/api test:   duration_ms: 1.60697
+apps/api test:   type: 'test'
+apps/api test:   ...
+apps/api test: # Subtest: public report never carries encoder tuning, timings, tool versions or checksums
+apps/api test: ok 10 - public report never carries encoder tuning, timings, tool versions or checksums
+apps/api test:   ---
+apps/api test:   duration_ms: 5.736642
+apps/api test:   type: 'test'
+apps/api test:   ...
+apps/api test: # Subtest: summary carries only the four user-facing facts and is not a superset of the report
+apps/api test: ok 11 - summary carries only the four user-facing facts and is not a superset of the report
+apps/api test:   ---
+apps/api test:   duration_ms: 1.525619
+apps/api test:   type: 'test'
+apps/api test:   ...
+apps/api test: # Subtest: platformReady is false for other recipes and when any required property fails
+apps/api test: ok 12 - platformReady is false for other recipes and when any required property fails
+apps/api test:   ---
+apps/api test:   duration_ms: 0.768179
+apps/api test:   type: 'test'
+apps/api test:   ...
+apps/api test: # Subtest: verified requires both decode and duration checks
+apps/api test: ok 13 - verified requires both decode and duration checks
+apps/api test:   ---
+apps/api test:   duration_ms: 0.341682
+apps/api test:   type: 'test'
+apps/api test:   ...
+apps/api test: # Subtest: a tiny source that grew is reported honestly as a negative reduction
+apps/api test: ok 14 - a tiny source that grew is reported honestly as a negative reduction
+apps/api test:   ---
+apps/api test:   duration_ms: 0.300835
+apps/api test:   type: 'test'
+apps/api test:   ...
+apps/api test: # Subtest: no summary until the job has succeeded and a report exists
+apps/api test: ok 15 - no summary until the job has succeeded and a report exists
+apps/api test:   ---
+apps/api test:   duration_ms: 0.303872
+apps/api test:   type: 'test'
+apps/api test:   ...
+apps/api test: # Subtest: default output name is hasheemstudio_YYYYMMDD_HHmmss.mp4 from the completion time
+apps/api test: ok 16 - default output name is hasheemstudio_YYYYMMDD_HHmmss.mp4 from the completion time
+apps/api test:   ---
+apps/api test:   duration_ms: 0.6604
+apps/api test:   type: 'test'
+apps/api test:   ...
+apps/api test: # Subtest: client-supplied names are accepted only in the exact shape; everything else falls back
+apps/api test: ok 17 - client-supplied names are accepted only in the exact shape; everything else falls back
+apps/api test:   ---
+apps/api test:   duration_ms: 2.426735
+apps/api test:   type: 'test'
+apps/api test:   ...
+apps/api test: 1..17
+apps/api test: # tests 17
+apps/api test: # suites 0
+apps/api test: # pass 17
+apps/api test: # fail 0
+apps/api test: # cancelled 0
+apps/api test: # skipped 0
+apps/api test: # todo 0
+apps/api test: # duration_ms 971.11017
+apps/worker test: # Subtest: removes the Dolby Vision brand from a re-encoded H.264 file's header
+apps/worker test: ok 7 - removes the Dolby Vision brand from a re-encoded H.264 file's header
+apps/worker test:   ---
+apps/worker test:   duration_ms: 3.289439
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: leaves an already-clean header alone
+apps/worker test: ok 8 - leaves an already-clean header alone
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.474798
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: QuickTime / Dolby major brand becomes isom; non-ftyp input is ignored
+apps/worker test: ok 9 - QuickTime / Dolby major brand becomes isom; non-ftyp input is ignored
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.246906
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/api test: Done
+apps/worker test: # Subtest: ceilings match the published YouTube 1080p/720p/480p anchors at 30 and 60 fps
+apps/worker test: ok 10 - ceilings match the published YouTube 1080p/720p/480p anchors at 30 and 60 fps
+apps/worker test:   ---
+apps/worker test:   duration_ms: 2.865526
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: targets differ per resolution/frame rate instead of one hardcoded number
+apps/worker test: ok 11 - targets differ per resolution/frame rate instead of one hardcoded number
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.578059
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: frame rates between 30 and 60 interpolate; 29.97 and 59.94 land on the anchors' neighbourhood
+apps/worker test: ok 12 - frame rates between 30 and 60 interpolate; 29.97 and 59.94 land on the anchors' neighbourhood
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.304342
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: never upscales and does not resize a source already within 1080p60
+apps/worker test: ok 13 - never upscales and does not resize a source already within 1080p60
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.965664
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: 4K landscape and 4K portrait are shrunk to the 1080p ceiling with exact aspect ratio
+apps/worker test: ok 14 - 4K landscape and 4K portrait are shrunk to the 1080p ceiling with exact aspect ratio
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.3134
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: odd ratios stay even-sized (x264 yuv420p requirement)
+apps/worker test: ok 15 - odd ratios stay even-sized (x264 yuv420p requirement)
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.190232
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: frame rates above 60 are capped to 60; up to 60.5 is left alone
+apps/worker test: ok 16 - frame rates above 60 are capped to 60; up to 60.5 is left alone
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.24902
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: unknown frame rate falls back to 30 rather than failing
+apps/worker test: ok 17 - unknown frame rate falls back to 30 rather than failing
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.172018
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: ceiling is never planned above 90% of the source bitrate (no inflating small files) but never below TikTok's 516 kbps minimum
+apps/worker test: ok 18 - ceiling is never planned above 90% of the source bitrate (no inflating small files) but never below TikTok's 516 kbps minimum
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.448848
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: every planned ceiling stays under Instagram's published 25 Mbps maximum
+apps/worker test: ok 19 - every planned ceiling stays under Instagram's published 25 Mbps maximum
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.67136
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: bufsize is one second of ceiling with a half-full start; GOP is ~2 seconds
+apps/worker test: ok 20 - bufsize is one second of ceiling with a half-full start; GOP is ~2 seconds
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.217892
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: rotation swaps display dimensions for 90/270 only (including negative and >360 values)
+apps/worker test: ok 21 - rotation swaps display dimensions for 90/270 only (including negative and >360 values)
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.428321
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: a plan for the real rotated 4K drone clip uses display size, not coded size
+apps/worker test: ok 22 - a plan for the real rotated 4K drone clip uses display size, not coded size
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.31369
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: short 1080p clips use `faster`; long 1080p60 clips fall back to `veryfast`; never superfast/ultrafast
+apps/worker test: ok 23 - short 1080p clips use `faster`; long 1080p60 clips fall back to `veryfast`; never superfast/ultrafast
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.359344
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: the real 4K drone clip (5 s, 4K HEVC in, 1080p out) is planned with `faster` and a plausible prediction
+apps/worker test: ok 24 - the real 4K drone clip (5 s, 4K HEVC in, 1080p out) is planned with `faster` and a plausible prediction
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.187296
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: a 10-minute 4K clip is refused up front instead of failing after eight-minute attempts
+apps/worker test: ok 25 - a 10-minute 4K clip is refused up front instead of failing after eight-minute attempts
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.211852
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: free-tier ceiling (2 minutes of 1080p60) is always accepted
+apps/worker test: ok 26 - free-tier ceiling (2 minutes of 1080p60) is always accepted
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.181826
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: SDR filter chain: shrink first, cap fps, then plain yuv420p — never the tone-map chain
+apps/worker test: ok 27 - SDR filter chain: shrink first, cap fps, then plain yuv420p — never the tone-map chain
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.222
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: HDR filter chain shrinks BEFORE tone-mapping (float32 pass runs on the smallest picture) and ends 8-bit BT.709
+apps/worker test: ok 28 - HDR filter chain shrinks BEFORE tone-mapping (float32 pass runs on the smallest picture) and ends 8-bit BT.709
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.171047
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: # Subtest: tone-mapping raises the predicted time; a 4K HDR clip of the free-tier size is still accepted
+apps/worker test: ok 29 - tone-mapping raises the predicted time; a 4K HDR clip of the free-tier size is still accepted
+apps/worker test:   ---
+apps/worker test:   duration_ms: 0.220177
+apps/worker test:   type: 'test'
+apps/worker test:   ...
+apps/worker test: 1..29
+apps/worker test: # tests 29
+apps/worker test: # suites 0
+apps/worker test: # pass 29
+apps/worker test: # fail 0
+apps/worker test: # cancelled 0
+apps/worker test: # skipped 0
+apps/worker test: # todo 0
+apps/worker test: # duration_ms 984.71846
+apps/worker test: Done
+
+> hasheemstudio@0.0.0 build /home/yuso/hasheemstudio
+> pnpm -r --if-present build
+
+Scope: 4 of 5 workspace projects
+apps/web build$ tsc -b && vite build && node scripts/seo-prerender.mjs
+apps/web build: vite v5.4.21 building for production...
+apps/web build: transforming...
+apps/web build: ✓ 2238 modules transformed.
+apps/web build: rendering chunks...
+apps/web build: computing gzip size...
+apps/web build: dist/index.html                                              4.95 kB │ gzip:   1.51 kB
+apps/web build: dist/assets/inter-vietnamese-wght-normal-CBcvBZtf.woff2     10.25 kB
+apps/web build: dist/assets/inter-greek-ext-wght-normal-DlzME5K_.woff2      11.23 kB
+apps/web build: dist/assets/inter-cyrillic-wght-normal-DqGufNeO.woff2       18.75 kB
+apps/web build: dist/assets/inter-greek-wght-normal-CkhJZR-_.woff2          19.00 kB
+apps/web build: dist/assets/inter-cyrillic-ext-wght-normal-BOeWTOD4.woff2   25.96 kB
+apps/web build: dist/assets/inter-latin-wght-normal-Dx4kXJAl.woff2          48.26 kB
+apps/web build: dist/assets/inter-latin-ext-wght-normal-DO1Apj_S.woff2      85.07 kB
+apps/web build: dist/assets/index-Di57HRvu.css                              69.17 kB │ gzip:  13.86 kB
+apps/web build: dist/assets/index-BLeYTcjL.js                              730.13 kB │ gzip: 220.58 kB
+apps/web build: ✓ built in 11.16s
+apps/web build: (!) Some chunks are larger than 500 kB after minification. Consider:
+apps/web build: - Using dynamic import() to code-split the application
+apps/web build: - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+apps/web build: - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+apps/web build: seo-prerender: wrote privacy/index.html (15756 bytes)
+apps/web build: seo-prerender: wrote terms/index.html (17097 bytes)
+apps/web build: seo-prerender: wrote 404.html (2738 bytes)
+apps/web build: Done

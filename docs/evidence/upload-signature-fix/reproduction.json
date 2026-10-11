@@ -1,0 +1,7 @@
+{
+  "timestamp": "2026-10-11T03:00:52.532Z",
+  "status": 500,
+  "exactOwnerFailureReproduced": true,
+  "fixture": "synthetic-remux-test.mov",
+  "error": "createResumableUpload failed: 400 {\"statusCode\":\"403\",\"code\":\"AccessDenied\",\"error\":\"Unauthorized\",\"message\":\"signature verification failed\"}"
+}

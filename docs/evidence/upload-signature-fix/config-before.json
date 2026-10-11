@@ -1,0 +1,152 @@
+{
+  "api": {
+    "config": {
+      "JWT_SECRET": {
+        "present": true,
+        "sha256": "4b528f6cb3fa59b3ca971f80ed58cf692c2aedddd98b99d12257b7c834dd15a6",
+        "matchesProtected": true
+      },
+      "SERVICE_ROLE_KEY": {
+        "present": true,
+        "sha256": "1e7a00b0d28af87851d75b34efe89e1045988edda3b9f62e4f289560a0eeed0b",
+        "matchesProtected": true
+      },
+      "API_STORAGE_HOST": {
+        "present": true,
+        "sha256": "eb1a537c36e54dfe295117e2df490cdb2ea9864285e2b5b0429c2ddbb2e1ba46",
+        "matchesProtected": null
+      },
+      "API_STORAGE_PORT": {
+        "present": true,
+        "sha256": "ad5f9478d603fe97eae2bbff07f76fe7f18610343b5f3bc8e00945ee51b30d2c",
+        "matchesProtected": null
+      },
+      "serviceToken": {
+        "alg": "HS256",
+        "role": "service_role",
+        "issuer": "hasheemstudio",
+        "audience": null,
+        "expires": 2104950590,
+        "expired": false,
+        "validProtectedSignature": true
+      }
+    },
+    "image": "sha256:5b1c0590541e95e9ca826bceca5ed7edc093119b9902f1596f31642953f311ef",
+    "configuredImage": "hasheemstudio-api",
+    "created": "2026-09-25T22:17:42.299419464Z",
+    "composeProject": "hasheemstudio",
+    "composeFiles": "/home/yuso/hasheemstudio/infra/compose/docker-compose.yml"
+  },
+  "worker": {
+    "config": {
+      "SERVICE_ROLE_KEY": {
+        "present": true,
+        "sha256": "1e7a00b0d28af87851d75b34efe89e1045988edda3b9f62e4f289560a0eeed0b",
+        "matchesProtected": true
+      },
+      "serviceToken": {
+        "alg": "HS256",
+        "role": "service_role",
+        "issuer": "hasheemstudio",
+        "audience": null,
+        "expires": 2104950590,
+        "expired": false,
+        "validProtectedSignature": true
+      }
+    },
+    "image": "sha256:39cc78d6e512488f1b229af64dcab7149581398f142c2086f1d8ff2909d67ed2",
+    "configuredImage": "hasheemstudio-worker",
+    "created": "2026-09-25T11:34:10.757888669Z",
+    "composeProject": "hasheemstudio",
+    "composeFiles": "/home/yuso/hasheemstudio/infra/compose/docker-compose.yml"
+  },
+  "storage": {
+    "config": {
+      "AUTH_JWT_SECRET": {
+        "present": true,
+        "sha256": "4b528f6cb3fa59b3ca971f80ed58cf692c2aedddd98b99d12257b7c834dd15a6",
+        "matchesProtected": true
+      },
+      "SERVICE_KEY": {
+        "present": true,
+        "sha256": "1e7a00b0d28af87851d75b34efe89e1045988edda3b9f62e4f289560a0eeed0b",
+        "matchesProtected": true
+      },
+      "ANON_KEY": {
+        "present": true,
+        "sha256": "c1a310e45c0f64447904c04beeac2e63a589716ccc2c769b62e58e2876d7317d",
+        "matchesProtected": true
+      },
+      "serviceToken": {
+        "alg": "HS256",
+        "role": "service_role",
+        "issuer": "hasheemstudio",
+        "audience": null,
+        "expires": 2104950590,
+        "expired": false,
+        "validProtectedSignature": true
+      }
+    },
+    "image": "sha256:f1546fac6d1c7e345428ac904bfaa7be7cecd50a1f549fe1cf38c628a7b15c85",
+    "configuredImage": "supabase/storage-api:v1.74.0",
+    "created": "2026-09-17T02:10:19.6932404Z",
+    "composeProject": "hasheemstudio",
+    "composeFiles": "/home/yuso/hasheemstudio/infra/compose/docker-compose.yml"
+  },
+  "auth": {
+    "config": {
+      "GOTRUE_JWT_SECRET": {
+        "present": true,
+        "sha256": "4b528f6cb3fa59b3ca971f80ed58cf692c2aedddd98b99d12257b7c834dd15a6",
+        "matchesProtected": true
+      }
+    },
+    "image": "sha256:c0c25187a6b835e65a6f6e6c6b39d090e832d40e6de5186f2c038e0411944232",
+    "configuredImage": "supabase/gotrue:v2.196.0",
+    "created": "2026-09-21T00:08:45.001581388Z",
+    "composeProject": "hasheemstudio",
+    "composeFiles": "/home/yuso/hasheemstudio/infra/compose/docker-compose.yml"
+  },
+  "rest": {
+    "config": {
+      "PGRST_JWT_SECRET": {
+        "present": true,
+        "sha256": "4b528f6cb3fa59b3ca971f80ed58cf692c2aedddd98b99d12257b7c834dd15a6",
+        "matchesProtected": true
+      }
+    },
+    "image": "sha256:c9dc201e555f5d8e37e7f39cdd4df0229774996e213bfd7de8d10ac609030f2c",
+    "configuredImage": "postgrest/postgrest:v14.17",
+    "created": "2026-09-16T20:34:44.782162586Z",
+    "composeProject": "hasheemstudio",
+    "composeFiles": "/home/yuso/hasheemstudio/infra/compose/docker-compose.yml"
+  },
+  "envoy": {
+    "config": {
+      "SERVICE_ROLE_KEY": {
+        "present": true,
+        "sha256": "1e7a00b0d28af87851d75b34efe89e1045988edda3b9f62e4f289560a0eeed0b",
+        "matchesProtected": true
+      },
+      "ANON_KEY": {
+        "present": true,
+        "sha256": "c1a310e45c0f64447904c04beeac2e63a589716ccc2c769b62e58e2876d7317d",
+        "matchesProtected": true
+      },
+      "serviceToken": {
+        "alg": "HS256",
+        "role": "service_role",
+        "issuer": "hasheemstudio",
+        "audience": null,
+        "expires": 2104950590,
+        "expired": false,
+        "validProtectedSignature": true
+      }
+    },
+    "image": "sha256:57e14a549d7bd43c8d3f6d03e8cfa653e037d4b38e133acd9b54f38c524401b4",
+    "configuredImage": "envoyproxy/envoy:v1.39.1",
+    "created": "2026-09-22T17:21:44.656491042Z",
+    "composeProject": "hasheemstudio",
+    "composeFiles": "/home/yuso/hasheemstudio/infra/compose/docker-compose.yml"
+  }
+}

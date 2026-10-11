@@ -622,7 +622,9 @@ services:
       API_PORT: "8787"
       API_DB_HOST: supavisor
       API_DB_PORT: "6543"
-      API_STORAGE_HOST: api-gw
+      # api-gw is also advertised by other projects on the shared ingress network.
+      # Use our unique container name so service credentials only reach Studio Storage.
+      API_STORAGE_HOST: hasheemstudio-envoy
       API_STORAGE_PORT: "8000"
       SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL}
       # Hardcoded here, deliberately NOT read from the shared env file: a bare host `pnpm dev`
